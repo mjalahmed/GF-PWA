@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "deno run --config supabase/functions/deno.json --allow-env --allow-net --allow-read src/main.ts"
+healthcheckPath = "/v1/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Run versioned SQL migrations before each deploy (non-destructive, forward-only).
+preDeployCommand = "bash scripts/migrate.sh"
