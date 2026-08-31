@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { AuthProvider } from '../hooks/useAuth'
+import { LanguageGate } from '../i18n/LanguageGate'
+import { LocaleProvider } from '../i18n/LocaleProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,7 +17,11 @@ const queryClient = new QueryClient({
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <LocaleProvider>
+          <LanguageGate>{children}</LanguageGate>
+        </LocaleProvider>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }
