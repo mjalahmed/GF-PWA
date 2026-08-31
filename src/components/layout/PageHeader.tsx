@@ -18,7 +18,7 @@ export function PageHeader({ title, backTo, action }: PageHeaderProps) {
           <Link
             to={backTo}
             className="touch-target -ms-2 flex items-center text-primary"
-            aria-label={t('common.back')}
+            aria-label={t('common.backAria')}
           >
             <IconChevron className="size-5 rotate-180 rtl:rotate-0" />
           </Link>

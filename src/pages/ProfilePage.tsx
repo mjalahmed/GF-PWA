@@ -10,7 +10,6 @@ import { useAuth } from '../hooks/useAuth'
 import { LanguageToggle } from '../i18n/LanguageToggle'
 import { useLocale } from '../i18n/LocaleProvider'
 import { signOut, updateProfile } from '../services/api/auth'
-import type { MessageKey } from '../i18n/messages'
 
 function ProfileNavLink({ to, label }: { to: string; label: string }) {
   return (
@@ -56,7 +55,9 @@ export function ProfilePage() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold text-text-primary">{t('lang.label')}</h2>
-          <p className="mt-0.5 text-xs text-text-muted">A / ع</p>
+          <p className="mt-0.5 text-xs text-text-muted">
+            {t('lang.symbolEn')} / {t('lang.symbolAr')}
+          </p>
         </div>
         <LanguageToggle />
       </div>
@@ -87,7 +88,7 @@ export function ProfilePage() {
     setEditing(true)
   }
 
-  const links: { to: string; labelKey: MessageKey }[] = [
+  const links: { to: string; labelKey: string }[] = [
     { to: '/vehicles', labelKey: 'profile.vehicles' },
     { to: '/favorites', labelKey: 'profile.favorites' },
     { to: '/appointments', labelKey: 'profile.appointments' },

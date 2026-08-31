@@ -3,14 +3,16 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { userMessage } from '../lib/error-codes'
-import { signIn, signUp } from '../services/api/auth'
 import { useAuth } from '../hooks/useAuth'
+import { useLocale } from '../i18n/LocaleProvider'
+import { userMessageKey } from '../lib/error-codes'
+import { signIn, signUp } from '../services/api/auth'
 
 export function SignInPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { refresh } = useAuth()
+  const { t } = useLocale()
   const from = (location.state as { from?: string } | null)?.from ?? '/profile'
 
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
@@ -35,7 +37,7 @@ export function SignInPage() {
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : userMessage('INVALID_CREDENTIALS')
+        err instanceof Error ? err.message : t(userMessageKey('INVALID_CREDENTIALS'))
       setError(message)
     } finally {
       setLoading(false)
@@ -44,12 +46,15 @@ export function SignInPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <PageHeader title={mode === 'sign-in' ? 'Sign in' : 'Create account'} backTo="/" />
+      <PageHeader
+        title={mode === 'sign-in' ? t('auth.signIn') : t('auth.createAccount')}
+        backTo="/"
+      />
       <div className="mx-auto max-w-lg px-4 py-8">
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'sign-up' && (
             <Input
-              label="Full name"
+              label={t('auth.fullName')}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
@@ -57,7 +62,7 @@ export function SignInPage() {
             />
           )}
           <Input
-            label="Email"
+            label={t('auth.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -65,7 +70,7 @@ export function SignInPage() {
             autoComplete="email"
           />
           <Input
-            label="Password"
+            label={t('auth.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -76,18 +81,18 @@ export function SignInPage() {
           {mode === 'sign-in' && (
             <p className="text-right">
               <Link to="/forgot-password" className="text-sm font-medium text-primary">
-                Forgot password?
+                {t('auth.forgot')}
               </Link>
             </p>
           )}
           {error && <p className="text-sm text-error">{error}</p>}
           <Button type="submit" className="w-full" loading={loading}>
-            {mode === 'sign-in' ? 'Sign in' : 'Create account'}
+            {mode === 'sign-in' ? t('auth.signIn') : t('auth.createAccount')}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-text-muted">
-          {mode === 'sign-in' ? "Don't have an account? " : 'Already have an account? '}
+          {mode === 'sign-in' ? t('auth.noAccount') : t('auth.hasAccount')}{' '}
           <button
             type="button"
             className="font-medium text-primary"
@@ -96,13 +101,13 @@ export function SignInPage() {
               setError('')
             }}
           >
-            {mode === 'sign-in' ? 'Sign up' : 'Sign in'}
+            {mode === 'sign-in' ? t('auth.signUp') : t('auth.signIn')}
           </button>
         </p>
 
         <p className="mt-4 text-center">
           <Link to="/" className="text-sm text-text-subtle">
-            Continue without signing in
+            {t('auth.continueGuest')}
           </Link>
         </p>
       </div>

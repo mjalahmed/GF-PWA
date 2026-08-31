@@ -3,13 +3,15 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { verifyOtp } from '../services/api/auth'
 import { useAuth } from '../hooks/useAuth'
+import { useLocale } from '../i18n/LocaleProvider'
+import { verifyOtp } from '../services/api/auth'
 
 export function VerifyPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { refresh } = useAuth()
+  const { t } = useLocale()
 
   const emailParam = searchParams.get('email') ?? ''
   const typeParam = (searchParams.get('type') ?? 'signup') as 'signup' | 'recovery' | 'email'
@@ -20,7 +22,11 @@ export function VerifyPage() {
   const [loading, setLoading] = useState(false)
 
   const title =
-    typeParam === 'recovery' ? 'Reset password' : typeParam === 'email' ? 'Verify email' : 'Verify account'
+    typeParam === 'recovery'
+      ? t('auth.verifyRecovery')
+      : typeParam === 'email'
+        ? t('auth.verifyEmail')
+        : t('auth.verifySignup')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,9 +35,9 @@ export function VerifyPage() {
     try {
       await verifyOtp(email, token, typeParam)
       await refresh()
-      navigate(typeParam === 'recovery' ? '/profile' : '/profile', { replace: true })
+      navigate('/profile', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired code')
+      setError(err instanceof Error ? err.message : t('auth.invalidCode'))
     } finally {
       setLoading(false)
     }
@@ -41,12 +47,10 @@ export function VerifyPage() {
     <div className="min-h-dvh bg-background">
       <PageHeader title={title} backTo="/sign-in" />
       <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="mb-6 text-sm text-text-muted">
-          Enter the verification code sent to your email.
-        </p>
+        <p className="mb-6 text-sm text-text-muted">{t('auth.verifyInstructions')}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Email"
+            label={t('auth.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -54,22 +58,22 @@ export function VerifyPage() {
             autoComplete="email"
           />
           <Input
-            label="Verification code"
+            label={t('auth.code')}
             value={token}
             onChange={(e) => setToken(e.target.value)}
             required
             autoComplete="one-time-code"
             inputMode="numeric"
-            placeholder="6-digit code"
+            placeholder={t('auth.codePlaceholder')}
           />
           {error && <p className="text-sm text-error">{error}</p>}
           <Button type="submit" className="w-full" loading={loading}>
-            Verify
+            {t('auth.verify')}
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-text-muted">
           <Link to="/sign-in" className="font-medium text-primary">
-            Back to sign in
+            {t('auth.backToSignIn')}
           </Link>
         </p>
       </div>

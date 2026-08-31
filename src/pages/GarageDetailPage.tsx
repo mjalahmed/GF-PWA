@@ -10,8 +10,14 @@ import { StorageImage } from '../components/ui/StorageImage'
 import { Tabs } from '../components/ui/Tabs'
 import { useAuth } from '../hooks/useAuth'
 import { useGeolocation } from '../hooks/useGeolocation'
+import {
+  formatDateLocalized,
+  formatDistanceLocalized,
+  formatRatingLocalized,
+} from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
 import { mapReview } from '../lib/mappers'
-import { formatDistance, formatMoney, formatRating, primaryBranch } from '../lib/utils'
+import { formatMoney, primaryBranch } from '../lib/utils'
 import { listBusinessReviews, listPublicProducts, listPublicServices } from '../services/api/catalog'
 import { addFavorite, listFavorites, removeFavorite } from '../services/api/favorites'
 import { getBusinessBySlug } from '../services/api/garages'
@@ -23,6 +29,7 @@ export function GarageDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { session } = useAuth()
+  const { t, dateLocale } = useLocale()
   const { state: geo } = useGeolocation()
   const [tab, setTab] = useState<TabId>('overview')
 
@@ -79,11 +86,11 @@ export function GarageDetailPage() {
   if (garageQuery.error || !garage) {
     return (
       <div>
-        <PageHeader title="Garage" backTo="/search" />
+        <PageHeader title={t('garage.title')} backTo="/search" />
         <EmptyState
-          title="Garage not found"
-          description="This listing may have been removed."
-          actionLabel="Back to search"
+          title={t('garage.notFound')}
+          description={t('garage.notFoundDesc')}
+          actionLabel={t('garage.backToSearch')}
           onAction={() => navigate('/search')}
         />
       </div>
@@ -105,7 +112,7 @@ export function GarageDetailPage() {
               onClick={() => favoriteMutation.mutate()}
               disabled={favoriteMutation.isPending}
               className="text-xl"
-              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={isFavorite ? t('garage.removeFavorite') : t('garage.addFavorite')}
             >
               {isFavorite ? '❤️' : '🤍'}
             </button>
@@ -117,7 +124,7 @@ export function GarageDetailPage() {
           <StorageImage
             bucket="business-media"
             path={garage.coverPath}
-            alt={`${garage.displayName} cover`}
+            alt={t('common.coverAlt', { name: garage.displayName })}
             className="size-full object-cover"
             fallback=""
           />
@@ -138,14 +145,14 @@ export function GarageDetailPage() {
               <div className="flex flex-wrap items-center gap-2">
                 {verified && (
                   <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-                    Verified
+                    {t('common.verified')}
                   </span>
                 )}
               </div>
               <div className="mt-1 flex items-center gap-2">
                 <StarRating rating={garage.averageRating} />
                 <span className="text-sm text-text-muted">
-                  {formatRating(garage.averageRating, garage.ratingCount)}
+                  {formatRatingLocalized(garage.averageRating, garage.ratingCount, t)}
                 </span>
               </div>
               {garage.openingState && (
@@ -154,24 +161,26 @@ export function GarageDetailPage() {
                     garage.openingState.isOpen ? 'mt-1 text-sm text-success' : 'mt-1 text-sm text-text-subtle'
                   }
                 >
-                  {garage.openingState.isOpen ? 'Open now' : 'Closed'}
+                  {garage.openingState.isOpen ? t('common.openNow') : t('common.closed')}
                 </p>
               )}
               {garage.distanceKm != null && (
-                <p className="mt-1 text-sm text-text-muted">{formatDistance(garage.distanceKm)}</p>
+                <p className="mt-1 text-sm text-text-muted">
+                  {formatDistanceLocalized(garage.distanceKm, t)}
+                </p>
               )}
             </div>
           </div>
 
           <Tabs
             tabs={[
-              { id: 'overview', label: 'Overview' },
-              { id: 'services', label: `Services (${garage.serviceCount})` },
-              { id: 'products', label: `Products (${garage.productCount})` },
-              { id: 'reviews', label: 'Reviews' },
+              { id: 'overview', label: t('garage.tab.overview') },
+              { id: 'services', label: t('garage.tab.services', { count: garage.serviceCount }) },
+              { id: 'products', label: t('garage.tab.products', { count: garage.productCount }) },
+              { id: 'reviews', label: t('garage.tab.reviews') },
             ]}
             active={tab}
-            onChange={(id) => setTab(id as TabId)} 
+            onChange={(id) => setTab(id as TabId)}
           />
 
           <div className="mt-4">
@@ -182,7 +191,7 @@ export function GarageDetailPage() {
                 )}
                 {branch && (
                   <section className="mt-6 rounded-2xl border border-border bg-surface p-4">
-                    <h2 className="font-semibold text-text-primary">Location</h2>
+                    <h2 className="font-semibold text-text-primary">{t('common.location')}</h2>
                     <p className="mt-2 text-sm text-text-secondary">{branch.addressLine}</p>
                     {(branch.area || branch.city) && (
                       <p className="text-sm text-text-muted">
@@ -201,7 +210,7 @@ export function GarageDetailPage() {
                 )}
                 {garage.branches.length > 1 && (
                   <section className="mt-4">
-                    <h2 className="mb-3 font-semibold text-text-primary">All branches</h2>
+                    <h2 className="mb-3 font-semibold text-text-primary">{t('common.allBranches')}</h2>
                     <div className="space-y-2">
                       {garage.branches.map((b) => (
                         <div key={b.id} className="rounded-xl border border-border bg-surface p-3 text-sm">
@@ -219,7 +228,10 @@ export function GarageDetailPage() {
               <>
                 {servicesQuery.isLoading && <Spinner />}
                 {servicesQuery.data?.items.length === 0 && (
-                  <EmptyState title="No services listed" description="This garage has not published services yet." />
+                  <EmptyState
+                    title={t('garage.noServices')}
+                    description={t('garage.noServicesDesc')}
+                  />
                 )}
                 <div className="space-y-3">
                   {servicesQuery.data?.items.map((svc) => (
@@ -232,7 +244,7 @@ export function GarageDetailPage() {
                         <span>{svc.category.name}</span>
                         {svc.price != null && <span>{formatMoney(svc.price)}</span>}
                         {svc.estimatedDurationMinutes != null && (
-                          <span>{svc.estimatedDurationMinutes} min</span>
+                          <span>{t('common.minutes', { minutes: svc.estimatedDurationMinutes })}</span>
                         )}
                       </div>
                     </article>
@@ -245,7 +257,10 @@ export function GarageDetailPage() {
               <>
                 {productsQuery.isLoading && <Spinner />}
                 {productsQuery.data?.items.length === 0 && (
-                  <EmptyState title="No products listed" description="This garage has not published products yet." />
+                  <EmptyState
+                    title={t('garage.noProducts')}
+                    description={t('garage.noProductsDesc')}
+                  />
                 )}
                 <div className="space-y-3">
                   {productsQuery.data?.items.map((prod) => (
@@ -272,7 +287,7 @@ export function GarageDetailPage() {
               <>
                 {reviewsQuery.isLoading && <Spinner />}
                 {reviewsQuery.data?.length === 0 && (
-                  <EmptyState title="No reviews yet" description="Be the first to review after a visit." />
+                  <EmptyState title={t('garage.noReviews')} description={t('garage.noReviewsDesc')} />
                 )}
                 <div className="space-y-3">
                   {reviewsQuery.data?.map((review) => (
@@ -280,7 +295,7 @@ export function GarageDetailPage() {
                       <div className="flex items-center gap-2">
                         <StarRating rating={review.overallRating} />
                         <span className="text-xs text-text-muted">
-                          {new Date(review.createdAt).toLocaleDateString()}
+                          {formatDateLocalized(review.createdAt, dateLocale)}
                         </span>
                       </div>
                       {review.comment && (
@@ -288,7 +303,7 @@ export function GarageDetailPage() {
                       )}
                       {review.response && (
                         <div className="mt-3 rounded-lg bg-surface-secondary p-3 text-sm">
-                          <p className="font-medium text-text-primary">Garage response</p>
+                          <p className="font-medium text-text-primary">{t('common.garageResponse')}</p>
                           <p className="mt-1 text-text-muted">{review.response.message}</p>
                         </div>
                       )}
@@ -300,7 +315,7 @@ export function GarageDetailPage() {
           </div>
 
           <Link to={`/garages/${garage.slug}/book`} className="mt-8 block">
-            <Button className="w-full">Book appointment</Button>
+            <Button className="w-full">{t('garage.book')}</Button>
           </Link>
         </div>
       </div>

@@ -7,7 +7,9 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatMoney, formatStatus } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney } from '../lib/utils'
 import { cancelAppointment, getAppointment } from '../services/api/appointments'
 
 const CANCELLABLE = new Set(['requested', 'confirmed', 'pending'])
@@ -16,6 +18,7 @@ export function AppointmentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t, statusLabel, dateLocale } = useLocale()
   const [showCancel, setShowCancel] = useState(false)
   const [reason, setReason] = useState('')
 
@@ -38,10 +41,10 @@ export function AppointmentDetailPage() {
   if (error || !appt) {
     return (
       <div>
-        <PageHeader title="Appointment" backTo="/appointments" />
+        <PageHeader title={t('appointments.detail')} backTo="/appointments" />
         <EmptyState
-          title="Appointment not found"
-          actionLabel="Back"
+          title={t('appointments.notFound')}
+          actionLabel={t('common.back')}
           onAction={() => navigate('/appointments')}
         />
       </div>
@@ -52,12 +55,12 @@ export function AppointmentDetailPage() {
 
   return (
     <div>
-      <PageHeader title="Appointment" backTo="/appointments" />
+      <PageHeader title={t('appointments.detail')} backTo="/appointments" />
       <div className="mx-auto max-w-lg px-4 py-4">
         <div className="flex items-start justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-text-primary">
-              {appt.businessName ?? 'Garage appointment'}
+              {appt.businessName ?? t('appointments.detail')}
             </h2>
             {appt.branchName && <p className="text-sm text-text-muted">{appt.branchName}</p>}
           </div>
@@ -66,22 +69,22 @@ export function AppointmentDetailPage() {
 
         <dl className="mt-6 space-y-3 rounded-2xl border border-border bg-surface p-4 text-sm">
           <div>
-            <dt className="text-text-muted">Scheduled</dt>
-            <dd className="font-medium">{formatDate(appt.scheduledStart)}</dd>
+            <dt className="text-text-muted">{t('common.scheduled')}</dt>
+            <dd className="font-medium">{formatDateLocalized(appt.scheduledStart, dateLocale)}</dd>
           </div>
           <div>
-            <dt className="text-text-muted">Status</dt>
-            <dd>{formatStatus(appt.status)}</dd>
+            <dt className="text-text-muted">{t('common.status')}</dt>
+            <dd>{statusLabel(appt.status)}</dd>
           </div>
           {appt.customerNotes && (
             <div>
-              <dt className="text-text-muted">Your notes</dt>
+              <dt className="text-text-muted">{t('appointments.yourNotes')}</dt>
               <dd>{appt.customerNotes}</dd>
             </div>
           )}
           {appt.cancellationReason && (
             <div>
-              <dt className="text-text-muted">Cancellation reason</dt>
+              <dt className="text-text-muted">{t('appointments.cancelReasonLabel')}</dt>
               <dd>{appt.cancellationReason}</dd>
             </div>
           )}
@@ -89,13 +92,13 @@ export function AppointmentDetailPage() {
 
         {appt.services.length > 0 && (
           <section className="mt-4">
-            <h3 className="mb-2 font-semibold text-text-primary">Services</h3>
+            <h3 className="mb-2 font-semibold text-text-primary">{t('common.services')}</h3>
             <div className="space-y-2">
               {appt.services.map((svc) => (
                 <div key={svc.id} className="rounded-xl border border-border bg-surface p-3 text-sm">
                   <p className="font-medium">{svc.serviceName}</p>
                   <p className="text-text-muted">
-                    {svc.estimatedDurationMinutes} min
+                    {t('common.minutes', { minutes: svc.estimatedDurationMinutes })}
                     {svc.quotedPrice != null && ` · ${formatMoney(svc.quotedPrice)}`}
                   </p>
                 </div>
@@ -106,17 +109,17 @@ export function AppointmentDetailPage() {
 
         {canCancel && !showCancel && (
           <Button variant="danger" className="mt-8 w-full" onClick={() => setShowCancel(true)}>
-            Cancel appointment
+            {t('appointments.cancel')}
           </Button>
         )}
 
         {showCancel && (
           <div className="mt-8 space-y-3">
             <Input
-              label="Reason (optional)"
+              label={t('appointments.cancelReasonOptional')}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Why are you cancelling?"
+              placeholder={t('appointments.cancelReasonPlaceholder')}
             />
             <Button
               variant="danger"
@@ -124,10 +127,10 @@ export function AppointmentDetailPage() {
               loading={cancelMutation.isPending}
               onClick={() => cancelMutation.mutate()}
             >
-              Confirm cancellation
+              {t('appointments.confirmCancel')}
             </Button>
             <Button variant="ghost" className="w-full" onClick={() => setShowCancel(false)}>
-              Keep appointment
+              {t('appointments.keep')}
             </Button>
           </div>
         )}

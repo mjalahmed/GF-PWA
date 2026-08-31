@@ -4,26 +4,29 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { useLocale } from '../i18n/LocaleProvider'
+import { disputeReasonKey } from '../i18n/messages'
 import { createDispute } from '../services/api/disputes'
 
 const REASON_CODES = [
-  { value: 'service_not_completed', label: 'Service not completed' },
-  { value: 'service_quality', label: 'Service quality' },
-  { value: 'unexpected_charge', label: 'Unexpected charge' },
-  { value: 'pricing_dispute', label: 'Pricing dispute' },
-  { value: 'incorrect_invoice', label: 'Incorrect invoice' },
-  { value: 'payment_issue', label: 'Payment issue' },
-  { value: 'appointment_issue', label: 'Appointment issue' },
-  { value: 'quotation_issue', label: 'Quotation issue' },
-  { value: 'review_issue', label: 'Review issue' },
-  { value: 'damage_claim', label: 'Damage claim' },
-  { value: 'communication_issue', label: 'Communication issue' },
-  { value: 'other', label: 'Other' },
+  'service_not_completed',
+  'service_quality',
+  'unexpected_charge',
+  'pricing_dispute',
+  'incorrect_invoice',
+  'payment_issue',
+  'appointment_issue',
+  'quotation_issue',
+  'review_issue',
+  'damage_claim',
+  'communication_issue',
+  'other',
 ] as const
 
 export function DisputeNewPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { t } = useLocale()
   const [businessId, setBusinessId] = useState(searchParams.get('businessId') ?? '')
   const [reasonCode, setReasonCode] = useState('other')
   const [summary, setSummary] = useState('')
@@ -47,13 +50,13 @@ export function DisputeNewPage() {
         quotationId: quotationId || undefined,
       }),
     onSuccess: (d) => navigate(`/disputes/${d.id}`, { replace: true }),
-    onError: (err) => setError(err instanceof Error ? err.message : 'Could not create dispute'),
+    onError: (err) => setError(err instanceof Error ? err.message : t('disputes.createError')),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!businessId.trim() || !summary.trim()) {
-      setError('Business ID and summary are required.')
+      setError(t('disputes.required'))
       return
     }
     setError('')
@@ -62,40 +65,40 @@ export function DisputeNewPage() {
 
   return (
     <div>
-      <PageHeader title="New dispute" backTo="/disputes" />
+      <PageHeader title={t('disputes.new')} backTo="/disputes" />
       <div className="mx-auto max-w-lg px-4 py-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Business ID"
+            label={t('disputes.businessId')}
             value={businessId}
             onChange={(e) => setBusinessId(e.target.value)}
             required
-            placeholder="UUID from invoice or appointment"
+            placeholder={t('disputes.businessIdPlaceholder')}
           />
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">Reason</span>
+            <span className="text-sm font-medium text-text-secondary">{t('disputes.reason')}</span>
             <select
               value={reasonCode}
               onChange={(e) => setReasonCode(e.target.value)}
               className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
             >
-              {REASON_CODES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
+              {REASON_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {t(disputeReasonKey(code))}
                 </option>
               ))}
             </select>
           </label>
           <Input
-            label="Summary"
+            label={t('disputes.summary')}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             required
             maxLength={500}
-            placeholder="Brief summary of the issue"
+            placeholder={t('disputes.summaryPlaceholder')}
           />
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">Description (optional)</span>
+            <span className="text-sm font-medium text-text-secondary">{t('disputes.description')}</span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -104,7 +107,7 @@ export function DisputeNewPage() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">Initial message (optional)</span>
+            <span className="text-sm font-medium text-text-secondary">{t('disputes.initialMessage')}</span>
             <textarea
               value={initialMessage}
               onChange={(e) => setInitialMessage(e.target.value)}
@@ -113,23 +116,23 @@ export function DisputeNewPage() {
             />
           </label>
           <Input
-            label="Appointment ID (optional)"
+            label={t('disputes.appointmentId')}
             value={appointmentId}
             onChange={(e) => setAppointmentId(e.target.value)}
           />
           <Input
-            label="Invoice ID (optional)"
+            label={t('disputes.invoiceId')}
             value={invoiceId}
             onChange={(e) => setInvoiceId(e.target.value)}
           />
           <Input
-            label="Quotation ID (optional)"
+            label={t('disputes.quotationId')}
             value={quotationId}
             onChange={(e) => setQuotationId(e.target.value)}
           />
           {error && <p className="text-sm text-error">{error}</p>}
           <Button type="submit" className="w-full" loading={createMutation.isPending}>
-            Submit dispute
+            {t('disputes.submit')}
           </Button>
         </form>
       </div>

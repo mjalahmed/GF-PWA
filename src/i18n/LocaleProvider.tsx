@@ -15,14 +15,18 @@ import {
   writeStoredLocale,
   type Locale,
 } from './locale'
-import { translate, type MessageKey } from './messages'
+import { formatStatusLabel, translate, type Vars } from './messages'
+
+export type TranslateFn = (key: string, vars?: Vars) => string
 
 interface LocaleContextValue {
   locale: Locale | null
   ready: boolean
   hasChosenLocale: boolean
   setLocale: (locale: Locale) => Promise<void>
-  t: (key: MessageKey) => string
+  t: TranslateFn
+  statusLabel: (status: string) => string
+  dateLocale: string
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null)
@@ -55,15 +59,19 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     [session],
   )
 
+  const activeLocale: Locale = locale ?? 'en'
+
   const value = useMemo<LocaleContextValue>(
     () => ({
       locale,
       ready,
       hasChosenLocale: locale != null,
       setLocale,
-      t: (key) => translate(locale ?? 'en', key),
+      t: (key, vars) => translate(activeLocale, key, vars),
+      statusLabel: (status) => formatStatusLabel(activeLocale, status),
+      dateLocale: activeLocale === 'ar' ? 'ar-BH' : 'en-BH',
     }),
-    [locale, ready, setLocale],
+    [locale, ready, setLocale, activeLocale],
   )
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import type { DiscoveryBusiness } from '../../types/discovery'
-import { formatDistance, formatRating, primaryBranch } from '../../lib/utils'
+import { primaryBranch } from '../../lib/utils'
+import { useLocale } from '../../i18n/LocaleProvider'
+import { formatDistanceLocalized, formatRatingLocalized } from '../../i18n/format'
 import { StarRating } from './StarRating'
 
 interface GarageCardProps {
@@ -8,6 +10,7 @@ interface GarageCardProps {
 }
 
 export function GarageCard({ garage }: GarageCardProps) {
+  const { t } = useLocale()
   const branch = primaryBranch(garage)
   const area = branch?.area ?? garage.areas[0]
 
@@ -25,15 +28,19 @@ export function GarageCard({ garage }: GarageCardProps) {
           {area && <p className="truncate text-sm text-text-muted">{area}</p>}
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
             <StarRating rating={garage.averageRating} />
-            <span className="text-text-muted">{formatRating(garage.averageRating, garage.ratingCount)}</span>
+            <span className="text-text-muted">
+              {formatRatingLocalized(garage.averageRating, garage.ratingCount, t)}
+            </span>
             {garage.openingState && (
               <span className={garage.openingState.isOpen ? 'text-success' : 'text-text-subtle'}>
-                {garage.openingState.isOpen ? 'Open' : 'Closed'}
+                {garage.openingState.isOpen ? t('common.open') : t('common.closed')}
               </span>
             )}
           </div>
           {garage.distanceKm != null && (
-            <p className="mt-1 text-xs text-text-subtle">{formatDistance(garage.distanceKm)}</p>
+            <p className="mt-1 text-xs text-text-subtle">
+              {formatDistanceLocalized(garage.distanceKm, t)}
+            </p>
           )}
         </div>
       </div>

@@ -4,9 +4,11 @@ import { InstallPromptBanner } from './InstallPromptBanner'
 import { OfflineBanner } from './OfflineBanner'
 import { UpdatePrompt } from './UpdatePrompt'
 import { isConfigured } from '../../lib/env'
+import { useLocale } from '../../i18n/LocaleProvider'
 
 export function AppShell() {
   const { pathname } = useLocation()
+  const { t } = useLocale()
   const hideNav =
     pathname.startsWith('/sign-in') ||
     pathname.startsWith('/forgot-password') ||
@@ -18,7 +20,7 @@ export function AppShell() {
       <OfflineBanner />
       {!isConfigured && (
         <div className="bg-warning/10 px-4 py-2 text-center text-xs text-warning">
-          API not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env
+          {t('pwa.configWarning')}
         </div>
       )}
       <InstallPromptBanner />

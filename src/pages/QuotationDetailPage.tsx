@@ -5,7 +5,9 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatMoney } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney } from '../lib/utils'
 import {
   acceptQuotation,
   getQuotation,
@@ -17,6 +19,7 @@ export function QuotationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t, dateLocale } = useLocale()
 
   const quotationQuery = useQuery({
     queryKey: ['quotation', id],
@@ -45,8 +48,12 @@ export function QuotationDetailPage() {
   if (quotationQuery.error || !q) {
     return (
       <div>
-        <PageHeader title="Quotation" backTo="/quotations" />
-        <EmptyState title="Quotation not found" actionLabel="Back" onAction={() => navigate('/quotations')} />
+        <PageHeader title={t('quotations.detail')} backTo="/quotations" />
+        <EmptyState
+          title={t('quotations.notFound')}
+          actionLabel={t('common.back')}
+          onAction={() => navigate('/quotations')}
+        />
       </div>
     )
   }
@@ -65,18 +72,18 @@ export function QuotationDetailPage() {
         <dl className="mt-4 space-y-2 rounded-2xl border border-border bg-surface p-4 text-sm">
           {q.validUntil && (
             <div className="flex justify-between">
-              <dt className="text-text-muted">Valid until</dt>
-              <dd>{formatDate(q.validUntil)}</dd>
+              <dt className="text-text-muted">{t('common.validUntil')}</dt>
+              <dd>{formatDateLocalized(q.validUntil, dateLocale)}</dd>
             </div>
           )}
           <div className="flex justify-between font-semibold">
-            <dt>Total</dt>
+            <dt>{t('common.total')}</dt>
             <dd>{formatMoney(q.grandTotal, q.currency)}</dd>
           </div>
         </dl>
 
         <section className="mt-4">
-          <h3 className="mb-2 font-semibold text-text-primary">Line items</h3>
+          <h3 className="mb-2 font-semibold text-text-primary">{t('common.lineItems')}</h3>
           <div className="space-y-2">
             {q.items.map((item) => (
               <div key={item.id} className="rounded-xl border border-border bg-surface p-3 text-sm">
@@ -85,7 +92,10 @@ export function QuotationDetailPage() {
                   <span className="font-medium">{formatMoney(item.lineTotal, q.currency)}</span>
                 </div>
                 <p className="text-text-muted">
-                  {item.quantity} × {formatMoney(item.unitPrice, q.currency)}
+                  {t('common.qtyPrice', {
+                    quantity: item.quantity,
+                    unitPrice: formatMoney(item.unitPrice, q.currency),
+                  })}
                 </p>
               </div>
             ))}
@@ -95,13 +105,13 @@ export function QuotationDetailPage() {
         <div className="mt-8 space-y-2">
           {q.status === 'issued' && (
             <Button className="w-full" loading={viewMutation.isPending} onClick={() => viewMutation.mutate()}>
-              Mark as viewed
+              {t('quotations.markViewed')}
             </Button>
           )}
           {pending && (
             <>
               <Button className="w-full" loading={acceptMutation.isPending} onClick={() => acceptMutation.mutate()}>
-                Accept quotation
+                {t('quotations.accept')}
               </Button>
               <Button
                 variant="danger"
@@ -109,7 +119,7 @@ export function QuotationDetailPage() {
                 loading={rejectMutation.isPending}
                 onClick={() => rejectMutation.mutate()}
               >
-                Reject quotation
+                {t('quotations.reject')}
               </Button>
             </>
           )}

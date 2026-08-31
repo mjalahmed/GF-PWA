@@ -5,10 +5,13 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatStatus } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { disputeReasonKey } from '../i18n/messages'
 import { listDisputes } from '../services/api/disputes'
 
 export function DisputesPage() {
+  const { t, dateLocale } = useLocale()
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['disputes'],
     queryFn: () => listDisputes(),
@@ -17,25 +20,29 @@ export function DisputesPage() {
   return (
     <div>
       <PageHeader
-        title="Disputes"
+        title={t('disputes.title')}
         backTo="/profile"
         action={
           <Link to="/disputes/new" className="text-sm font-medium text-primary">
-            New
+            {t('common.new')}
           </Link>
         }
       />
       <div className="mx-auto max-w-lg px-4 py-4">
         <Link to="/disputes/new" className="mb-4 block">
-          <Button className="w-full">Open a dispute</Button>
+          <Button className="w-full">{t('disputes.open')}</Button>
         </Link>
 
         {isLoading && <Spinner />}
         {error && (
-          <EmptyState title="Could not load disputes" actionLabel="Retry" onAction={() => refetch()} />
+          <EmptyState
+            title={t('disputes.loadError')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         )}
         {data?.length === 0 && (
-          <EmptyState title="No disputes" description="We hope you never need this, but we're here if you do." />
+          <EmptyState title={t('disputes.empty')} description={t('disputes.emptyDesc')} />
         )}
         {data && data.length > 0 && (
           <div className="space-y-3">
@@ -54,7 +61,7 @@ export function DisputesPage() {
                 </div>
                 <p className="mt-2 line-clamp-2 text-sm text-text-secondary">{d.summary}</p>
                 <p className="mt-2 text-xs text-text-muted">
-                  {formatStatus(d.reasonCode)} · {formatDate(d.createdAt)}
+                  {t(disputeReasonKey(d.reasonCode))} · {formatDateLocalized(d.createdAt, dateLocale)}
                 </p>
               </Link>
             ))}

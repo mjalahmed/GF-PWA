@@ -4,10 +4,13 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatMoney } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney } from '../lib/utils'
 import { listQuotations } from '../services/api/quotations'
 
 export function QuotationsPage() {
+  const { t, dateLocale } = useLocale()
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['quotations'],
     queryFn: () => listQuotations(),
@@ -15,16 +18,20 @@ export function QuotationsPage() {
 
   return (
     <div>
-      <PageHeader title="Quotations" backTo="/profile" />
+      <PageHeader title={t('quotations.title')} backTo="/profile" />
       <div className="mx-auto max-w-lg px-4 py-4">
         {isLoading && <Spinner />}
         {error && (
-          <EmptyState title="Could not load quotations" actionLabel="Retry" onAction={() => refetch()} />
+          <EmptyState
+            title={t('quotations.loadError')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         )}
         {data?.length === 0 && (
           <EmptyState
-            title="No quotations yet"
-            description="Quotes from garages will appear here."
+            title={t('quotations.empty')}
+            description={t('quotations.emptyDesc')}
             icon="📋"
           />
         )}
@@ -46,7 +53,11 @@ export function QuotationsPage() {
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className="font-medium">{formatMoney(q.grandTotal, q.currency)}</span>
                   {q.validUntil && (
-                    <span className="text-text-muted">Valid until {formatDate(q.validUntil)}</span>
+                    <span className="text-text-muted">
+                      {t('common.validUntilDate', {
+                        date: formatDateLocalized(q.validUntil, dateLocale),
+                      })}
+                    </span>
                   )}
                 </div>
               </Link>

@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
+import { useLocale } from '../i18n/LocaleProvider'
 import { listVehicleMakes, listVehicleModels } from '../services/api/catalog'
 import { createVehicle, getVehicle, updateVehicle } from '../services/api/vehicles'
 
@@ -14,6 +15,7 @@ export function VehicleFormPage() {
   const isEdit = !!id
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t } = useLocale()
 
   const [makeId, setMakeId] = useState('')
   const [modelId, setModelId] = useState('')
@@ -74,13 +76,13 @@ export function VehicleFormPage() {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] })
       navigate(`/vehicles/${v.id}`, { replace: true })
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'Could not save vehicle'),
+    onError: (err) => setError(err instanceof Error ? err.message : t('vehicles.saveError')),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!makeId || !modelId || !year) {
-      setError('Make, model, and year are required.')
+      setError(t('vehicles.required'))
       return
     }
     setError('')
@@ -91,19 +93,26 @@ export function VehicleFormPage() {
   if (isEdit && vehicleQuery.error) {
     return (
       <div>
-        <PageHeader title="Edit vehicle" backTo="/vehicles" />
-        <EmptyState title="Vehicle not found" actionLabel="Back" onAction={() => navigate('/vehicles')} />
+        <PageHeader title={t('vehicles.edit')} backTo="/vehicles" />
+        <EmptyState
+          title={t('vehicles.notFound')}
+          actionLabel={t('common.back')}
+          onAction={() => navigate('/vehicles')}
+        />
       </div>
     )
   }
 
   return (
     <div>
-      <PageHeader title={isEdit ? 'Edit vehicle' : 'Add vehicle'} backTo={isEdit ? `/vehicles/${id}` : '/vehicles'} />
+      <PageHeader
+        title={isEdit ? t('vehicles.edit') : t('vehicles.add')}
+        backTo={isEdit ? `/vehicles/${id}` : '/vehicles'}
+      />
       <div className="mx-auto max-w-lg px-4 py-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">Make</span>
+            <span className="text-sm font-medium text-text-secondary">{t('common.make')}</span>
             <select
               value={makeId}
               onChange={(e) => {
@@ -113,7 +122,7 @@ export function VehicleFormPage() {
               required
               className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
             >
-              <option value="">Select make</option>
+              <option value="">{t('vehicles.selectMake')}</option>
               {makesQuery.data?.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
@@ -123,7 +132,7 @@ export function VehicleFormPage() {
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">Model</span>
+            <span className="text-sm font-medium text-text-secondary">{t('common.model')}</span>
             <select
               value={modelId}
               onChange={(e) => setModelId(e.target.value)}
@@ -131,7 +140,7 @@ export function VehicleFormPage() {
               disabled={!makeId}
               className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary disabled:opacity-50"
             >
-              <option value="">Select model</option>
+              <option value="">{t('vehicles.selectModel')}</option>
               {modelsQuery.data?.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
@@ -141,7 +150,7 @@ export function VehicleFormPage() {
           </label>
 
           <Input
-            label="Year"
+            label={t('common.year')}
             type="number"
             min={1980}
             max={new Date().getFullYear() + 1}
@@ -149,12 +158,16 @@ export function VehicleFormPage() {
             onChange={(e) => setYear(e.target.value)}
             required
           />
-          <Input label="Plate number" value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} />
-          <Input label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} />
-          <Input label="Color" value={color} onChange={(e) => setColor(e.target.value)} />
-          <Input label="Trim" value={trim} onChange={(e) => setTrim(e.target.value)} />
           <Input
-            label="Mileage (km)"
+            label={t('vehicles.plateNumber')}
+            value={plateNumber}
+            onChange={(e) => setPlateNumber(e.target.value)}
+          />
+          <Input label={t('common.vin')} value={vin} onChange={(e) => setVin(e.target.value)} />
+          <Input label={t('common.color')} value={color} onChange={(e) => setColor(e.target.value)} />
+          <Input label={t('common.trim')} value={trim} onChange={(e) => setTrim(e.target.value)} />
+          <Input
+            label={t('vehicles.mileageKm')}
             type="number"
             min={0}
             value={mileage}
@@ -163,7 +176,7 @@ export function VehicleFormPage() {
 
           {error && <p className="text-sm text-error">{error}</p>}
           <Button type="submit" className="w-full" loading={saveMutation.isPending}>
-            {isEdit ? 'Save changes' : 'Add vehicle'}
+            {isEdit ? t('vehicles.saveChanges') : t('vehicles.add')}
           </Button>
         </form>
       </div>

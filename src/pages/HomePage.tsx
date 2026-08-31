@@ -5,18 +5,19 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { GarageCard } from '../components/ui/GarageCard'
 import { Spinner } from '../components/ui/Spinner'
 import { useAuth } from '../hooks/useAuth'
-import { vehicleLabel } from '../lib/utils'
+import { vehicleLabelLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
 import { listServiceCategories } from '../services/api/catalog'
 import { listFavorites } from '../services/api/favorites'
 import { searchBusinesses } from '../services/api/garages'
 import { listVehicles } from '../services/api/vehicles'
 
-function SectionHeader({ title, to }: { title: string; to: string }) {
+function SectionHeader({ title, to, seeAllLabel }: { title: string; to: string; seeAllLabel: string }) {
   return (
     <div className="mb-4 flex items-center justify-between">
       <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
       <Link to={to} className="text-sm font-medium text-primary">
-        See all
+        {seeAllLabel}
       </Link>
     </div>
   )
@@ -24,6 +25,7 @@ function SectionHeader({ title, to }: { title: string; to: string }) {
 
 export function HomePage() {
   const { session } = useAuth()
+  const { t } = useLocale()
 
   const categoriesQuery = useQuery({
     queryKey: ['service-categories'],
@@ -57,18 +59,16 @@ export function HomePage() {
 
   return (
     <div>
-      <PageHeader title="GarageFinder" />
+      <PageHeader title={t('home.title')} />
       <div className="mx-auto max-w-lg px-4 py-6">
         <section className="rounded-2xl bg-primary px-5 py-6 text-white">
-          <h2 className="text-xl font-bold">Find trusted garages in Bahrain</h2>
-          <p className="mt-2 text-sm text-white/90">
-            Search workshops, compare ratings, and book services near you.
-          </p>
+          <h2 className="text-xl font-bold">{t('home.hero')}</h2>
+          <p className="mt-2 text-sm text-white/90">{t('home.heroSub')}</p>
           <Link
             to="/search"
             className="mt-4 inline-flex touch-target items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-primary hover:bg-white/90"
           >
-            Search garages
+            {t('common.searchGarages')}
           </Link>
         </section>
 
@@ -81,17 +81,19 @@ export function HomePage() {
               🚗
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-text-primary">{vehicleLabel(defaultVehicle)}</p>
+              <p className="font-medium text-text-primary">
+                {vehicleLabelLocalized(defaultVehicle, t)}
+              </p>
               {defaultVehicle.plateNumber && (
                 <p className="text-text-muted">{defaultVehicle.plateNumber}</p>
               )}
             </div>
-            <span className="text-xs font-medium text-primary">Default</span>
+            <span className="text-xs font-medium text-primary">{t('common.default')}</span>
           </Link>
         )}
 
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold text-text-primary">Browse by service</h2>
+          <h2 className="mb-3 text-lg font-semibold text-text-primary">{t('home.browseByService')}</h2>
           {categoriesQuery.isLoading && <Spinner className="py-6" />}
           {categoriesQuery.data && categoriesQuery.data.length > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -109,18 +111,22 @@ export function HomePage() {
         </section>
 
         <section className="mt-8">
-          <SectionHeader title="Top rated" to="/search?sort=rating" />
+          <SectionHeader
+            title={t('home.topRated')}
+            to="/search?sort=rating"
+            seeAllLabel={t('common.seeAll')}
+          />
           {featuredQuery.isLoading && <Spinner />}
           {featuredQuery.error && (
             <EmptyState
-              title="Could not load garages"
-              description="Check your connection and try again."
-              actionLabel="Retry"
+              title={t('home.loadError')}
+              description={t('home.loadErrorDesc')}
+              actionLabel={t('common.retry')}
               onAction={() => featuredQuery.refetch()}
             />
           )}
           {featuredQuery.data?.items.length === 0 && (
-            <EmptyState title="No garages yet" description="Check back soon for featured listings." />
+            <EmptyState title={t('home.noGarages')} description={t('home.noGaragesDesc')} />
           )}
           {featuredQuery.data && featuredQuery.data.items.length > 0 && (
             <div className="space-y-3">
@@ -132,7 +138,11 @@ export function HomePage() {
         </section>
 
         <section className="mt-8">
-          <SectionHeader title="Newest" to="/search?sort=newest" />
+          <SectionHeader
+            title={t('home.newest')}
+            to="/search?sort=newest"
+            seeAllLabel={t('common.seeAll')}
+          />
           {newestQuery.isLoading && <Spinner />}
           {newestQuery.data && newestQuery.data.items.length > 0 && (
             <div className="space-y-3">
@@ -145,13 +155,17 @@ export function HomePage() {
 
         {session && (
           <section className="mt-8">
-            <SectionHeader title="Your favorites" to="/favorites" />
+            <SectionHeader
+              title={t('home.yourFavorites')}
+              to="/favorites"
+              seeAllLabel={t('common.seeAll')}
+            />
             {favoritesQuery.isLoading && <Spinner />}
             {favoritesQuery.data?.length === 0 && (
               <EmptyState
-                title="No favorites yet"
-                description="Save garages you like to find them quickly."
-                actionLabel="Search garages"
+                title={t('home.noFavorites')}
+                description={t('home.noFavoritesDesc')}
+                actionLabel={t('common.searchGarages')}
                 onAction={() => {
                   window.location.href = '/search'
                 }}
@@ -172,13 +186,13 @@ export function HomePage() {
             to="/appointments"
             className="rounded-xl border border-border bg-surface px-4 py-3 text-center text-sm font-medium text-text-primary"
           >
-            Appointments
+            {t('nav.appointments')}
           </Link>
           <Link
             to="/invoices"
             className="rounded-xl border border-border bg-surface px-4 py-3 text-center text-sm font-medium text-text-primary"
           >
-            Invoices
+            {t('nav.invoices')}
           </Link>
         </nav>
       </div>

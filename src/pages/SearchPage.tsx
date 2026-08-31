@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
 import { useAuth } from '../hooks/useAuth'
 import { useGeolocation } from '../hooks/useGeolocation'
+import { useLocale } from '../i18n/LocaleProvider'
 import { listProductCategories, listServiceCategories } from '../services/api/catalog'
 import { searchBusinesses } from '../services/api/garages'
 import { listVehicles } from '../services/api/vehicles'
@@ -16,6 +17,7 @@ import { listVehicles } from '../services/api/vehicles'
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { session } = useAuth()
+  const { t } = useLocale()
   const { state: geo, requestLocation } = useGeolocation()
 
   const [query, setQuery] = useState(searchParams.get('query') ?? '')
@@ -109,25 +111,25 @@ export function SearchPage() {
 
   return (
     <div>
-      <PageHeader title="Search" />
+      <PageHeader title={t('search.title')} />
       <div className="mx-auto max-w-lg px-4 py-4">
         <form onSubmit={handleSearch} className="space-y-3">
           <Input
-            label="Search garages"
-            placeholder="Name, area, or service…"
+            label={t('search.label')}
+            placeholder={t('search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">Service category</span>
+              <span className="text-sm font-medium text-text-secondary">{t('search.serviceCategory')}</span>
               <select
                 value={serviceCategory}
                 onChange={(e) => setServiceCategory(e.target.value)}
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
               >
-                <option value="">Any service</option>
+                <option value="">{t('search.anyService')}</option>
                 {serviceCategoriesQuery.data?.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -136,13 +138,13 @@ export function SearchPage() {
               </select>
             </label>
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">Product category</span>
+              <span className="text-sm font-medium text-text-secondary">{t('search.productCategory')}</span>
               <select
                 value={productCategory}
                 onChange={(e) => setProductCategory(e.target.value)}
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
               >
-                <option value="">Any product</option>
+                <option value="">{t('search.anyProduct')}</option>
                 {productCategoriesQuery.data?.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -154,47 +156,47 @@ export function SearchPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">Min rating</span>
+              <span className="text-sm font-medium text-text-secondary">{t('search.minRating')}</span>
               <select
                 value={minRating}
                 onChange={(e) => setMinRating(e.target.value)}
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
               >
-                <option value="">Any rating</option>
+                <option value="">{t('search.anyRating')}</option>
                 {[5, 4, 3, 2, 1].map((r) => (
                   <option key={r} value={String(r)}>
-                    {r}+ stars
+                    {t('search.starsPlus', { rating: r })}
                   </option>
                 ))}
               </select>
             </label>
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">Sort by</span>
+              <span className="text-sm font-medium text-text-secondary">{t('search.sortBy')}</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
               >
-                <option value="relevance">Relevance</option>
-                <option value="rating">Rating</option>
-                <option value="newest">Newest</option>
-                <option value="distance">Distance</option>
+                <option value="relevance">{t('search.sort.relevance')}</option>
+                <option value="rating">{t('search.sort.rating')}</option>
+                <option value="newest">{t('search.sort.newest')}</option>
+                <option value="distance">{t('search.sort.distance')}</option>
               </select>
             </label>
           </div>
 
           {session && vehiclesQuery.data && vehiclesQuery.data.length > 0 && (
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">Vehicle</span>
+              <span className="text-sm font-medium text-text-secondary">{t('search.vehicle')}</span>
               <select
                 value={vehicleId}
                 onChange={(e) => setVehicleId(e.target.value)}
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
               >
-                <option value="">Any vehicle</option>
+                <option value="">{t('search.anyVehicle')}</option>
                 {vehiclesQuery.data.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.displayLabel ?? `${v.year} vehicle`}
+                    {v.displayLabel ?? t('search.yearVehicle', { year: v.year })}
                   </option>
                 ))}
               </select>
@@ -208,12 +210,12 @@ export function SearchPage() {
               onChange={(e) => setOpenNow(e.target.checked)}
               className="size-4 rounded border-border text-primary"
             />
-            Open now only
+            {t('search.openNowOnly')}
           </label>
 
           <div className="flex gap-2">
             <Button type="submit" className="flex-1" loading={isFetching}>
-              Search
+              {t('search.submit')}
             </Button>
             <Button
               type="button"
@@ -221,21 +223,24 @@ export function SearchPage() {
               loading={geo.status === 'loading'}
               onClick={requestLocation}
             >
-              Near me
+              {t('search.nearMe')}
             </Button>
           </div>
         </form>
 
-        {geo.status === 'denied' && <p className="mt-2 text-sm text-warning">{geo.message}</p>}
-        {geo.status === 'unavailable' && (
-          <p className="mt-2 text-sm text-text-muted">{geo.message}</p>
+        {(geo.status === 'denied' || geo.status === 'unavailable') && (
+          <p
+            className={`mt-2 text-sm ${geo.status === 'denied' ? 'text-warning' : 'text-text-muted'}`}
+          >
+            {t(geo.messageKey)}
+          </p>
         )}
 
         <div className="mt-6">
           {!submitted && !hasFilters && (
             <EmptyState
-              title="Find a garage"
-              description="Apply filters or tap Search to see matching garages."
+              title={t('search.findTitle')}
+              description={t('search.findDesc')}
               icon="🔍"
             />
           )}
@@ -243,20 +248,18 @@ export function SearchPage() {
           {submitted && isLoading && <Spinner />}
           {error && (
             <EmptyState
-              title="Search failed"
-              description="Something went wrong. Please try again."
-              actionLabel="Retry"
+              title={t('search.failedTitle')}
+              description={t('search.failedDesc')}
+              actionLabel={t('common.retry')}
               onAction={() => refetch()}
             />
           )}
           {data && data.items.length === 0 && submitted && (
-            <EmptyState title="No results" description="Try different filters or widen your search." />
+            <EmptyState title={t('search.noResults')} description={t('search.noResultsDesc')} />
           )}
           {data && data.items.length > 0 && (
             <div className="space-y-3">
-              {coords && (
-                <p className="text-sm text-text-muted">Showing results near your location</p>
-              )}
+              {coords && <p className="text-sm text-text-muted">{t('search.nearHint')}</p>}
               {data.items.map((garage) => (
                 <GarageCard key={garage.id} garage={garage} />
               ))}

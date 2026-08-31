@@ -47,4 +47,14 @@ describe('translate', () => {
     expect(translate('en', 'lang.symbolEn')).toBe('A')
     expect(translate('en', 'lang.symbolAr')).toBe('ع')
   })
+
+  it('interpolates variables', () => {
+    expect(translate('en', 'garage.tab.services', { count: 4 })).toBe('Services (4)')
+    expect(translate('ar', 'garage.tab.services', { count: 4 })).toBe('الخدمات (4)')
+  })
+
+  it('translates statuses', () => {
+    expect(translate('en', 'status.confirmed')).toBe('Confirmed')
+    expect(translate('ar', 'status.confirmed')).toBe('مؤكد')
+  })
 })

@@ -4,10 +4,13 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatMoney } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney } from '../lib/utils'
 import { listInvoices } from '../services/api/invoices'
 
 export function InvoicesPage() {
+  const { t, dateLocale } = useLocale()
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['invoices'],
     queryFn: () => listInvoices(),
@@ -15,16 +18,20 @@ export function InvoicesPage() {
 
   return (
     <div>
-      <PageHeader title="Invoices" />
+      <PageHeader title={t('invoices.title')} />
       <div className="mx-auto max-w-lg px-4 py-4">
         {isLoading && <Spinner />}
         {error && (
-          <EmptyState title="Could not load invoices" actionLabel="Retry" onAction={() => refetch()} />
+          <EmptyState
+            title={t('invoices.loadError')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         )}
         {data?.length === 0 && (
           <EmptyState
-            title="No invoices yet"
-            description="Invoices from your garage visits will appear here."
+            title={t('invoices.empty')}
+            description={t('invoices.emptyDesc')}
             icon="🧾"
           />
         )}
@@ -45,11 +52,17 @@ export function InvoicesPage() {
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className="font-medium">{formatMoney(inv.grandTotal, inv.currency)}</span>
-                  {inv.issuedAt && <span className="text-text-muted">{formatDate(inv.issuedAt)}</span>}
+                  {inv.issuedAt && (
+                    <span className="text-text-muted">
+                      {formatDateLocalized(inv.issuedAt, dateLocale)}
+                    </span>
+                  )}
                 </div>
                 {inv.remainingTotal > 0 && inv.remainingTotal < inv.grandTotal && (
                   <p className="mt-1 text-xs text-warning">
-                    {formatMoney(inv.remainingTotal, inv.currency)} remaining
+                    {t('common.remainingAmount', {
+                      amount: formatMoney(inv.remainingTotal, inv.currency),
+                    })}
                   </p>
                 )}
               </Link>

@@ -6,7 +6,9 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
-import { formatMoney, primaryBranch, vehicleLabel } from '../lib/utils'
+import { formatDateLocalized, formatTimeLocalized, vehicleLabelLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney, primaryBranch } from '../lib/utils'
 import {
   createAppointment,
   listAppointmentSlots,
@@ -22,6 +24,7 @@ type Step = (typeof STEPS)[number]
 export function BookAppointmentPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const { t, dateLocale } = useLocale()
   const [step, setStep] = useState<Step>('branch')
   const [branchId, setBranchId] = useState('')
   const [service, setService] = useState<PublicService | null>(null)
@@ -48,7 +51,7 @@ export function BookAppointmentPage() {
   const vehiclesQuery = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => listVehicles(),
-    enabled: step === 'vehicle' || step === 'slot',
+    enabled: step === 'vehicle' || step === 'slot' || step === 'confirm',
   })
 
   const slotsQuery = useQuery({
@@ -74,15 +77,19 @@ export function BookAppointmentPage() {
         customerNotes: notes.trim() || undefined,
       }),
     onSuccess: (appt) => navigate(`/appointments/${appt.id}`, { replace: true }),
-    onError: (err) => setError(err instanceof Error ? err.message : 'Booking failed'),
+    onError: (err) => setError(err instanceof Error ? err.message : t('book.failed')),
   })
 
   if (garageQuery.isLoading) return <Spinner />
   if (garageQuery.error || !garage) {
     return (
       <div>
-        <PageHeader title="Book" backTo="/search" />
-        <EmptyState title="Garage not found" actionLabel="Back" onAction={() => navigate('/search')} />
+        <PageHeader title={t('book.titleShort')} backTo="/search" />
+        <EmptyState
+          title={t('garage.notFound')}
+          actionLabel={t('common.back')}
+          onAction={() => navigate('/search')}
+        />
       </div>
     )
   }
@@ -105,15 +112,19 @@ export function BookAppointmentPage() {
 
   return (
     <div>
-      <PageHeader title="Book appointment" backTo={`/garages/${slug}`} />
+      <PageHeader title={t('book.title')} backTo={`/garages/${slug}`} />
       <div className="mx-auto max-w-lg px-4 py-4">
         <p className="mb-4 text-sm text-text-muted">
-          Step {stepIndex + 1} of {STEPS.length} · {garage.displayName}
+          {t('common.stepOf', {
+            current: stepIndex + 1,
+            total: STEPS.length,
+            name: garage.displayName,
+          })}
         </p>
 
         {step === 'branch' && (
           <div className="space-y-2">
-            <h2 className="font-semibold text-text-primary">Choose branch</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.chooseBranch')}</h2>
             {garage.branches.map((b) => (
               <button
                 key={b.id}
@@ -133,7 +144,7 @@ export function BookAppointmentPage() {
 
         {step === 'service' && (
           <div className="space-y-2">
-            <h2 className="font-semibold text-text-primary">Choose service</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.chooseService')}</h2>
             {servicesQuery.isLoading && <Spinner />}
             {servicesQuery.data?.items.map((svc) => (
               <button
@@ -151,20 +162,21 @@ export function BookAppointmentPage() {
               >
                 <p className="font-medium">{svc.name}</p>
                 <p className="text-sm text-text-muted">
-                  {svc.price != null ? formatMoney(svc.price) : 'Price on request'}
-                  {svc.estimatedDurationMinutes != null && ` · ${svc.estimatedDurationMinutes} min`}
+                  {svc.price != null ? formatMoney(svc.price) : t('common.priceOnRequest')}
+                  {svc.estimatedDurationMinutes != null &&
+                    ` · ${t('common.minutes', { minutes: svc.estimatedDurationMinutes })}`}
                 </p>
               </button>
             ))}
             {servicesQuery.data?.items.length === 0 && (
-              <EmptyState title="No bookable services" description="Try another garage." />
+              <EmptyState title={t('book.noServices')} description={t('book.noServicesDesc')} />
             )}
           </div>
         )}
 
         {step === 'vehicle' && (
           <div className="space-y-2">
-            <h2 className="font-semibold text-text-primary">Choose vehicle (optional)</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.chooseVehicle')}</h2>
             <button
               type="button"
               onClick={() => {
@@ -173,7 +185,7 @@ export function BookAppointmentPage() {
               }}
               className="block w-full rounded-xl border border-border bg-surface p-4 text-left"
             >
-              Skip — no vehicle
+              {t('book.skipVehicle')}
             </button>
             {vehiclesQuery.data?.map((v) => (
               <button
@@ -185,21 +197,21 @@ export function BookAppointmentPage() {
                 }}
                 className="block w-full rounded-xl border border-border bg-surface p-4 text-left hover:border-primary"
               >
-                <p className="font-medium">{vehicleLabel(v)}</p>
+                <p className="font-medium">{vehicleLabelLocalized(v, t)}</p>
                 {v.plateNumber && <p className="text-sm text-text-muted">{v.plateNumber}</p>}
               </button>
             ))}
             <Link to="/vehicles/new" className="block text-center text-sm text-primary">
-              Add a vehicle
+              {t('book.addVehicle')}
             </Link>
           </div>
         )}
 
         {step === 'date' && (
           <div className="space-y-4">
-            <h2 className="font-semibold text-text-primary">Pick a date</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.pickDate')}</h2>
             <Input
-              label="Date"
+              label={t('book.date')}
               type="date"
               value={date}
               min={new Date().toISOString().slice(0, 10)}
@@ -207,17 +219,17 @@ export function BookAppointmentPage() {
               required
             />
             <Button className="w-full" disabled={!date} onClick={goNext}>
-              Continue
+              {t('common.continue')}
             </Button>
           </div>
         )}
 
         {step === 'slot' && (
           <div className="space-y-2">
-            <h2 className="font-semibold text-text-primary">Pick a time slot</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.pickSlot')}</h2>
             {slotsQuery.isLoading && <Spinner />}
             {slotsQuery.data?.slots.length === 0 && (
-              <EmptyState title="No slots available" description="Try another date." />
+              <EmptyState title={t('book.noSlots')} description={t('book.noSlotsDesc')} />
             )}
             {slotsQuery.data?.slots.map((slot) => (
               <button
@@ -229,15 +241,9 @@ export function BookAppointmentPage() {
                 }}
                 className="block w-full rounded-xl border border-border bg-surface p-3 text-left hover:border-primary"
               >
-                {new Date(slot.start).toLocaleTimeString(undefined, {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatTimeLocalized(slot.start, dateLocale)}
                 {' – '}
-                {new Date(slot.end).toLocaleTimeString(undefined, {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatTimeLocalized(slot.end, dateLocale)}
               </button>
             ))}
           </div>
@@ -245,62 +251,65 @@ export function BookAppointmentPage() {
 
         {step === 'notes' && (
           <div className="space-y-4">
-            <h2 className="font-semibold text-text-primary">Add notes (optional)</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.addNotes')}</h2>
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">Notes for the garage</span>
+              <span className="text-sm font-medium text-text-secondary">{t('book.notesLabel')}</span>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
                 className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
-                placeholder="Describe the issue or any preferences…"
+                placeholder={t('book.notesPlaceholder')}
               />
             </label>
             <Button className="w-full" onClick={goNext}>
-              Continue
+              {t('common.continue')}
             </Button>
           </div>
         )}
 
         {step === 'confirm' && (
           <div className="space-y-4">
-            <h2 className="font-semibold text-text-primary">Confirm booking</h2>
+            <h2 className="font-semibold text-text-primary">{t('book.confirmTitle')}</h2>
             <dl className="space-y-2 rounded-xl border border-border bg-surface p-4 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-text-muted">Garage</dt>
+                <dt className="text-text-muted">{t('common.garage')}</dt>
                 <dd className="text-right font-medium">{garage.displayName}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-text-muted">Branch</dt>
+                <dt className="text-text-muted">{t('common.branch')}</dt>
                 <dd className="text-right">{selectedBranch?.name}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-text-muted">Service</dt>
+                <dt className="text-text-muted">{t('common.service')}</dt>
                 <dd className="text-right">{service?.name}</dd>
               </div>
               {vehicleId && (
                 <div className="flex justify-between gap-4">
-                  <dt className="text-text-muted">Vehicle</dt>
+                  <dt className="text-text-muted">{t('common.vehicle')}</dt>
                   <dd className="text-right">
-                    {vehicleLabel(vehiclesQuery.data?.find((v) => v.id === vehicleId) ?? { year: 0 })}
+                    {vehicleLabelLocalized(
+                      vehiclesQuery.data?.find((v) => v.id === vehicleId) ?? { year: 0 },
+                      t,
+                    )}
                   </dd>
                 </div>
               )}
               <div className="flex justify-between gap-4">
-                <dt className="text-text-muted">When</dt>
-                <dd className="text-right">{new Date(slotStart).toLocaleString()}</dd>
+                <dt className="text-text-muted">{t('common.when')}</dt>
+                <dd className="text-right">{formatDateLocalized(slotStart, dateLocale)}</dd>
               </div>
             </dl>
             {error && <p className="text-sm text-error">{error}</p>}
             <Button className="w-full" loading={bookMutation.isPending} onClick={() => bookMutation.mutate()}>
-              Confirm booking
+              {t('book.confirm')}
             </Button>
           </div>
         )}
 
         {step !== 'branch' && step !== 'confirm' && (
           <Button variant="ghost" className="mt-6 w-full" onClick={goBack}>
-            Back
+            {t('common.back')}
           </Button>
         )}
       </div>

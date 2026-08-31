@@ -1,19 +1,34 @@
+import type { ComponentType, SVGProps } from 'react'
 import { NavLink } from 'react-router-dom'
+import {
+  IconCalendar,
+  IconHome,
+  IconInvoice,
+  IconProfile,
+  IconSearch,
+} from '../icons/NavIcons'
+import { useLocale } from '../../i18n/LocaleProvider'
 import { cn } from '../../lib/utils'
 
-const tabs = [
-  { to: '/', label: 'Home', icon: '🏠' },
-  { to: '/search', label: 'Search', icon: '🔍' },
-  { to: '/appointments', label: 'Appointments', icon: '📅' },
-  { to: '/invoices', label: 'Invoices', icon: '🧾' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
-] as const
+const tabs: {
+  to: string
+  labelKey: string
+  Icon: ComponentType<SVGProps<SVGSVGElement>>
+}[] = [
+  { to: '/', labelKey: 'nav.home', Icon: IconHome },
+  { to: '/search', labelKey: 'nav.search', Icon: IconSearch },
+  { to: '/appointments', labelKey: 'nav.appointments', Icon: IconCalendar },
+  { to: '/invoices', labelKey: 'nav.invoices', Icon: IconInvoice },
+  { to: '/profile', labelKey: 'nav.profile', Icon: IconProfile },
+]
 
 export function BottomNav() {
+  const { t } = useLocale()
+
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-lg items-stretch justify-around">
-        {tabs.map(({ to, label, icon }) => (
+        {tabs.map(({ to, labelKey, Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -25,10 +40,8 @@ export function BottomNav() {
               )
             }
           >
-            <span className="text-lg leading-none" aria-hidden>
-              {icon}
-            </span>
-            {label}
+            <Icon className="size-5" />
+            <span>{t(labelKey)}</span>
           </NavLink>
         ))}
       </div>

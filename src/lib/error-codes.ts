@@ -11,17 +11,34 @@ export const ErrorCodes = {
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes]
 
-const USER_MESSAGES: Record<string, string> = {
-  AUTH_REQUIRED: 'You must be signed in to continue.',
-  PERMISSION_DENIED: 'You do not have permission to perform this action.',
-  RESOURCE_NOT_FOUND: 'The requested resource was not found.',
-  VALIDATION_ERROR: 'Please check your input and try again.',
-  INTERNAL_ERROR: 'Something went wrong. Please try again.',
-  PROFILE_SUSPENDED: 'Your account has been suspended.',
-  INVALID_CREDENTIALS: 'Invalid email or password.',
-  RATE_LIMITED: 'Too many requests. Please try again later.',
+const MESSAGE_KEYS: Record<string, string> = {
+  AUTH_REQUIRED: 'auth.required',
+  PERMISSION_DENIED: 'auth.permission',
+  RESOURCE_NOT_FOUND: 'auth.notFound',
+  VALIDATION_ERROR: 'auth.validation',
+  INTERNAL_ERROR: 'auth.internal',
+  PROFILE_SUSPENDED: 'auth.suspended',
+  INVALID_CREDENTIALS: 'auth.invalidCredentials',
+  RATE_LIMITED: 'auth.rateLimited',
 }
 
+/** @deprecated Prefer userMessageKey + t() for localized UI. */
 export function userMessage(code: string, fallback?: string): string {
-  return USER_MESSAGES[code] ?? fallback ?? USER_MESSAGES.INTERNAL_ERROR
+  const key = MESSAGE_KEYS[code]
+  // English fallback for non-React callers / tests
+  const en: Record<string, string> = {
+    'auth.required': 'You must be signed in to continue.',
+    'auth.permission': 'You do not have permission to perform this action.',
+    'auth.notFound': 'The requested resource was not found.',
+    'auth.validation': 'Please check your input and try again.',
+    'auth.internal': 'Something went wrong. Please try again.',
+    'auth.suspended': 'Your account has been suspended.',
+    'auth.invalidCredentials': 'Invalid email or password.',
+    'auth.rateLimited': 'Too many requests. Please try again later.',
+  }
+  return (key && en[key]) || fallback || en['auth.internal']
+}
+
+export function userMessageKey(code: string): string {
+  return MESSAGE_KEYS[code] ?? 'auth.internal'
 }

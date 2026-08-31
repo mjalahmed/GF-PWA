@@ -7,7 +7,9 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatStatus } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { disputeReasonKey } from '../i18n/messages'
 import { getDispute, postDisputeMessage, withdrawDispute } from '../services/api/disputes'
 
 const WITHDRAWABLE = new Set(['open', 'under_review', 'pending'])
@@ -16,6 +18,7 @@ export function DisputeDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t, dateLocale } = useLocale()
   const [message, setMessage] = useState('')
 
   const disputeQuery = useQuery({
@@ -43,8 +46,12 @@ export function DisputeDetailPage() {
   if (disputeQuery.error || !d) {
     return (
       <div>
-        <PageHeader title="Dispute" backTo="/disputes" />
-        <EmptyState title="Dispute not found" actionLabel="Back" onAction={() => navigate('/disputes')} />
+        <PageHeader title={t('disputes.detail')} backTo="/disputes" />
+        <EmptyState
+          title={t('disputes.notFound')}
+          actionLabel={t('common.back')}
+          onAction={() => navigate('/disputes')}
+        />
       </div>
     )
   }
@@ -58,7 +65,7 @@ export function DisputeDetailPage() {
         <div className="flex items-start justify-between gap-2">
           <div>
             {d.businessName && <p className="text-sm text-text-muted">{d.businessName}</p>}
-            <p className="text-xs text-text-subtle">{formatStatus(d.reasonCode)}</p>
+            <p className="text-xs text-text-subtle">{t(disputeReasonKey(d.reasonCode))}</p>
           </div>
           <StatusBadge status={d.status} />
         </div>
@@ -66,13 +73,13 @@ export function DisputeDetailPage() {
         <section className="mt-4 rounded-2xl border border-border bg-surface p-4">
           <h3 className="font-semibold text-text-primary">{d.summary}</h3>
           {d.description && <p className="mt-2 text-sm text-text-secondary">{d.description}</p>}
-          <p className="mt-2 text-xs text-text-muted">Opened {formatDate(d.createdAt)}</p>
+          <p className="mt-2 text-xs text-text-muted">{formatDateLocalized(d.createdAt, dateLocale)}</p>
         </section>
 
         <section className="mt-6">
-          <h3 className="mb-3 font-semibold text-text-primary">Messages</h3>
+          <h3 className="mb-3 font-semibold text-text-primary">{t('common.messages')}</h3>
           {d.messages.length === 0 && (
-            <p className="text-sm text-text-muted">No messages yet.</p>
+            <p className="text-sm text-text-muted">{t('common.noMessagesYet')}</p>
           )}
           <div className="space-y-3">
             {d.messages.map((msg) => (
@@ -85,7 +92,9 @@ export function DisputeDetailPage() {
                 }`}
               >
                 <p>{msg.message}</p>
-                <p className="mt-1 text-xs text-text-muted">{formatDate(msg.createdAt)}</p>
+                <p className="mt-1 text-xs text-text-muted">
+                  {formatDateLocalized(msg.createdAt, dateLocale)}
+                </p>
               </div>
             ))}
           </div>
@@ -102,11 +111,11 @@ export function DisputeDetailPage() {
             <Input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message…"
+              placeholder={t('disputes.messagePlaceholder')}
               className="flex-1"
             />
             <Button type="submit" loading={messageMutation.isPending} disabled={!message.trim()}>
-              Send
+              {t('common.send')}
             </Button>
           </form>
         )}
@@ -118,7 +127,7 @@ export function DisputeDetailPage() {
             loading={withdrawMutation.isPending}
             onClick={() => withdrawMutation.mutate()}
           >
-            Withdraw dispute
+            {t('disputes.withdraw')}
           </Button>
         )}
       </div>

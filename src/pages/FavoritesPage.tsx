@@ -4,10 +4,12 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { GarageCard } from '../components/ui/GarageCard'
 import { Spinner } from '../components/ui/Spinner'
+import { useLocale } from '../i18n/LocaleProvider'
 import { listFavorites, removeFavorite } from '../services/api/favorites'
 
 export function FavoritesPage() {
   const queryClient = useQueryClient()
+  const { t } = useLocale()
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['favorites'],
@@ -21,17 +23,21 @@ export function FavoritesPage() {
 
   return (
     <div>
-      <PageHeader title="Favorites" backTo="/profile" />
+      <PageHeader title={t('favorites.title')} backTo="/profile" />
       <div className="mx-auto max-w-lg px-4 py-4">
         {isLoading && <Spinner />}
         {error && (
-          <EmptyState title="Could not load favorites" actionLabel="Retry" onAction={() => refetch()} />
+          <EmptyState
+            title={t('favorites.loadError')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         )}
         {data?.length === 0 && (
           <EmptyState
-            title="No favorites yet"
-            description="Tap the heart on a garage to save it here."
-            actionLabel="Search garages"
+            title={t('favorites.empty')}
+            description={t('favorites.emptyDesc')}
+            actionLabel={t('common.searchGarages')}
             onAction={() => {
               window.location.href = '/search'
             }}
@@ -50,7 +56,7 @@ export function FavoritesPage() {
                     loading={removeMutation.isPending}
                     onClick={() => removeMutation.mutate(fav.businessId)}
                   >
-                    Remove
+                    {t('common.remove')}
                   </Button>
                 </div>
               ) : null,

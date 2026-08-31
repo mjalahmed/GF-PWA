@@ -5,7 +5,9 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { formatDate, formatMoney, formatStatus } from '../lib/utils'
+import { formatDateLocalized } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney } from '../lib/utils'
 import {
   approveInvoice,
   getInvoice,
@@ -17,6 +19,7 @@ export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t, statusLabel, dateLocale } = useLocale()
 
   const invoiceQuery = useQuery({
     queryKey: ['invoice', id],
@@ -46,8 +49,12 @@ export function InvoiceDetailPage() {
   if (invoiceQuery.error || !inv) {
     return (
       <div>
-        <PageHeader title="Invoice" backTo="/invoices" />
-        <EmptyState title="Invoice not found" actionLabel="Back" onAction={() => navigate('/invoices')} />
+        <PageHeader title={t('invoices.detail')} backTo="/invoices" />
+        <EmptyState
+          title={t('invoices.notFound')}
+          actionLabel={t('common.back')}
+          onAction={() => navigate('/invoices')}
+        />
       </div>
     )
   }
@@ -69,30 +76,30 @@ export function InvoiceDetailPage() {
         <dl className="mt-4 space-y-2 rounded-2xl border border-border bg-surface p-4 text-sm">
           {inv.issuedAt && (
             <div className="flex justify-between">
-              <dt className="text-text-muted">Issued</dt>
-              <dd>{formatDate(inv.issuedAt)}</dd>
+              <dt className="text-text-muted">{t('common.issued')}</dt>
+              <dd>{formatDateLocalized(inv.issuedAt, dateLocale)}</dd>
             </div>
           )}
           {inv.dueAt && (
             <div className="flex justify-between">
-              <dt className="text-text-muted">Due</dt>
-              <dd>{formatDate(inv.dueAt)}</dd>
+              <dt className="text-text-muted">{t('common.due')}</dt>
+              <dd>{formatDateLocalized(inv.dueAt, dateLocale)}</dd>
             </div>
           )}
           <div className="flex justify-between font-semibold">
-            <dt>Total</dt>
+            <dt>{t('common.total')}</dt>
             <dd>{formatMoney(inv.grandTotal, inv.currency)}</dd>
           </div>
           {inv.remainingTotal > 0 && (
             <div className="flex justify-between text-warning">
-              <dt>Remaining</dt>
+              <dt>{t('common.remaining')}</dt>
               <dd>{formatMoney(inv.remainingTotal, inv.currency)}</dd>
             </div>
           )}
         </dl>
 
         <section className="mt-4">
-          <h3 className="mb-2 font-semibold text-text-primary">Line items</h3>
+          <h3 className="mb-2 font-semibold text-text-primary">{t('common.lineItems')}</h3>
           <div className="space-y-2">
             {inv.items.map((item) => (
               <div key={item.id} className="rounded-xl border border-border bg-surface p-3 text-sm">
@@ -101,7 +108,10 @@ export function InvoiceDetailPage() {
                   <span className="font-medium">{formatMoney(item.lineTotal, inv.currency)}</span>
                 </div>
                 <p className="text-text-muted">
-                  {item.quantity} × {formatMoney(item.unitPrice, inv.currency)}
+                  {t('common.qtyPrice', {
+                    quantity: item.quantity,
+                    unitPrice: formatMoney(item.unitPrice, inv.currency),
+                  })}
                 </p>
               </div>
             ))}
@@ -110,7 +120,7 @@ export function InvoiceDetailPage() {
 
         {paymentsQuery.data && paymentsQuery.data.length > 0 && (
           <section className="mt-6">
-            <h3 className="mb-2 font-semibold text-text-primary">Payments</h3>
+            <h3 className="mb-2 font-semibold text-text-primary">{t('common.payments')}</h3>
             <div className="space-y-2">
               {paymentsQuery.data.map((pay) => (
                 <div key={pay.id} className="rounded-xl border border-border bg-surface p-3 text-sm">
@@ -119,8 +129,8 @@ export function InvoiceDetailPage() {
                     <StatusBadge status={pay.status} />
                   </div>
                   <p className="mt-1 text-text-muted">
-                    {formatMoney(pay.amount, inv.currency)} · {formatStatus(pay.method)}
-                    {pay.paidAt && ` · ${formatDate(pay.paidAt)}`}
+                    {formatMoney(pay.amount, inv.currency)} · {statusLabel(pay.method)}
+                    {pay.paidAt && ` · ${formatDateLocalized(pay.paidAt, dateLocale)}`}
                   </p>
                 </div>
               ))}
@@ -131,7 +141,7 @@ export function InvoiceDetailPage() {
         <div className="mt-8 space-y-2">
           {needsView && (
             <Button className="w-full" loading={viewMutation.isPending} onClick={() => viewMutation.mutate()}>
-              Mark as viewed
+              {t('invoices.markViewed')}
             </Button>
           )}
           {needsApproval && (
@@ -140,7 +150,7 @@ export function InvoiceDetailPage() {
               loading={approveMutation.isPending}
               onClick={() => approveMutation.mutate()}
             >
-              Approve invoice
+              {t('invoices.approve')}
             </Button>
           )}
         </div>
