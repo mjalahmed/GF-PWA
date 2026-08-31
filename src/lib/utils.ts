@@ -23,6 +23,20 @@ export function formatStatus(status: string): string {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+export function formatMoney(amount: number, currency = 'BHD'): string {
+  return `${amount.toFixed(3)} ${currency}`
+}
+
+export function vehicleLabel(v: {
+  year: number
+  makeText?: string
+  modelText?: string
+  displayLabel?: string
+}): string {
+  if (v.displayLabel) return v.displayLabel
+  return `${v.year} ${v.makeText ?? ''} ${v.modelText ?? ''}`.trim() || 'Vehicle'
+}
+
 export function cn(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(' ')
 }

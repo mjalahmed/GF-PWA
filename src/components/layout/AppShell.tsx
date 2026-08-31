@@ -7,7 +7,11 @@ import { isConfigured } from '../../lib/env'
 
 export function AppShell() {
   const { pathname } = useLocation()
-  const hideNav = pathname.startsWith('/sign-in') || pathname.startsWith('/garages/')
+  const hideNav =
+    pathname.startsWith('/sign-in') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/garages/')
 
   return (
     <div className="min-h-dvh bg-background">

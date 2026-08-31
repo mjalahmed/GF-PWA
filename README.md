@@ -15,9 +15,23 @@ Customer-facing Progressive Web App for [GarageFinder](https://garagefinder.app)
 
 ## Backend
 
-This PWA reuses the existing GarageFinder Supabase Edge Function API (`/functions/v1/api`). No separate backend repo is required.
+This monorepo includes the GarageFinder API in `backend/` (Hono on Deno, deployable to Railway) plus the PWA client. The PWA talks to `/v1/*` endpoints with the user's Supabase JWT.
 
-See [docs/backend-requirements.md](docs/backend-requirements.md) for CORS, push notifications, and deployment notes.
+See [docs/backend-requirements.md](docs/backend-requirements.md) and [backend/docs/RAILWAY.md](backend/docs/RAILWAY.md) for CORS, env, and deployment.
+
+## Customer features
+
+| Area | Capabilities |
+|------|----------------|
+| **Discovery** | Home categories, featured/new garages, search with filters (category, open now, rating, vehicle, geo) |
+| **Garages** | Detail with services/products/reviews tabs, favorites, book appointment |
+| **Appointments** | List, detail, multi-step booking, cancel |
+| **Commerce** | Invoices (view/approve, payments), quotations (view/accept/reject) |
+| **Reviews** | Eligibilities, submit multi-dimension review, view responses |
+| **Disputes** | Open dispute, messaging thread, withdraw |
+| **Vehicles** | Full CRUD with make/model catalog |
+| **Account** | Sign in/up, forgot password, OTP verify, profile edit, roles |
+| **PWA** | Install prompt, offline shell, service worker updates |
 
 ## Getting started
 

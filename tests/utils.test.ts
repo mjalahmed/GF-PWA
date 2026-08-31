@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDistance, formatRating, formatStatus, primaryBranch } from '../src/lib/utils'
+import {
+  formatDate,
+  formatDistance,
+  formatMoney,
+  formatRating,
+  formatStatus,
+  primaryBranch,
+  vehicleLabel,
+} from '../src/lib/utils'
 
 describe('formatDistance', () => {
   it('formats meters under 1 km', () => {
@@ -28,6 +36,22 @@ describe('formatRating', () => {
 describe('formatStatus', () => {
   it('title-cases snake_case', () => {
     expect(formatStatus('pending_confirmation')).toBe('Pending Confirmation')
+  })
+})
+
+describe('formatMoney', () => {
+  it('formats BHD amounts with three decimals', () => {
+    expect(formatMoney(12.5)).toBe('12.500 BHD')
+  })
+})
+
+describe('vehicleLabel', () => {
+  it('uses displayLabel when present', () => {
+    expect(vehicleLabel({ year: 2020, displayLabel: 'My Camry' })).toBe('My Camry')
+  })
+
+  it('builds label from make/model/year', () => {
+    expect(vehicleLabel({ year: 2020, makeText: 'Toyota', modelText: 'Camry' })).toBe('2020 Toyota Camry')
   })
 })
 

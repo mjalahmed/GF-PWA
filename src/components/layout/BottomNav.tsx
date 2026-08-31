@@ -4,7 +4,8 @@ import { cn } from '../../lib/utils'
 const tabs = [
   { to: '/', label: 'Home', icon: '🏠' },
   { to: '/search', label: 'Search', icon: '🔍' },
-  { to: '/bookings', label: 'Bookings', icon: '📅' },
+  { to: '/appointments', label: 'Appointments', icon: '📅' },
+  { to: '/invoices', label: 'Invoices', icon: '🧾' },
   { to: '/profile', label: 'Profile', icon: '👤' },
 ] as const
 
@@ -19,12 +20,12 @@ export function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors',
+                'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors sm:text-xs',
                 isActive ? 'text-primary' : 'text-text-muted hover:text-text-secondary',
               )
             }
           >
-            <span className="text-xl leading-none" aria-hidden>
+            <span className="text-lg leading-none" aria-hidden>
               {icon}
             </span>
             {label}

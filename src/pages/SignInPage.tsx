@@ -27,16 +27,15 @@ export function SignInPage() {
     try {
       if (mode === 'sign-in') {
         await signIn(email, password)
+        await refresh()
+        navigate(from, { replace: true })
       } else {
         await signUp(email, password, fullName)
+        navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`, { replace: true })
       }
-      await refresh()
-      navigate(from, { replace: true })
     } catch (err) {
       const message =
-        err instanceof Error
-          ? err.message
-          : userMessage('INVALID_CREDENTIALS')
+        err instanceof Error ? err.message : userMessage('INVALID_CREDENTIALS')
       setError(message)
     } finally {
       setLoading(false)
@@ -74,6 +73,13 @@ export function SignInPage() {
             minLength={8}
             autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
           />
+          {mode === 'sign-in' && (
+            <p className="text-right">
+              <Link to="/forgot-password" className="text-sm font-medium text-primary">
+                Forgot password?
+              </Link>
+            </p>
+          )}
           {error && <p className="text-sm text-error">{error}</p>}
           <Button type="submit" className="w-full" loading={loading}>
             {mode === 'sign-in' ? 'Sign in' : 'Create account'}

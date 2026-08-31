@@ -43,6 +43,15 @@ export interface Profile {
   phone: string | null
   locale: string | null
   isSuspended: boolean
+  avatarPath?: string
+  preferredLanguage?: string
+}
+
+export interface FavoriteBusiness {
+  favoriteId: string
+  businessId: string
+  createdAt: string
+  business?: DiscoveryBusiness
 }
 
 export interface Appointment {
@@ -58,10 +67,20 @@ export interface Appointment {
 
 export interface Vehicle {
   id: string
+  customerId?: string
   makeId: string
   modelId: string
+  makeText?: string
+  modelText?: string
   year: number
+  trim?: string
+  engine?: string
+  vin?: string
   plateNumber?: string
+  color?: string
+  mileage?: number
+  mileageUnit?: string
   isDefault: boolean
+  isActive?: boolean
   displayLabel?: string
 }

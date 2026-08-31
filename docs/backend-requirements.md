@@ -32,11 +32,24 @@ Use the Railway-generated URL for initial smoke testing before the custom domain
 
 The API should continue to require a valid JWT (`Authorization: Bearer …`) for protected routes. Public discovery endpoints (`/v1/discovery/*`) remain accessible with the anon key.
 
-## Authentication
+## API surface (customer)
 
-- Sign-in/sign-up uses **Supabase Auth** directly from the client
-- API requests attach the user's access token automatically
-- Token refresh is handled by the Supabase client and retried once on 401
+The PWA uses these authenticated and public routes:
+
+| Domain | Routes |
+|--------|--------|
+| Auth / profile | Supabase Auth client-side; `GET/PATCH /v1/profiles/me`, `GET /v1/me` |
+| Discovery | `GET /v1/discovery/businesses`, categories, business by slug |
+| Catalog | Services/products per business, vehicle makes/models |
+| Favorites | `GET/POST/DELETE /v1/favorites` |
+| Appointments | List, detail, slots, create, cancel |
+| Vehicles | Full CRUD under `/v1/vehicles` |
+| Invoices | List, detail, approve, payments |
+| Quotations | List, detail, accept/reject |
+| Reviews | Eligibilities, submit, list, detail |
+| Disputes | Create, list, detail, messages, withdraw |
+
+Both camelCase and snake_case JSON fields are accepted; the PWA mappers normalize responses.
 
 ## Push notifications (future)
 
