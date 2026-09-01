@@ -80,6 +80,7 @@ export interface Vehicle {
   color?: string
   mileage?: number
   mileageUnit?: string
+  imagePath?: string
   isDefault: boolean
   isActive?: boolean
   displayLabel?: string

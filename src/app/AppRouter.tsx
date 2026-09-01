@@ -11,6 +11,9 @@ import { DisputeNewPage } from '../pages/DisputeNewPage'
 import { DisputesPage } from '../pages/DisputesPage'
 import { FavoritesPage } from '../pages/FavoritesPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
+import { EmergencyPage } from '../pages/EmergencyPage'
+import { NotificationsPage } from '../pages/NotificationsPage'
+import { RequestQuotePage } from '../pages/RequestQuotePage'
 import { GarageDetailPage } from '../pages/GarageDetailPage'
 import { HomePage } from '../pages/HomePage'
 import { InvoiceDetailPage } from '../pages/InvoiceDetailPage'
@@ -53,6 +56,23 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <BookAppointmentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="garages/:slug/request-quote"
+            element={
+              <ProtectedRoute>
+                <RequestQuotePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="emergency" element={<EmergencyPage />} />
+          <Route
+            path="notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

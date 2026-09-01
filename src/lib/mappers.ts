@@ -155,6 +155,17 @@ export function mapAppointment(raw: Record<string, unknown>): Appointment {
     services: Array.isArray(raw.services)
       ? raw.services.map((s) => mapServiceLine(s as Record<string, unknown>))
       : [],
+    statusHistory: Array.isArray(raw.statusHistory)
+      ? (raw.statusHistory as Record<string, unknown>[]).map((h) => ({
+          status: String(h.toStatus ?? h.to_status ?? h.status),
+          changedAt: String(h.createdAt ?? h.created_at ?? ''),
+        }))
+      : Array.isArray(raw.status_history)
+        ? (raw.status_history as Record<string, unknown>[]).map((h) => ({
+            status: String(h.to_status ?? h.status),
+            changedAt: String(h.created_at ?? ''),
+          }))
+        : undefined,
   }
 }
 
@@ -335,6 +346,7 @@ export function mapVehicle(raw: Record<string, unknown>): Vehicle {
     color: pick(raw, 'color') as string | undefined,
     mileage: pickNum(raw, 'mileage'),
     mileageUnit: String(pick(raw, 'mileageUnit', 'mileage_unit') ?? 'km'),
+    imagePath: pick(raw, 'imagePath', 'image_path') as string | undefined,
     isDefault: pickBool(raw, 'isDefault', 'is_default'),
     isActive: pickBool(raw, 'isActive', 'is_active') || raw.isActive === undefined,
     displayLabel: pick(raw, 'displayLabel', 'display_label') as string | undefined,

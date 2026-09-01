@@ -21,6 +21,7 @@ export interface Appointment {
   businessName?: string
   branchName?: string
   services: AppointmentServiceLine[]
+  statusHistory?: Array<{ status: string; changedAt: string }>
 }
 
 export interface AppointmentSlot {

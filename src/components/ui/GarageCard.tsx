@@ -24,7 +24,14 @@ export function GarageCard({ garage }: GarageCardProps) {
           {garage.displayName.charAt(0)}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-semibold text-text-primary">{garage.displayName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="truncate font-semibold text-text-primary">{garage.displayName}</h3>
+            {garage.verificationStatus === 'verified' && (
+              <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
+                {t('common.verified')}
+              </span>
+            )}
+          </div>
           {area && <p className="truncate text-sm text-text-muted">{area}</p>}
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
             <StarRating rating={garage.averageRating} />

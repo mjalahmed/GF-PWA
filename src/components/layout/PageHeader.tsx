@@ -4,11 +4,12 @@ import { useLocale } from '../../i18n/LocaleProvider'
 
 interface PageHeaderProps {
   title: string
+  subtitle?: string
   backTo?: string
   action?: React.ReactNode
 }
 
-export function PageHeader({ title, backTo, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backTo, action }: PageHeaderProps) {
   const { t } = useLocale()
 
   return (
@@ -23,7 +24,10 @@ export function PageHeader({ title, backTo, action }: PageHeaderProps) {
             <IconChevron className="size-5 rotate-180 rtl:rotate-0" />
           </Link>
         )}
-        <h1 className="flex-1 truncate text-lg font-semibold text-text-primary">{title}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-lg font-semibold text-text-primary">{title}</h1>
+          {subtitle && <p className="truncate text-xs text-text-muted">{subtitle}</p>}
+        </div>
         {action}
       </div>
     </header>

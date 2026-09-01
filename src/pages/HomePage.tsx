@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
+import { NotificationBell } from '../components/layout/NotificationBell'
 import { EmptyState } from '../components/ui/EmptyState'
 import { GarageCard } from '../components/ui/GarageCard'
 import { Spinner } from '../components/ui/Spinner'
+import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { useAuth } from '../hooks/useAuth'
 import { vehicleLabelLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import { listServiceCategories } from '../services/api/catalog'
+import { listAnnouncements } from '../services/api/experience'
 import { listFavorites } from '../services/api/favorites'
 import { searchBusinesses } from '../services/api/garages'
 import { listVehicles } from '../services/api/vehicles'
@@ -54,12 +57,17 @@ export function HomePage() {
     enabled: !!session,
   })
 
+  const announcementsQuery = useQuery({
+    queryKey: ['announcements'],
+    queryFn: () => listAnnouncements(),
+  })
+
   const defaultVehicle = vehiclesQuery.data?.find((v) => v.isDefault) ?? vehiclesQuery.data?.[0]
   const favoritePreview = favoritesQuery.data?.slice(0, 3) ?? []
 
   return (
     <div>
-      <PageHeader title={t('home.title')} />
+      <PageHeader title={t('home.title')} action={<NotificationBell />} />
       <div className="mx-auto max-w-lg px-4 py-6">
         <section className="rounded-2xl bg-primary px-5 py-6 text-white">
           <h2 className="text-xl font-bold">{t('home.hero')}</h2>
@@ -71,6 +79,23 @@ export function HomePage() {
             {t('common.searchGarages')}
           </Link>
         </section>
+
+        {defaultVehicle && !defaultVehicle.vin && (
+          <VinReminderBanner vehicleId={defaultVehicle.id} className="mt-4" />
+        )}
+
+        <Link
+          to="/emergency"
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-error/30 bg-error/5 p-4"
+        >
+          <span className="text-2xl" aria-hidden>
+            🚨
+          </span>
+          <div>
+            <p className="font-semibold text-text-primary">{t('emergency.homeCta')}</p>
+            <p className="text-xs text-text-muted">{t('emergency.homeSub')}</p>
+          </div>
+        </Link>
 
         {defaultVehicle && (
           <Link
@@ -92,6 +117,20 @@ export function HomePage() {
           </Link>
         )}
 
+        {announcementsQuery.data && announcementsQuery.data.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 text-lg font-semibold text-text-primary">{t('comingSoon.section')}</h2>
+            <div className="space-y-2">
+              {announcementsQuery.data.slice(0, 4).map((a) => (
+                <div key={a.id} className="rounded-xl border border-dashed border-primary/30 bg-primary-light/20 p-3">
+                  <p className="text-xs font-semibold uppercase text-primary">{t('comingSoon.badge')}</p>
+                  <p className="font-medium text-text-primary">{a.title}</p>
+                  <p className="text-sm text-text-muted">{a.summary}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-semibold text-text-primary">{t('home.browseByService')}</h2>
           {categoriesQuery.isLoading && <Spinner className="py-6" />}

@@ -4,9 +4,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
+import { ImageUpload } from '../components/ui/ImageUpload'
 import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
+import { VinReminderBanner } from '../components/ui/VinReminderBanner'
+import { useAuth } from '../hooks/useAuth'
 import { useLocale } from '../i18n/LocaleProvider'
+import { uploadImage, vehicleImagePath } from '../lib/upload'
 import { listVehicleMakes, listVehicleModels } from '../services/api/catalog'
 import { createVehicle, getVehicle, updateVehicle } from '../services/api/vehicles'
 
@@ -16,6 +20,7 @@ export function VehicleFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { t } = useLocale()
+  const { session } = useAuth()
 
   const [makeId, setMakeId] = useState('')
   const [modelId, setModelId] = useState('')
@@ -25,6 +30,7 @@ export function VehicleFormPage() {
   const [color, setColor] = useState('')
   const [mileage, setMileage] = useState('')
   const [trim, setTrim] = useState('')
+  const [imagePath, setImagePath] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   const vehicleQuery = useQuery({
@@ -55,22 +61,24 @@ export function VehicleFormPage() {
     setColor(v.color ?? '')
     setMileage(v.mileage != null ? String(v.mileage) : '')
     setTrim(v.trim ?? '')
+    setImagePath(v.imagePath ?? null)
   }, [vehicleQuery.data])
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const body: Record<string, unknown> = {
+      const payload = {
         makeId,
         modelId,
         year: Number(year),
-        plateNumber: plateNumber.trim() || null,
-        vin: vin.trim() || null,
-        color: color.trim() || null,
-        trim: trim.trim() || null,
-        mileage: mileage ? Number(mileage) : null,
+        plateNumber: plateNumber.trim() || undefined,
+        vin: vin.trim() || undefined,
+        color: color.trim() || undefined,
+        trim: trim.trim() || undefined,
+        mileage: mileage ? Number(mileage) : undefined,
+        imagePath: imagePath ?? undefined,
       }
-      if (isEdit) return updateVehicle(id!, body)
-      return createVehicle(body)
+      if (isEdit) return updateVehicle(id!, payload)
+      return createVehicle(payload)
     },
     onSuccess: (v) => {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] })
@@ -164,6 +172,18 @@ export function VehicleFormPage() {
             onChange={(e) => setPlateNumber(e.target.value)}
           />
           <Input label={t('common.vin')} value={vin} onChange={(e) => setVin(e.target.value)} />
+          {!vin.trim() && <VinReminderBanner vehicleId={id} />}
+          <ImageUpload
+            bucket="vehicle-images"
+            value={imagePath}
+            onChange={setImagePath}
+            buildPath={(file) =>
+              vehicleImagePath(session?.user.id ?? 'unknown', id ?? 'new', file.name)
+            }
+            onUpload={async (file, path) => {
+              await uploadImage('vehicle-images', path, file)
+            }}
+          />
           <Input label={t('common.color')} value={color} onChange={(e) => setColor(e.target.value)} />
           <Input label={t('common.trim')} value={trim} onChange={(e) => setTrim(e.target.value)} />
           <Input

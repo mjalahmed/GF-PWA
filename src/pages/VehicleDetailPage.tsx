@@ -4,19 +4,29 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
+import { StorageImage } from '../components/ui/StorageImage'
+import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { vehicleLabelLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
+import { formatMoney } from '../lib/utils'
+import { getVehicleServiceHistory } from '../services/api/experience'
 import { deleteVehicle, getVehicle, makeVehicleDefault } from '../services/api/vehicles'
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { t } = useLocale()
+  const { t, statusLabel } = useLocale()
 
   const { data: vehicle, isLoading, error } = useQuery({
     queryKey: ['vehicle', id],
     queryFn: () => getVehicle(id!),
+    enabled: !!id,
+  })
+
+  const historyQuery = useQuery({
+    queryKey: ['vehicle-history', id],
+    queryFn: () => getVehicleServiceHistory(id!),
     enabled: !!id,
   })
 
@@ -54,6 +64,17 @@ export function VehicleDetailPage() {
     <div>
       <PageHeader title={vehicleLabelLocalized(vehicle, t)} backTo="/vehicles" />
       <div className="mx-auto max-w-lg px-4 py-4">
+        {vehicle.imagePath && (
+          <StorageImage
+            bucket="vehicle-images"
+            path={vehicle.imagePath}
+            alt={vehicleLabelLocalized(vehicle, t)}
+            className="mb-4 aspect-video w-full rounded-2xl object-cover"
+          />
+        )}
+
+        {!vehicle.vin && <VinReminderBanner vehicleId={vehicle.id} className="mb-4" />}
+
         {vehicle.isDefault && (
           <span className="mb-4 inline-block rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary">
             {t('common.defaultVehicle')}
@@ -83,10 +104,15 @@ export function VehicleDetailPage() {
               <dd>{vehicle.plateNumber}</dd>
             </div>
           )}
-          {vehicle.vin && (
+          {vehicle.vin ? (
             <div className="flex justify-between">
               <dt className="text-text-muted">{t('common.vin')}</dt>
               <dd className="text-right text-xs">{vehicle.vin}</dd>
+            </div>
+          ) : (
+            <div className="flex justify-between">
+              <dt className="text-text-muted">{t('common.vin')}</dt>
+              <dd className="text-text-subtle">{t('vehicles.vinMissing')}</dd>
             </div>
           )}
           {vehicle.color && (
@@ -110,6 +136,33 @@ export function VehicleDetailPage() {
             </div>
           )}
         </dl>
+
+        <section className="mt-6">
+          <h2 className="mb-3 text-base font-semibold text-text-primary">{t('vehicles.serviceHistory')}</h2>
+          {historyQuery.isLoading && <Spinner className="py-4" />}
+          {historyQuery.data?.length === 0 && (
+            <p className="text-sm text-text-muted">{t('vehicles.noServiceHistory')}</p>
+          )}
+          <ul className="space-y-2">
+            {historyQuery.data?.map((item) => (
+              <li key={`${item.type}-${item.id}`} className="rounded-xl border border-border bg-surface p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-text-primary">
+                      {item.businessName ?? item.title}
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {new Date(item.occurredAt).toLocaleDateString()} · {statusLabel(item.status)}
+                    </p>
+                  </div>
+                  {item.amount != null && (
+                    <span className="font-medium">{formatMoney(item.amount, item.currency ?? 'BHD')}</span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <div className="mt-6 space-y-2">
           {!vehicle.isDefault && (

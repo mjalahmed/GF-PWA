@@ -5,6 +5,11 @@ export const platformPaths = {
   me: `${V1}/me`,
   profile: `${V1}/profiles/me`,
   health: `${V1}/health`,
+  notifications: `${V1}/notifications`,
+  notificationUnreadCount: `${V1}/notifications/unread-count`,
+  notificationRead: (id: string) => `${V1}/notifications/${id}/read`,
+  notificationsReadAll: `${V1}/notifications/read-all`,
+  pushSubscriptions: `${V1}/push-subscriptions`,
   appointment: (id: string) => `${V1}/appointments/${id}`,
   appointmentAction: (id: string, action: string) => `${V1}/appointments/${id}/${action}`,
 } as const
@@ -32,6 +37,7 @@ export const customerPaths = {
   vehicles: `${V1}/customer/vehicles`,
   vehicle: (id: string) => `${V1}/customer/vehicles/${id}`,
   vehicleDefault: (id: string) => `${V1}/customer/vehicles/${id}/make-default`,
+  vehicleServiceHistory: (id: string) => `${V1}/customer/vehicles/${id}/service-history`,
   quotations: `${V1}/customer/quotations`,
   quotation: (id: string) => `${V1}/customer/quotations/${id}`,
   quotationAction: (id: string, action: string) => `${V1}/customer/quotations/${id}/${action}`,
@@ -51,6 +57,11 @@ export const customerPaths = {
   disputeMessages: (id: string) => `${V1}/customer/disputes/${id}/messages`,
   disputeEvidence: (id: string) => `${V1}/customer/disputes/${id}/evidence`,
   disputeWithdraw: (id: string) => `${V1}/customer/disputes/${id}/withdraw`,
+  quoteRequests: `${V1}/customer/quote-requests`,
+  emergencyRequests: `${V1}/customer/emergency-requests`,
+  announcements: `${V1}/customer/announcements`,
+  appointmentMedia: (appointmentId: string) =>
+    `${V1}/customer/appointments/${appointmentId}/media`,
 } as const
 
 export const businessPaths = {

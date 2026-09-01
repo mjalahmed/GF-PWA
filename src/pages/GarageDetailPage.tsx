@@ -16,7 +16,6 @@ import {
   formatRatingLocalized,
 } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
-import { mapReview } from '../lib/mappers'
 import { formatMoney, primaryBranch } from '../lib/utils'
 import { listBusinessReviews, listPublicProducts, listPublicServices } from '../services/api/catalog'
 import { addFavorite, listFavorites, removeFavorite } from '../services/api/favorites'
@@ -66,10 +65,7 @@ export function GarageDetailPage() {
 
   const reviewsQuery = useQuery({
     queryKey: ['garage-reviews', garage?.id],
-    queryFn: async () => {
-      const envelope = await listBusinessReviews(garage!.id)
-      return (envelope.data ?? []).map((item) => mapReview(item as Record<string, unknown>))
-    },
+    queryFn: () => listBusinessReviews(garage!.id),
     enabled: !!garage?.id && tab === 'reviews',
   })
 
@@ -286,11 +282,11 @@ export function GarageDetailPage() {
             {tab === 'reviews' && (
               <>
                 {reviewsQuery.isLoading && <Spinner />}
-                {reviewsQuery.data?.length === 0 && (
+                {reviewsQuery.data?.items.length === 0 && (
                   <EmptyState title={t('garage.noReviews')} description={t('garage.noReviewsDesc')} />
                 )}
                 <div className="space-y-3">
-                  {reviewsQuery.data?.map((review) => (
+                  {reviewsQuery.data?.items.map((review) => (
                     <article key={review.id} className="rounded-xl border border-border bg-surface p-4">
                       <div className="flex items-center gap-2">
                         <StarRating rating={review.overallRating} />
@@ -314,8 +310,13 @@ export function GarageDetailPage() {
             )}
           </div>
 
-          <Link to={`/garages/${garage.slug}/book`} className="mt-8 block">
+          <Link to={`/garages/${garage.slug}/book`} className="mt-4 block">
             <Button className="w-full">{t('garage.book')}</Button>
+          </Link>
+          <Link to={`/garages/${garage.slug}/request-quote`} className="mt-2 block">
+            <Button variant="secondary" className="w-full">
+              {t('quotes.requestTitle')}
+            </Button>
           </Link>
         </div>
       </div>

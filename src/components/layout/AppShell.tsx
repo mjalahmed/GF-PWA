@@ -5,10 +5,12 @@ import { OfflineBanner } from './OfflineBanner'
 import { UpdatePrompt } from './UpdatePrompt'
 import { isConfigured } from '../../lib/env'
 import { useLocale } from '../../i18n/LocaleProvider'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 export function AppShell() {
   const { pathname } = useLocation()
   const { t } = useLocale()
+  usePushNotifications()
   const hideNav =
     pathname.startsWith('/sign-in') ||
     pathname.startsWith('/forgot-password') ||

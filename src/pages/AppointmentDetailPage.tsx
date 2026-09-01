@@ -7,10 +7,13 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { ServiceStatusTimeline } from '../components/ui/ServiceStatusTimeline'
+import { BeforeAfterGallery } from '../components/ui/BeforeAfterGallery'
 import { formatDateLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import { formatMoney } from '../lib/utils'
 import { cancelAppointment, getAppointment } from '../services/api/appointments'
+import { getAppointmentMedia } from '../services/api/experience'
 
 const CANCELLABLE = new Set(['requested', 'confirmed', 'pending'])
 
@@ -25,6 +28,12 @@ export function AppointmentDetailPage() {
   const { data: appt, isLoading, error } = useQuery({
     queryKey: ['appointment', id],
     queryFn: () => getAppointment(id!),
+    enabled: !!id,
+  })
+
+  const mediaQuery = useQuery({
+    queryKey: ['appointment-media', id],
+    queryFn: () => getAppointmentMedia(id!),
     enabled: !!id,
   })
 
@@ -89,6 +98,18 @@ export function AppointmentDetailPage() {
             </div>
           )}
         </dl>
+
+        <section className="mt-6">
+          <h3 className="mb-3 font-semibold text-text-primary">{t('appointments.progress')}</h3>
+          <ServiceStatusTimeline status={appt.status} statusHistory={appt.statusHistory} />
+        </section>
+
+        {mediaQuery.data && mediaQuery.data.length > 0 && (
+          <section className="mt-6">
+            <h3 className="mb-3 font-semibold text-text-primary">{t('repair.photos')}</h3>
+            <BeforeAfterGallery photos={mediaQuery.data} />
+          </section>
+        )}
 
         {appt.services.length > 0 && (
           <section className="mt-4">
