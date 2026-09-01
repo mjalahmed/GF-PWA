@@ -25,9 +25,11 @@ function IconBase({ title, children, className, ...props }: IconProps & { childr
 export function IconHome(props: IconProps) {
   return (
     <IconBase {...props}>
-      <path d="M4 10.5 12 4l8 6.5" />
-      <path d="M6.5 9.5V20h11V9.5" />
-      <path d="M10 20v-6h4v6" />
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor" fillOpacity="0.12" />
+      <path d="M8 17.5c0-.8.7-1.5 1.5-1.5h5c.8 0 1.5.7 1.5 1.5V19H8v-1.5Z" fill="currentColor" />
+      <path d="M9.5 16 11 12h2l1.5 4" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="10" cy="18" r=".75" fill="currentColor" />
+      <circle cx="14" cy="18" r=".75" fill="currentColor" />
     </IconBase>
   )
 }
