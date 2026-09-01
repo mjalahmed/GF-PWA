@@ -86,12 +86,15 @@ export function HomePage() {
 
         <Link
           to="/emergency"
-          className="mt-4 flex items-center gap-3 rounded-2xl border border-error/30 bg-error/5 p-4"
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-primary/30 bg-primary-light/20 p-4"
         >
           <span className="text-2xl" aria-hidden>
             🚨
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              {t('comingSoon.badge')}
+            </p>
             <p className="font-semibold text-text-primary">{t('emergency.homeCta')}</p>
             <p className="text-xs text-text-muted">{t('emergency.homeSub')}</p>
           </div>

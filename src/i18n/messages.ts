@@ -335,7 +335,10 @@ const en: Catalog = {
   'emergency.notesPlaceholder': 'Flat tire, battery, accident…',
   'emergency.submit': 'Request help',
   'emergency.homeCta': 'Emergency tow & roadside',
-  'emergency.homeSub': '24/7 help when you need it',
+  'emergency.homeSub': 'Launching soon — preview what is planned.',
+  'emergency.comingSoonTitle': 'Tow & roadside assistance',
+  'emergency.comingSoonDesc':
+    'We are finishing tow-to-garage and roadside help. Check back soon or watch the Coming soon section on Home.',
 
   'comingSoon.badge': 'Coming soon',
   'comingSoon.title': 'Coming soon',
