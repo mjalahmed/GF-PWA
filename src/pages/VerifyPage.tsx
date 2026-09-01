@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
@@ -7,6 +7,8 @@ import { useAuth } from '../hooks/useAuth'
 import { useLocale } from '../i18n/LocaleProvider'
 import { isDevelopment } from '../lib/env'
 import { resendVerificationOtp, resetPassword, verifyOtp } from '../services/api/auth'
+
+const OTP_RESEND_COOLDOWN_SEC = 60
 
 export function VerifyPage() {
   const navigate = useNavigate()
@@ -23,6 +25,19 @@ export function VerifyPage() {
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
+  const [resendCooldownSec, setResendCooldownSec] = useState(OTP_RESEND_COOLDOWN_SEC)
+
+  useEffect(() => {
+    if (resendCooldownSec <= 0) return
+
+    const timer = window.setTimeout(() => {
+      setResendCooldownSec((prev) => prev - 1)
+    }, 1000)
+
+    return () => window.clearTimeout(timer)
+  }, [resendCooldownSec])
+
+  const resendDisabled = resending || resendCooldownSec > 0
 
   const title =
     typeParam === 'recovery'
@@ -48,6 +63,7 @@ export function VerifyPage() {
   }
 
   const handleResend = async () => {
+    if (resendDisabled) return
     if (!email.trim()) {
       setError(t('auth.emailRequired'))
       return
@@ -62,6 +78,7 @@ export function VerifyPage() {
         await resendVerificationOtp(email.trim(), typeParam === 'email' ? 'email_change' : 'signup')
       }
       setInfo(t('auth.codeResent'))
+      setResendCooldownSec(OTP_RESEND_COOLDOWN_SEC)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.resendFailed'))
     } finally {
@@ -110,9 +127,12 @@ export function VerifyPage() {
             variant="secondary"
             className="w-full"
             loading={resending}
+            disabled={resendDisabled}
             onClick={handleResend}
           >
-            {t('auth.resendCode')}
+            {resendCooldownSec > 0
+              ? t('auth.resendCodeWait', { seconds: resendCooldownSec })
+              : t('auth.resendCode')}
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-text-muted">
