@@ -27,4 +27,11 @@ export function applyDocumentLocale(locale: Locale): void {
   const root = document.documentElement
   root.lang = locale
   root.dir = locale === 'ar' ? 'rtl' : 'ltr'
+  root.setAttribute('translate', 'no')
+  root.classList.add('notranslate')
+
+  const contentLanguage = document.querySelector('meta[http-equiv="Content-Language"]')
+  if (contentLanguage) {
+    contentLanguage.setAttribute('content', locale)
+  }
 }
