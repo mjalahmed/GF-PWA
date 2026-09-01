@@ -183,6 +183,7 @@ export function ProfilePage() {
         )}
 
         <nav className="space-y-2">
+          {links.map((link) => (
             <ProfileNavLink key={link.to} to={link.to} label={t(link.labelKey)} />
           ))}
         </nav>

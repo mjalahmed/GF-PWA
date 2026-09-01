@@ -75,13 +75,15 @@ The service worker caches static assets and uses network-first for HTML/API rout
 
 ## Deployment
 
-Build and deploy the `dist/` folder to your static host (Vercel, Cloudflare Pages, etc.) at `app.garagefinder.app`.
+Build and deploy the `dist/` folder to Netlify at `app.garagefinder.app`.
 
 Ensure the Supabase API CORS allowlist includes `https://app.garagefinder.app`.
 
+**Remove the “Powered by Netlify” badge:** turn it **Off** in Netlify → Project configuration → General → Powered by Netlify badge. See [docs/netlify-deployment.md](docs/netlify-deployment.md). The repo also ships CSP headers that block the injected badge script.
+
 ```bash
 npm run build
-# Deploy dist/ to your CDN
+# Netlify publishes dist/ automatically when connected to this repo
 ```
 
 ## Project structure
