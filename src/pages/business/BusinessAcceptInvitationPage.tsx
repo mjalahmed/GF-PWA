@@ -3,11 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Spinner } from '../../components/ui/Spinner'
 import { useAuth } from '../../hooks/useAuth'
-import { useLocale } from '../../i18n/LocaleProvider'
 import { acceptBusinessInvitation } from '../../services/api/business'
 
 export function BusinessAcceptInvitationPage() {
-  const { t } = useLocale()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? ''
   const navigate = useNavigate()
@@ -54,7 +52,7 @@ export function BusinessAcceptInvitationPage() {
           state={{ from: `/business/invitations/accept?token=${encodeURIComponent(token)}` }}
           className="inline-flex rounded-xl bg-primary px-4 py-2.5 font-semibold text-white no-underline"
         >
-          {t('auth.continueWithGoogle')}
+          Sign in to accept
         </Link>
       </section>
     )

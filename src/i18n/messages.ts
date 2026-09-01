@@ -333,14 +333,9 @@ const en: Catalog = {
   'auth.emailRequired': 'Enter your email first.',
   'auth.verifySupabaseNote':
     'Sign-up codes are sent by Supabase Auth (not the GarageFinder API). Configure custom SMTP in your Supabase project under Authentication → SMTP if mail does not arrive.',
-  'auth.continueWithGoogle': 'Continue with Google',
-  'auth.googleOnlyHint': 'Sign in with your Google account to use GarageFinder.',
-  'auth.googleSignInFailed': 'Could not start Google sign-in. Check Supabase Google provider settings.',
-  'auth.googleCallbackFailed': 'Google sign-in did not complete. Try again.',
-  'auth.tryAgain': 'Try again',
-  'auth.forgotUseGoogle': 'Password reset is not available. Sign in with Google instead.',
   'auth.verifyDevHint':
-    'Dev: seeded email/password accounts still work via API if you need them (see backend README).',
+    'Dev shortcut: sign in with customer@garagefinder.test / GarageFinderDemo123! (seeded account, no OTP).',
+  'auth.invalidCredentials': 'Invalid email or password.',
   'auth.required': 'You must be signed in to continue.',
   'auth.permission': 'You do not have permission to perform this action.',
   'auth.notFound': 'The requested resource was not found.',
@@ -733,14 +728,8 @@ const ar: Catalog = {
   'auth.emailRequired': 'أدخل بريدك الإلكتروني أولاً.',
   'auth.verifySupabaseNote':
     'رموز التسجيل يُرسلها Supabase Auth (وليس واجهة GarageFinder). فعّل SMTP مخصصاً من لوحة Supabase → Authentication → SMTP إذا لم يصل البريد.',
-  'auth.continueWithGoogle': 'المتابعة مع Google',
-  'auth.googleOnlyHint': 'سجّل الدخول بحساب Google لاستخدام GarageFinder.',
-  'auth.googleSignInFailed': 'تعذر بدء تسجيل الدخول عبر Google. تحقق من إعدادات Google في Supabase.',
-  'auth.googleCallbackFailed': 'لم يكتمل تسجيل الدخول عبر Google. حاول مرة أخرى.',
-  'auth.tryAgain': 'حاول مرة أخرى',
-  'auth.forgotUseGoogle': 'إعادة تعيين كلمة المرور غير متاحة. سجّل الدخول عبر Google.',
   'auth.verifyDevHint':
-    'للتطوير: راجع README في الخادم لحسابات الاختبار.',
+    'اختصار للتطوير: سجّل الدخول بـ customer@garagefinder.test / GarageFinderDemo123! (حساب تجريبي بدون OTP).',
   'auth.invalidCredentials': 'البريد أو كلمة المرور غير صحيحة.',
   'auth.required': 'يجب تسجيل الدخول للمتابعة.',
   'auth.permission': 'ليس لديك صلاحية لتنفيذ هذا الإجراء.',
