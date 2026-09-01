@@ -5,38 +5,103 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+const DISMISS_KEY = 'pwa-install-dismissed'
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null
+const listeners = new Set<() => void>()
+
+function notify() {
+  listeners.forEach((listener) => listener())
+}
+
+function readDismissed(): boolean {
+  try {
+    return localStorage.getItem(DISMISS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function isStandaloneMode(): boolean {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  )
+}
+
+function isIosDevice(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt = e as BeforeInstallPromptEvent
+    notify()
+  })
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null
+    notify()
+  })
+}
+
 export function useInstallPrompt() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem('pwa-install-dismissed') === '1')
-  const [isIOS, setIsIOS] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
+  const [, tick] = useState(0)
 
   useEffect(() => {
-    const ua = navigator.userAgent
-    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !('MSStream' in window))
-    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true)
-
-    const handler = (e: Event) => {
-      e.preventDefault()
-      setDeferred(e as BeforeInstallPromptEvent)
+    const listener = () => tick((n) => n + 1)
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
     }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
+  const dismissed = readDismissed()
+  const isStandalone = isStandaloneMode()
+  const isIOS = isIosDevice()
+  const hasNativePrompt = deferredPrompt != null
+
   const install = async () => {
-    if (!deferred) return
-    await deferred.prompt()
-    const { outcome } = await deferred.userChoice
-    if (outcome === 'accepted') setDeferred(null)
+    if (!deferredPrompt) return false
+    await deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      deferredPrompt = null
+      notify()
+    }
+    return outcome === 'accepted'
   }
 
   const dismiss = () => {
-    localStorage.setItem('pwa-install-dismissed', '1')
-    setDismissed(true)
+    try {
+      localStorage.setItem(DISMISS_KEY, '1')
+    } catch {
+      // ignore
+    }
+    notify()
   }
 
-  const canPrompt = !isStandalone && !dismissed && (deferred != null || isIOS)
+  const showInstallBannerAgain = () => {
+    try {
+      localStorage.removeItem(DISMISS_KEY)
+    } catch {
+      // ignore
+    }
+    notify()
+  }
 
-  return { canPrompt, isIOS, isStandalone, install, dismiss, hasNativePrompt: deferred != null }
+  const canPrompt = !isStandalone && !dismissed && (hasNativePrompt || isIOS)
+  const canOfferInstall = !isStandalone
+
+  return {
+    canPrompt,
+    canOfferInstall,
+    isIOS,
+    isStandalone,
+    hasNativePrompt,
+    install,
+    dismiss,
+    showInstallBannerAgain,
+  }
 }

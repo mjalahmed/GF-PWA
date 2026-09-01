@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input'
 import { Spinner } from '../components/ui/Spinner'
 import { useAuth } from '../hooks/useAuth'
 import { LanguageToggle } from '../i18n/LanguageToggle'
+import { InstallAppSection } from '../components/layout/InstallAppSection'
 import { useLocale } from '../i18n/LocaleProvider'
 import { signOut, updateProfile } from '../services/api/auth'
 
@@ -70,6 +71,7 @@ export function ProfilePage() {
         <PageHeader title={t('profile.title')} />
         <div className="mx-auto max-w-lg space-y-6 px-4 py-8">
           {languageSection}
+          <InstallAppSection />
           <div className="text-center">
             <p className="text-text-muted">{t('profile.signInPrompt')}</p>
             <Button className="mt-6" onClick={() => navigate('/sign-in')}>
@@ -172,6 +174,8 @@ export function ProfilePage() {
         </section>
 
         {languageSection}
+
+        <InstallAppSection />
 
         {audienceLinks.length > 0 && (
           <nav className="space-y-2">
