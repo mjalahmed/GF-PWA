@@ -28,6 +28,7 @@ import { VehicleDetailPage } from '../pages/VehicleDetailPage'
 import { VehicleFormPage } from '../pages/VehicleFormPage'
 import { VehiclesPage } from '../pages/VehiclesPage'
 import { VerifyPage } from '../pages/VerifyPage'
+import { AuthCallbackPage } from '../pages/AuthCallbackPage'
 import { BusinessDashboardPage } from '../pages/business/BusinessDashboardPage'
 import { BusinessApplicationsPage } from '../pages/business/BusinessApplicationsPage'
 import { BusinessAppointmentsPage } from '../pages/business/BusinessAppointmentsPage'
@@ -203,6 +204,7 @@ export function AppRouter() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="sign-in" element={<SignInPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="auth/callback" element={<AuthCallbackPage />} />
           <Route path="auth/verify" element={<VerifyPage />} />
           <Route path="bookings" element={<Navigate to="/appointments" replace />} />
           <Route path="*" element={<NotFoundPage />} />

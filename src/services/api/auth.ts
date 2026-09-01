@@ -4,6 +4,25 @@ import { mapProfile } from '../../lib/mappers'
 import { apiClient } from './client'
 import { platformPaths } from './paths'
 
+export function buildAuthCallbackUrl(nextPath: string): string {
+  const next = nextPath.startsWith('/') ? nextPath : `/${nextPath}`
+  return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+}
+
+/** Primary sign-in — redirects to Google via Supabase Auth. */
+export async function signInWithGoogle(nextPath = '/profile') {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: buildAuthCallbackUrl(nextPath),
+      queryParams: {
+        prompt: 'select_account',
+      },
+    },
+  })
+  if (error) throw error
+}
+
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error

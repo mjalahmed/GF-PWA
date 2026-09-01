@@ -30,7 +30,7 @@ See [docs/backend-requirements.md](docs/backend-requirements.md) and [backend/do
 | **Reviews** | Eligibilities, submit multi-dimension review, view responses |
 | **Disputes** | Open dispute, messaging thread, withdraw |
 | **Vehicles** | Full CRUD with make/model catalog |
-| **Account** | Sign in/up, forgot password, OTP verify, profile edit, roles |
+| **Account** | Google sign-in, profile edit, roles |
 | **PWA** | Install prompt, offline shell, service worker updates |
 
 ## Getting started
@@ -45,7 +45,7 @@ npm run dev
 
 Open http://localhost:5173
 
-**OTP not arriving?** Auth mail is sent by Supabase, not the API. See [docs/auth-email.md](docs/auth-email.md).
+**Sign-in:** Google OAuth via Supabase — see [docs/google-auth.md](docs/google-auth.md) to enable the provider.
 
 ## Scripts
 
