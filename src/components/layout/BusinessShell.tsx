@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
+import { ProtectedRoute } from '../ui/ProtectedRoute'
 import { PageHeader } from './PageHeader'
 
 const links = [
@@ -22,7 +23,9 @@ export function BusinessShell() {
         </NavLink>
       </nav>
       <main className="app-main">
-        <Outlet />
+        <ProtectedRoute>
+          <Outlet />
+        </ProtectedRoute>
       </main>
     </div>
   )

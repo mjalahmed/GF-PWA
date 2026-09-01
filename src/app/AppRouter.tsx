@@ -31,6 +31,9 @@ import { VerifyPage } from '../pages/VerifyPage'
 import { BusinessDashboardPage } from '../pages/business/BusinessDashboardPage'
 import { BusinessApplicationsPage } from '../pages/business/BusinessApplicationsPage'
 import { BusinessAppointmentsPage } from '../pages/business/BusinessAppointmentsPage'
+import { BusinessGaragePage } from '../pages/business/BusinessGaragePage'
+import { BusinessTeamPage } from '../pages/business/BusinessTeamPage'
+import { BusinessAcceptInvitationPage } from '../pages/business/BusinessAcceptInvitationPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminApplicationsPage } from '../pages/admin/AdminApplicationsPage'
 import { AdminDisputesPage } from '../pages/admin/AdminDisputesPage'
@@ -210,6 +213,9 @@ export function AppRouter() {
           <Route index element={<BusinessDashboardPage />} />
           <Route path="applications" element={<BusinessApplicationsPage />} />
           <Route path="appointments" element={<BusinessAppointmentsPage />} />
+          <Route path="garages/:businessId" element={<BusinessGaragePage />} />
+          <Route path="garages/:businessId/team" element={<BusinessTeamPage />} />
+          <Route path="invitations/accept" element={<BusinessAcceptInvitationPage />} />
         </Route>
 
         <Route path="admin" element={<AdminShell />}>

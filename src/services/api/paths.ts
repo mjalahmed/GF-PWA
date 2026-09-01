@@ -59,6 +59,10 @@ export const businessPaths = {
   application: (id: string) => `${V1}/business/applications/${id}`,
   invitationAccept: (token: string) => `${V1}/business/invitations/${token}/accept`,
   business: (businessId: string) => `${V1}/business/businesses/${businessId}`,
+  members: (businessId: string) => `${V1}/business/businesses/${businessId}/members`,
+  invitations: (businessId: string) => `${V1}/business/businesses/${businessId}/invitations`,
+  invitation: (businessId: string, invitationId: string) =>
+    `${V1}/business/businesses/${businessId}/invitations/${invitationId}`,
   branches: (businessId: string) => `${V1}/business/businesses/${businessId}/branches`,
   appointments: (businessId: string) => `${V1}/business/businesses/${businessId}/appointments`,
   quotations: (businessId: string) => `${V1}/business/businesses/${businessId}/quotations`,
