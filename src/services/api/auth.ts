@@ -2,6 +2,7 @@ import { supabase } from '../../lib/supabase'
 import type { Profile } from '../../types/discovery'
 import { mapProfile } from '../../lib/mappers'
 import { apiClient } from './client'
+import { platformPaths } from './paths'
 
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -43,7 +44,7 @@ export async function verifyOtp(email: string, token: string, type: 'signup' | '
 }
 
 export async function getCurrentProfile(): Promise<Profile | null> {
-  const envelope = await apiClient.get('/v1/profiles/me', (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.get(platformPaths.profile, (json) => json as Record<string, unknown>)
   const raw = envelope.data
   if (!raw) return null
   return mapProfile(raw)
@@ -54,18 +55,25 @@ export async function updateProfile(body: {
   phone?: string
   preferredLanguage?: string
 }): Promise<Profile> {
-  const envelope = await apiClient.patch('/v1/profiles/me', body, (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.patch(platformPaths.profile, body, (json) => json as Record<string, unknown>)
   return mapProfile(envelope.data!)
 }
 
 export async function getMyRoles(): Promise<string[]> {
-  const envelope = await apiClient.get('/v1/me', (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.get(platformPaths.me, (json) => json as Record<string, unknown>)
   const roles = envelope.data?.roles
   if (Array.isArray(roles)) return roles.map(String)
   return []
 }
 
 export async function getCurrentUser() {
-  const envelope = await apiClient.get('/v1/me', (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.get(platformPaths.me, (json) => json as Record<string, unknown>)
   return envelope.data
+}
+
+export async function getMyPermissions(): Promise<string[]> {
+  const envelope = await apiClient.get(platformPaths.me, (json) => json as Record<string, unknown>)
+  const permissions = envelope.data?.permissions
+  if (Array.isArray(permissions)) return permissions.map(String)
+  return []
 }

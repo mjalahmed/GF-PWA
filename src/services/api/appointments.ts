@@ -1,6 +1,7 @@
 import type { Appointment, AppointmentSlotsResult } from '../../types/appointments'
 import { mapAppointment, mapAppointmentSlots } from '../../lib/mappers'
 import { apiClient, buildQuery } from './client'
+import { customerPaths, platformPaths } from './paths'
 
 export async function listAppointments(params?: {
   status?: string
@@ -10,7 +11,7 @@ export async function listAppointments(params?: {
   branchId?: string
 }): Promise<Appointment[]> {
   const envelope = await apiClient.get(
-    `/v1/appointments${buildQuery({
+    `${customerPaths.appointments}${buildQuery({
       status: params?.status,
       from: params?.from,
       to: params?.to,
@@ -23,7 +24,7 @@ export async function listAppointments(params?: {
 }
 
 export async function getAppointment(id: string): Promise<Appointment> {
-  const envelope = await apiClient.get(`/v1/appointments/${id}`, (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.get(platformPaths.appointment(id), (json) => json as Record<string, unknown>)
   return mapAppointment(envelope.data!)
 }
 
@@ -35,7 +36,7 @@ export async function createAppointment(body: {
   vehicleId?: string
   customerNotes?: string
 }): Promise<Appointment> {
-  const envelope = await apiClient.post('/v1/appointments', body, (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.post(customerPaths.appointments, body, (json) => json as Record<string, unknown>)
   return mapAppointment(envelope.data!)
 }
 
@@ -46,7 +47,7 @@ export async function listAppointmentSlots(params: {
   serviceId?: string
 }): Promise<AppointmentSlotsResult> {
   const envelope = await apiClient.get(
-    `/v1/businesses/${params.businessId}/branches/${params.branchId}/appointment-slots${buildQuery({
+    `${customerPaths.appointmentSlots(params.businessId, params.branchId)}${buildQuery({
       date: params.date,
       serviceId: params.serviceId,
     })}`,
@@ -57,7 +58,7 @@ export async function listAppointmentSlots(params: {
 
 export async function cancelAppointment(id: string, reason?: string): Promise<Appointment> {
   const envelope = await apiClient.post(
-    `/v1/appointments/${id}/cancel`,
+    platformPaths.appointmentAction(id, 'cancel'),
     { reason: reason ?? null },
     (json) => json as Record<string, unknown>,
   )

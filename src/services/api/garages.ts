@@ -2,6 +2,7 @@ import type { PaginatedResult } from '../../types/api'
 import type { DiscoveryBusiness } from '../../types/discovery'
 import { mapBusiness } from '../../lib/mappers'
 import { apiClient, buildQuery } from './client'
+import { customerPaths } from './paths'
 
 export async function searchBusinesses(params: {
   query?: string
@@ -22,7 +23,7 @@ export async function searchBusinesses(params: {
   longitude?: number
 }): Promise<PaginatedResult<DiscoveryBusiness>> {
   const envelope = await apiClient.get(
-    `/v1/discovery/businesses${buildQuery({
+    `${customerPaths.discovery.businesses}${buildQuery({
       query: params.query,
       city: params.city,
       area: params.area,
@@ -53,7 +54,7 @@ export async function getBusinessBySlug(
   coords?: { latitude: number; longitude: number },
 ): Promise<DiscoveryBusiness> {
   const envelope = await apiClient.get(
-    `/v1/discovery/businesses/${slug}${buildQuery({
+    `${customerPaths.discovery.business(slug)}${buildQuery({
       latitude: coords?.latitude,
       longitude: coords?.longitude,
     })}`,

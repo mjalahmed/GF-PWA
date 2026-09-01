@@ -1,51 +1,51 @@
-import type { Invoice, Payment } from '../../types/commerce'
-import { mapInvoice, mapPayment } from '../../lib/mappers'
+import type { PaginatedResult } from '../../types/api'
 import { apiClient, buildQuery } from './client'
+import { customerPaths } from './paths'
 
 export async function listInvoices(params?: {
   status?: string
-  from?: string
-  to?: string
   businessId?: string
-}): Promise<Invoice[]> {
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedResult<Record<string, unknown>>> {
   const envelope = await apiClient.get(
-    `/v1/invoices${buildQuery({
+    `${customerPaths.invoices}${buildQuery({
       status: params?.status,
-      from: params?.from,
-      to: params?.to,
       businessId: params?.businessId,
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
     })}`,
     (json) => (Array.isArray(json) ? json : []) as unknown[],
   )
-  return (envelope.data ?? []).map((item) => mapInvoice(item as Record<string, unknown>))
+  return { items: (envelope.data ?? []) as Record<string, unknown>[], pagination: envelope.meta?.pagination }
 }
 
-export async function getInvoice(id: string): Promise<Invoice> {
-  const envelope = await apiClient.get(`/v1/invoices/${id}`, (json) => json as Record<string, unknown>)
-  return mapInvoice(envelope.data!)
+export async function getInvoice(id: string): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.get(customerPaths.invoice(id), (json) => json as Record<string, unknown>)
+  return envelope.data!
 }
 
-export async function viewInvoice(id: string, note?: string): Promise<Invoice> {
+export async function viewInvoice(id: string): Promise<Record<string, unknown>> {
   const envelope = await apiClient.post(
-    `/v1/invoices/${id}/view`,
-    { note: note ?? null },
+    customerPaths.invoiceAction(id, 'view'),
+    {},
     (json) => json as Record<string, unknown>,
   )
-  return mapInvoice(envelope.data!)
+  return envelope.data!
 }
 
-export async function approveInvoice(id: string, note?: string): Promise<Invoice> {
+export async function approveInvoice(id: string): Promise<Record<string, unknown>> {
   const envelope = await apiClient.post(
-    `/v1/invoices/${id}/approve`,
-    { note: note ?? null },
+    customerPaths.invoiceAction(id, 'approve'),
+    {},
     (json) => json as Record<string, unknown>,
   )
-  return mapInvoice(envelope.data!)
+  return envelope.data!
 }
 
-export async function listInvoicePayments(invoiceId: string): Promise<Payment[]> {
-  const envelope = await apiClient.get(`/v1/invoices/${invoiceId}/payments`, (json) =>
+export async function listInvoicePayments(invoiceId: string): Promise<Record<string, unknown>[]> {
+  const envelope = await apiClient.get(customerPaths.invoicePayments(invoiceId), (json) =>
     Array.isArray(json) ? json : [],
   )
-  return (envelope.data ?? []).map((item) => mapPayment(item as Record<string, unknown>))
+  return (envelope.data ?? []) as Record<string, unknown>[]
 }

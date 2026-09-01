@@ -1,53 +1,53 @@
-import type { Quotation } from '../../types/commerce'
-import { mapQuotation } from '../../lib/mappers'
+import type { PaginatedResult } from '../../types/api'
 import { apiClient, buildQuery } from './client'
+import { customerPaths } from './paths'
 
 export async function listQuotations(params?: {
   status?: string
-  from?: string
-  to?: string
   businessId?: string
-}): Promise<Quotation[]> {
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedResult<Record<string, unknown>>> {
   const envelope = await apiClient.get(
-    `/v1/quotations${buildQuery({
+    `${customerPaths.quotations}${buildQuery({
       status: params?.status,
-      from: params?.from,
-      to: params?.to,
       businessId: params?.businessId,
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
     })}`,
     (json) => (Array.isArray(json) ? json : []) as unknown[],
   )
-  return (envelope.data ?? []).map((item) => mapQuotation(item as Record<string, unknown>))
+  return { items: (envelope.data ?? []) as Record<string, unknown>[], pagination: envelope.meta?.pagination }
 }
 
-export async function getQuotation(id: string): Promise<Quotation> {
-  const envelope = await apiClient.get(`/v1/quotations/${id}`, (json) => json as Record<string, unknown>)
-  return mapQuotation(envelope.data!)
+export async function getQuotation(id: string): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.get(customerPaths.quotation(id), (json) => json as Record<string, unknown>)
+  return envelope.data!
 }
 
-export async function viewQuotation(id: string, note?: string): Promise<Quotation> {
+export async function viewQuotation(id: string): Promise<Record<string, unknown>> {
   const envelope = await apiClient.post(
-    `/v1/quotations/${id}/view`,
-    { note: note ?? null },
+    customerPaths.quotationAction(id, 'view'),
+    {},
     (json) => json as Record<string, unknown>,
   )
-  return mapQuotation(envelope.data!)
+  return envelope.data!
 }
 
-export async function acceptQuotation(id: string, note?: string): Promise<Quotation> {
+export async function acceptQuotation(id: string): Promise<Record<string, unknown>> {
   const envelope = await apiClient.post(
-    `/v1/quotations/${id}/accept`,
-    { note: note ?? null },
+    customerPaths.quotationAction(id, 'accept'),
+    {},
     (json) => json as Record<string, unknown>,
   )
-  return mapQuotation(envelope.data!)
+  return envelope.data!
 }
 
-export async function rejectQuotation(id: string, note?: string): Promise<Quotation> {
+export async function rejectQuotation(id: string, reason?: string): Promise<Record<string, unknown>> {
   const envelope = await apiClient.post(
-    `/v1/quotations/${id}/reject`,
-    { note: note ?? null },
+    customerPaths.quotationAction(id, 'reject'),
+    { reason: reason ?? null },
     (json) => json as Record<string, unknown>,
   )
-  return mapQuotation(envelope.data!)
+  return envelope.data!
 }
