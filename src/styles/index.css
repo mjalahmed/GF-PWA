@@ -37,3 +37,29 @@
   .safe-top { padding-top: env(safe-area-inset-top, 0px); }
   .touch-target { min-height: 48px; min-width: 48px; }
 }
+
+.audience-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.audience-nav a {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  text-decoration: none;
+  color: var(--color-text-muted);
+}
+
+.audience-nav a.active,
+.audience-nav a:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.audience-nav__back {
+  margin-inline-start: auto;
+}

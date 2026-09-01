@@ -88,6 +88,17 @@ export function ProfilePage() {
     setEditing(true)
   }
 
+  const isBusinessUser = roles.some((r) =>
+    ['business_owner', 'business_manager', 'business_staff'].includes(r),
+  )
+  const isAdminUser = roles.some((r) =>
+    ['admin', 'super_admin', 'onboarding_officer', 'dispute_officer', 'content_moderator', 'support_agent'].includes(r),
+  )
+
+  const audienceLinks: { to: string; label: string }[] = []
+  if (isBusinessUser) audienceLinks.push({ to: '/business', label: 'Garage portal' })
+  if (isAdminUser) audienceLinks.push({ to: '/admin', label: 'Admin console' })
+
   const links: { to: string; labelKey: string }[] = [
     { to: '/vehicles', labelKey: 'profile.vehicles' },
     { to: '/favorites', labelKey: 'profile.favorites' },
@@ -162,8 +173,16 @@ export function ProfilePage() {
 
         {languageSection}
 
+        {audienceLinks.length > 0 && (
+          <nav className="space-y-2">
+            <p className="px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">Workspaces</p>
+            {audienceLinks.map((link) => (
+              <ProfileNavLink key={link.to} to={link.to} label={link.label} />
+            ))}
+          </nav>
+        )}
+
         <nav className="space-y-2">
-          {links.map((link) => (
             <ProfileNavLink key={link.to} to={link.to} label={t(link.labelKey)} />
           ))}
         </nav>

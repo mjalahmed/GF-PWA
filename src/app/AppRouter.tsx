@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { BusinessShell } from '../components/layout/BusinessShell'
+import { AdminShell } from '../components/layout/AdminShell'
 import { ProtectedRoute } from '../components/ui/ProtectedRoute'
 import { AppointmentDetailPage } from '../pages/AppointmentDetailPage'
 import { AppointmentsPage } from '../pages/AppointmentsPage'
@@ -26,6 +28,13 @@ import { VehicleDetailPage } from '../pages/VehicleDetailPage'
 import { VehicleFormPage } from '../pages/VehicleFormPage'
 import { VehiclesPage } from '../pages/VehiclesPage'
 import { VerifyPage } from '../pages/VerifyPage'
+import { BusinessDashboardPage } from '../pages/business/BusinessDashboardPage'
+import { BusinessApplicationsPage } from '../pages/business/BusinessApplicationsPage'
+import { BusinessAppointmentsPage } from '../pages/business/BusinessAppointmentsPage'
+import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
+import { AdminApplicationsPage } from '../pages/admin/AdminApplicationsPage'
+import { AdminDisputesPage } from '../pages/admin/AdminDisputesPage'
+import { AdminReviewsPage } from '../pages/admin/AdminReviewsPage'
 
 
 export function AppRouter() {
@@ -196,6 +205,19 @@ export function AppRouter() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route path="home" element={<Navigate to="/" replace />} />
+
+        <Route path="business" element={<BusinessShell />}>
+          <Route index element={<BusinessDashboardPage />} />
+          <Route path="applications" element={<BusinessApplicationsPage />} />
+          <Route path="appointments" element={<BusinessAppointmentsPage />} />
+        </Route>
+
+        <Route path="admin" element={<AdminShell />}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="applications" element={<AdminApplicationsPage />} />
+          <Route path="disputes" element={<AdminDisputesPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )
