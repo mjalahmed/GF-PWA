@@ -45,6 +45,8 @@ npm run dev
 
 Open http://localhost:5173
 
+**OTP not arriving?** Auth mail is sent by Supabase, not the API. See [docs/auth-email.md](docs/auth-email.md).
+
 ## Scripts
 
 | Command | Description |

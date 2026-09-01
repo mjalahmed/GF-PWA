@@ -32,8 +32,13 @@ export function SignInPage() {
         await refresh()
         navigate(from, { replace: true })
       } else {
-        await signUp(email, password, fullName)
-        navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`, { replace: true })
+        const result = await signUp(email, password, fullName)
+        await refresh()
+        if (result.session) {
+          navigate(from, { replace: true })
+        } else {
+          navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`, { replace: true })
+        }
       }
     } catch (err) {
       const message =

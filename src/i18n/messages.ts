@@ -327,6 +327,14 @@ const en: Catalog = {
   'auth.verify': 'Verify',
   'auth.backToSignIn': 'Back to sign in',
   'auth.invalidCode': 'Invalid or expired code',
+  'auth.resendCode': 'Resend code',
+  'auth.codeResent': 'A new code was sent. Check your inbox and spam folder.',
+  'auth.resendFailed': 'Could not resend the code. Try again in a minute.',
+  'auth.emailRequired': 'Enter your email first.',
+  'auth.verifySupabaseNote':
+    'Sign-up codes are sent by Supabase Auth (not the GarageFinder API). Configure custom SMTP in your Supabase project under Authentication → SMTP if mail does not arrive.',
+  'auth.verifyDevHint':
+    'Dev shortcut: sign in with customer@garagefinder.test / GarageFinderDemo123! (seeded account, no OTP).',
   'auth.invalidCredentials': 'Invalid email or password.',
   'auth.required': 'You must be signed in to continue.',
   'auth.permission': 'You do not have permission to perform this action.',
@@ -714,6 +722,14 @@ const ar: Catalog = {
   'auth.verify': 'تحقق',
   'auth.backToSignIn': 'العودة لتسجيل الدخول',
   'auth.invalidCode': 'رمز غير صالح أو منتهٍ',
+  'auth.resendCode': 'إعادة إرسال الرمز',
+  'auth.codeResent': 'تم إرسال رمز جديد. تحقق من البريد ومجلد الرسائل غير المرغوب فيها.',
+  'auth.resendFailed': 'تعذر إعادة إرسال الرمز. حاول بعد دقيقة.',
+  'auth.emailRequired': 'أدخل بريدك الإلكتروني أولاً.',
+  'auth.verifySupabaseNote':
+    'رموز التسجيل يُرسلها Supabase Auth (وليس واجهة GarageFinder). فعّل SMTP مخصصاً من لوحة Supabase → Authentication → SMTP إذا لم يصل البريد.',
+  'auth.verifyDevHint':
+    'اختصار للتطوير: سجّل الدخول بـ customer@garagefinder.test / GarageFinderDemo123! (حساب تجريبي بدون OTP).',
   'auth.invalidCredentials': 'البريد أو كلمة المرور غير صحيحة.',
   'auth.required': 'يجب تسجيل الدخول للمتابعة.',
   'auth.permission': 'ليس لديك صلاحية لتنفيذ هذا الإجراء.',

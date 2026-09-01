@@ -19,10 +19,24 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, preferred_language: preferredLanguage } },
+    options: {
+      data: { full_name: fullName, preferred_language: preferredLanguage },
+      emailRedirectTo: `${window.location.origin}/auth/verify?type=signup`,
+    },
   })
   if (error) throw error
   return data
+}
+
+export async function resendVerificationOtp(
+  email: string,
+  type: 'signup' | 'email_change' = 'signup',
+) {
+  const { error } = await supabase.auth.resend({
+    type,
+    email,
+  })
+  if (error) throw error
 }
 
 export async function signOut() {
