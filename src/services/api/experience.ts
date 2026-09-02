@@ -33,18 +33,23 @@ export type RepairPhoto = {
 }
 
 export async function listAnnouncements(): Promise<Announcement[]> {
-  const envelope = await apiClient.get(customerPaths.announcements, (json) =>
-    json as Record<string, unknown>[],
-  )
-  return (envelope.data ?? []).map((raw) => ({
-    id: String(raw.id),
-    slug: String(raw.slug),
-    title: String(raw.title),
-    summary: String(raw.summary),
-    body: (raw.body as string | null) ?? null,
-    category: String(raw.category),
-    icon: (raw.icon as string | null) ?? null,
-  }))
+  try {
+    const envelope = await apiClient.get(customerPaths.announcements, (json) =>
+      Array.isArray(json) ? (json as Record<string, unknown>[]) : [],
+    )
+    return (envelope.data ?? []).map((raw) => ({
+      id: String(raw.id),
+      slug: String(raw.slug),
+      title: String(raw.title),
+      summary: String(raw.summary),
+      body: (raw.body as string | null) ?? null,
+      category: String(raw.category),
+      icon: (raw.icon as string | null) ?? null,
+    }))
+  } catch {
+    // Table may be missing until migration is applied — home page still works
+    return []
+  }
 }
 
 export async function getVehicleServiceHistory(vehicleId: string): Promise<ServiceHistoryItem[]> {

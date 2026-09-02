@@ -5,7 +5,7 @@ export type UploadResult = {
   path: string
 }
 
-export async function uploadImage(
+export async function uploadFile(
   bucket: string,
   path: string,
   file: File,
@@ -16,6 +16,14 @@ export async function uploadImage(
   })
   if (error) throw new Error(error.message)
   return { bucket, path }
+}
+
+export async function uploadImage(
+  bucket: string,
+  path: string,
+  file: File,
+): Promise<UploadResult> {
+  return uploadFile(bucket, path, file)
 }
 
 export function vehicleImagePath(userId: string, vehicleId: string, fileName: string): string {

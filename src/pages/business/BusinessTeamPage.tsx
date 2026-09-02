@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
@@ -87,6 +88,7 @@ export function BusinessTeamPage() {
   }
 
   return (
+    <RequireGarageSetup businessId={businessId}>
     <section className="mx-auto max-w-lg space-y-6 px-4 py-4">
       <div>
         <Link to={`/business/garages/${businessId}`} className="text-sm text-primary">
@@ -175,5 +177,6 @@ export function BusinessTeamPage() {
         )}
       </div>
     </section>
+    </RequireGarageSetup>
   )
 }

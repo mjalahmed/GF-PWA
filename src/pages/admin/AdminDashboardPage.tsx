@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ProtectedRoute } from '../../components/ui/ProtectedRoute'
+import { Link } from 'react-router-dom'
 import { Spinner } from '../../components/ui/Spinner'
 import { listAdminApplications, listAdminDisputes, listAdminReviews } from '../../services/api/admin'
 
@@ -8,7 +8,11 @@ export function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([listAdminApplications(), listAdminDisputes(), listAdminReviews()])
+    Promise.all([
+      listAdminApplications({ status: 'submitted', pageSize: 50 }),
+      listAdminDisputes(),
+      listAdminReviews(),
+    ])
       .then(([applications, disputes, reviews]) => {
         setStats({
           applications: applications.length,
@@ -22,15 +26,18 @@ export function AdminDashboardPage() {
   if (loading) return <Spinner />
 
   return (
-    <ProtectedRoute>
-      <section>
-        <h2>Platform overview</h2>
-        <ul>
-          <li>Pending applications: {stats.applications}</li>
-          <li>Open disputes: {stats.disputes}</li>
-          <li>Reviews to moderate: {stats.reviews}</li>
-        </ul>
-      </section>
-    </ProtectedRoute>
+    <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
+      <h2 className="text-xl font-semibold">Platform overview</h2>
+      <ul className="space-y-2 text-sm">
+        <li>
+          Submitted applications: {stats.applications}{' '}
+          <Link to="/admin/applications" className="text-primary">
+            Review →
+          </Link>
+        </li>
+        <li>Open disputes: {stats.disputes}</li>
+        <li>Reviews to moderate: {stats.reviews}</li>
+      </ul>
+    </section>
   )
 }

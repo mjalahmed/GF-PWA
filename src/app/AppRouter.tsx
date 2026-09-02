@@ -11,6 +11,7 @@ import { DisputeNewPage } from '../pages/DisputeNewPage'
 import { DisputesPage } from '../pages/DisputesPage'
 import { FavoritesPage } from '../pages/FavoritesPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '../pages/ResetPasswordPage'
 import { EmergencyPage } from '../pages/EmergencyPage'
 import { NotificationsPage } from '../pages/NotificationsPage'
 import { RequestQuotePage } from '../pages/RequestQuotePage'
@@ -31,14 +32,25 @@ import { VehicleDetailPage } from '../pages/VehicleDetailPage'
 import { VehicleFormPage } from '../pages/VehicleFormPage'
 import { VehiclesPage } from '../pages/VehiclesPage'
 import { VerifyPage } from '../pages/VerifyPage'
+import { LegalIndexPage } from '../pages/LegalIndexPage'
+import { LegalDocumentPage } from '../pages/LegalDocumentPage'
 import { BusinessDashboardPage } from '../pages/business/BusinessDashboardPage'
 import { BusinessApplicationsPage } from '../pages/business/BusinessApplicationsPage'
+import { BusinessApplicationWizardPage } from '../pages/business/BusinessApplicationWizardPage'
 import { BusinessAppointmentsPage } from '../pages/business/BusinessAppointmentsPage'
 import { BusinessGaragePage } from '../pages/business/BusinessGaragePage'
+import { BusinessProductsPage } from '../pages/business/BusinessProductsPage'
+import { BusinessQuotationsPage } from '../pages/business/BusinessQuotationsPage'
+import { BusinessInvoicesPage } from '../pages/business/BusinessInvoicesPage'
 import { BusinessTeamPage } from '../pages/business/BusinessTeamPage'
 import { BusinessAcceptInvitationPage } from '../pages/business/BusinessAcceptInvitationPage'
+import {
+  AdminGarageSetupPage,
+  BusinessGarageSetupPage,
+} from '../pages/shared/GarageSetupPages'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminApplicationsPage } from '../pages/admin/AdminApplicationsPage'
+import { AdminApplicationDetailPage } from '../pages/admin/AdminApplicationDetailPage'
 import { AdminDisputesPage } from '../pages/admin/AdminDisputesPage'
 import { AdminReviewsPage } from '../pages/admin/AdminReviewsPage'
 
@@ -224,6 +236,9 @@ export function AppRouter() {
           <Route path="sign-in" element={<SignInPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="auth/verify" element={<VerifyPage />} />
+          <Route path="auth/reset-password" element={<ResetPasswordPage />} />
+          <Route path="legal" element={<LegalIndexPage />} />
+          <Route path="legal/:docId" element={<LegalDocumentPage />} />
           <Route path="bookings" element={<Navigate to="/appointments" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
@@ -232,8 +247,14 @@ export function AppRouter() {
         <Route path="business" element={<BusinessShell />}>
           <Route index element={<BusinessDashboardPage />} />
           <Route path="applications" element={<BusinessApplicationsPage />} />
+          <Route path="applications/new" element={<BusinessApplicationWizardPage />} />
+          <Route path="applications/:applicationId" element={<BusinessApplicationWizardPage />} />
           <Route path="appointments" element={<BusinessAppointmentsPage />} />
+          <Route path="quotations" element={<BusinessQuotationsPage />} />
+          <Route path="invoices" element={<BusinessInvoicesPage />} />
           <Route path="garages/:businessId" element={<BusinessGaragePage />} />
+          <Route path="garages/:businessId/setup" element={<BusinessGarageSetupPage />} />
+          <Route path="garages/:businessId/products" element={<BusinessProductsPage />} />
           <Route path="garages/:businessId/team" element={<BusinessTeamPage />} />
           <Route path="invitations/accept" element={<BusinessAcceptInvitationPage />} />
         </Route>
@@ -241,6 +262,8 @@ export function AppRouter() {
         <Route path="admin" element={<AdminShell />}>
           <Route index element={<AdminDashboardPage />} />
           <Route path="applications" element={<AdminApplicationsPage />} />
+          <Route path="applications/:applicationId" element={<AdminApplicationDetailPage />} />
+          <Route path="businesses/:businessId/setup" element={<AdminGarageSetupPage />} />
           <Route path="disputes" element={<AdminDisputesPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>

@@ -1,21 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { getCurrentProfile, getMyRoles } from '../services/api/auth'
 import type { Profile } from '../types/discovery'
-
-interface AuthContextValue {
-  session: Session | null
-  profile: Profile | null
-  roles: string[]
-  loading: boolean
-  refresh: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+import { AuthContext, type AuthContextValue } from './auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
+  const [session, setSession] = useState<AuthContextValue['session']>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [roles, setRoles] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh().finally(() => setLoading(false))
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      refresh()
+      void refresh()
     })
     return () => sub.subscription.unsubscribe()
   }, [])

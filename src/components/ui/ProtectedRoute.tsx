@@ -12,3 +12,22 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   return children
 }
+
+export function RoleProtectedRoute({
+  children,
+  roles,
+}: {
+  children: ReactNode
+  roles: string[]
+}) {
+  const { session, roles: userRoles, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) return <Spinner />
+  if (!session) return <Navigate to="/sign-in" state={{ from: location.pathname }} replace />
+  if (!userRoles.some((r) => roles.includes(r))) {
+    return <Navigate to="/profile" replace />
+  }
+
+  return children
+}

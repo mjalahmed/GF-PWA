@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
+import { DirectionsActions } from '../components/ui/DirectionsActions'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StarRating } from '../components/ui/StarRating'
@@ -141,7 +142,7 @@ export function GarageDetailPage() {
               <div className="flex flex-wrap items-center gap-2">
                 {verified && (
                   <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-                    {t('common.verified')}
+                    {t('common.verifiedProvider')}
                   </span>
                 )}
               </div>
@@ -202,6 +203,15 @@ export function GarageDetailPage() {
                         {branch.phone}
                       </a>
                     )}
+                    <DirectionsActions
+                      className="mt-4"
+                      destination={{
+                        latitude: branch.latitude,
+                        longitude: branch.longitude,
+                        addressLine: branch.addressLine,
+                        label: garage.displayName,
+                      }}
+                    />
                   </section>
                 )}
                 {garage.branches.length > 1 && (

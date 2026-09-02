@@ -72,6 +72,9 @@ export function ProfilePage() {
         <div className="mx-auto max-w-lg space-y-6 px-4 py-8">
           {languageSection}
           <InstallAppSection />
+          <div className="space-y-2">
+            <ProfileNavLink to="/legal" label={t('profile.legal')} />
+          </div>
           <div className="text-center">
             <p className="text-text-muted">{t('profile.signInPrompt')}</p>
             <Button className="mt-6" onClick={() => navigate('/sign-in')}>
@@ -97,7 +100,9 @@ export function ProfilePage() {
     ['admin', 'super_admin', 'onboarding_officer', 'dispute_officer', 'content_moderator', 'support_agent'].includes(r),
   )
 
-  const audienceLinks: { to: string; label: string }[] = []
+  const audienceLinks: { to: string; label: string }[] = [
+    { to: '/business/applications', label: 'Apply as a garage' },
+  ]
   if (isBusinessUser) audienceLinks.push({ to: '/business', label: 'Garage portal' })
   if (isAdminUser) audienceLinks.push({ to: '/admin', label: 'Admin console' })
 
@@ -109,6 +114,7 @@ export function ProfilePage() {
     { to: '/quotations', labelKey: 'profile.quotations' },
     { to: '/reviews', labelKey: 'profile.reviews' },
     { to: '/disputes', labelKey: 'profile.disputes' },
+    { to: '/legal', labelKey: 'profile.legal' },
   ]
 
   return (

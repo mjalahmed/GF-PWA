@@ -1,12 +1,31 @@
-import { useEffect } from 'react'
-import { useAuth } from './useAuth'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { registerPushSubscription } from '../services/api/notifications'
 
+/**
+ * Registers web push when the user has a session and VAPID is configured.
+ * Uses Supabase session directly so it stays safe under Vite HMR
+ * (AuthContext can get duplicated across hot reloads).
+ */
 export function usePushNotifications() {
-  const { session } = useAuth()
+  const [hasSession, setHasSession] = useState(false)
 
   useEffect(() => {
-    if (!session || !('serviceWorker' in navigator) || !('PushManager' in window)) return
+    let mounted = true
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setHasSession(!!data.session)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session)
+    })
+    return () => {
+      mounted = false
+      sub.subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hasSession || !('serviceWorker' in navigator) || !('PushManager' in window)) return
 
     const run = async () => {
       try {
@@ -16,7 +35,6 @@ export function usePushNotifications() {
         const registration = await navigator.serviceWorker.ready
         let subscription = await registration.pushManager.getSubscription()
         if (!subscription) {
-          // VAPID public key can be set via VITE_VAPID_PUBLIC_KEY when backend push is configured
           const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined
           if (!vapidKey) return
           subscription = await registration.pushManager.subscribe({
@@ -30,6 +48,6 @@ export function usePushNotifications() {
       }
     }
 
-    run()
-  }, [session])
+    void run()
+  }, [hasSession])
 }

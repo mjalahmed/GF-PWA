@@ -89,6 +89,17 @@ export const apiClient = {
       decode,
     )
   },
+  put<T>(path: string, body: Record<string, unknown>, decode: (json: unknown) => T) {
+    return send(
+      async () =>
+        fetch(uri(path), {
+          method: 'PUT',
+          headers: await headers(true),
+          body: JSON.stringify(body),
+        }),
+      decode,
+    )
+  },
   delete<T>(path: string, decode: (json: unknown) => T) {
     return send(async () => fetch(uri(path), { method: 'DELETE', headers: await headers() }), decode)
   },

@@ -10,6 +10,7 @@ export const platformPaths = {
   notificationRead: (id: string) => `${V1}/notifications/${id}/read`,
   notificationsReadAll: `${V1}/notifications/read-all`,
   pushSubscriptions: `${V1}/push-subscriptions`,
+  legalAcceptances: `${V1}/legal/acceptances`,
   appointment: (id: string) => `${V1}/appointments/${id}`,
   appointmentAction: (id: string, action: string) => `${V1}/appointments/${id}/${action}`,
 } as const
@@ -66,18 +67,55 @@ export const customerPaths = {
 
 export const businessPaths = {
   memberships: `${V1}/business/memberships`,
+  businessCategories: `${V1}/business/business-categories`,
+  businessCategoryRequirements: (categoryId: string) =>
+    `${V1}/business/business-categories/${categoryId}/document-requirements`,
   applications: `${V1}/business/applications`,
   application: (id: string) => `${V1}/business/applications/${id}`,
+  applicationBranch: (id: string) => `${V1}/business/applications/${id}/branch`,
+  applicationSubmit: (id: string) => `${V1}/business/applications/${id}/submit`,
+  applicationWithdraw: (id: string) => `${V1}/business/applications/${id}/withdraw`,
+  applicationDocuments: (id: string) => `${V1}/business/applications/${id}/documents`,
+  applicationDocument: (id: string, documentId: string) =>
+    `${V1}/business/applications/${id}/documents/${documentId}`,
   invitationAccept: (token: string) => `${V1}/business/invitations/${token}/accept`,
   business: (businessId: string) => `${V1}/business/businesses/${businessId}`,
+  settings: (businessId: string) => `${V1}/business/businesses/${businessId}/settings`,
   members: (businessId: string) => `${V1}/business/businesses/${businessId}/members`,
   invitations: (businessId: string) => `${V1}/business/businesses/${businessId}/invitations`,
   invitation: (businessId: string, invitationId: string) =>
     `${V1}/business/businesses/${businessId}/invitations/${invitationId}`,
   branches: (businessId: string) => `${V1}/business/businesses/${businessId}/branches`,
+  branch: (businessId: string, branchId: string) =>
+    `${V1}/business/businesses/${businessId}/branches/${branchId}`,
+  openingHours: (businessId: string) => `${V1}/business/businesses/${businessId}/opening-hours`,
+  services: (businessId: string) => `${V1}/business/businesses/${businessId}/services`,
+  service: (businessId: string, serviceId: string) =>
+    `${V1}/business/businesses/${businessId}/services/${serviceId}`,
   appointments: (businessId: string) => `${V1}/business/businesses/${businessId}/appointments`,
+  products: (businessId: string) => `${V1}/business/businesses/${businessId}/products`,
+  product: (businessId: string, productId: string) =>
+    `${V1}/business/businesses/${businessId}/products/${productId}`,
   quotations: (businessId: string) => `${V1}/business/businesses/${businessId}/quotations`,
+  quotation: (businessId: string, quotationId: string) =>
+    `${V1}/business/businesses/${businessId}/quotations/${quotationId}`,
+  quotationIssue: (businessId: string, quotationId: string) =>
+    `${V1}/business/businesses/${businessId}/quotations/${quotationId}/issue`,
+  quotationCancel: (businessId: string, quotationId: string) =>
+    `${V1}/business/businesses/${businessId}/quotations/${quotationId}/cancel`,
+  appointmentQuotation: (businessId: string, appointmentId: string) =>
+    `${V1}/business/businesses/${businessId}/appointments/${appointmentId}/quotation`,
   invoices: (businessId: string) => `${V1}/business/businesses/${businessId}/invoices`,
+  invoice: (businessId: string, invoiceId: string) =>
+    `${V1}/business/businesses/${businessId}/invoices/${invoiceId}`,
+  invoiceIssue: (businessId: string, invoiceId: string) =>
+    `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/issue`,
+  invoiceCancel: (businessId: string, invoiceId: string) =>
+    `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/cancel`,
+  quotationInvoice: (businessId: string, quotationId: string) =>
+    `${V1}/business/businesses/${businessId}/quotations/${quotationId}/invoice`,
+  invoiceCashPayment: (businessId: string, invoiceId: string) =>
+    `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/payments/cash`,
   disputes: (businessId: string) => `${V1}/business/businesses/${businessId}/disputes`,
 } as const
 
@@ -85,6 +123,8 @@ export const adminPaths = {
   applications: `${V1}/admin/applications`,
   application: (id: string) => `${V1}/admin/applications/${id}`,
   applicationAction: (id: string, action: string) => `${V1}/admin/applications/${id}/${action}`,
+  applicationDocumentReview: (id: string, documentId: string) =>
+    `${V1}/admin/applications/${id}/documents/${documentId}/review`,
   reviews: `${V1}/admin/reviews`,
   review: (id: string) => `${V1}/admin/reviews/${id}`,
   reviewAction: (id: string, action: string) => `${V1}/admin/reviews/${id}/${action}`,

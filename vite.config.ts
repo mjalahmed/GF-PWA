@@ -50,9 +50,22 @@ export default defineConfig({
           },
         ],
       },
-      devOptions: { enabled: true, type: 'module' },
+      // SW in dev steals Vite HMR WebSocket and can duplicate React contexts after hot reload
+      devOptions: { enabled: false },
     }),
   ],
+  server: {
+    // Bind IPv4 so both http://127.0.0.1:5173 and http://localhost:5173 work
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5173,
+      clientPort: 5173,
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],

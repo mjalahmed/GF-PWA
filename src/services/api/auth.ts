@@ -46,9 +46,15 @@ export async function signOut() {
 
 export async function resetPassword(email: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/verify?type=recovery`,
+    redirectTo: `${window.location.origin}/auth/reset-password`,
   })
   if (error) throw error
+}
+
+export async function updatePassword(password: string) {
+  const { data, error } = await supabase.auth.updateUser({ password })
+  if (error) throw error
+  return data
 }
 
 export async function verifyOtp(email: string, token: string, type: 'signup' | 'recovery' | 'email' = 'signup') {

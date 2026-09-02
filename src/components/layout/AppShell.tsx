@@ -15,6 +15,7 @@ export function AppShell() {
     pathname.startsWith('/sign-in') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/auth/') ||
+    pathname.startsWith('/legal') ||
     pathname.startsWith('/garages/')
 
   return (

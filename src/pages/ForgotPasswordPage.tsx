@@ -33,14 +33,10 @@ export function ForgotPasswordPage() {
       <div className="mx-auto max-w-lg px-4 py-8">
         {sent ? (
           <div className="text-center">
-            <p className="text-text-secondary">
-              {t('auth.resetSent', { email })}
-            </p>
-            <Link
-              to={`/auth/verify?email=${encodeURIComponent(email)}&type=recovery`}
-              className="mt-6 inline-block"
-            >
-              <Button>{t('auth.enterCode')}</Button>
+            <p className="text-text-secondary">{t('auth.resetSent', { email })}</p>
+            <p className="mt-3 text-sm text-text-muted">{t('auth.resetSentHint')}</p>
+            <Link to="/sign-in" className="mt-6 inline-block font-medium text-primary">
+              {t('auth.backToSignIn')}
             </Link>
           </div>
         ) : (

@@ -7,15 +7,15 @@ import { customerPaths } from './paths'
 export async function listInvoices(params?: {
   status?: string
   businessId?: string
-  page?: number
-  pageSize?: number
+  from?: string
+  to?: string
 }): Promise<Invoice[]> {
   const envelope = await apiClient.get(
     `${customerPaths.invoices}${buildQuery({
       status: params?.status,
       businessId: params?.businessId,
-      page: params?.page ?? 1,
-      pageSize: params?.pageSize ?? 20,
+      from: params?.from,
+      to: params?.to,
     })}`,
     (json) => json,
   )
