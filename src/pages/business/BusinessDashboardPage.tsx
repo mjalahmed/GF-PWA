@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Spinner } from '../../components/ui/Spinner'
 import { fetchGarageSetupChecklist } from '../../lib/fetchGarageSetup'
 import { listMyBusinessMemberships } from '../../services/api/business'
@@ -62,6 +62,9 @@ export function BusinessDashboardPage() {
   if (membershipsQuery.isLoading) return <Spinner />
 
   const memberships = membershipsQuery.data ?? []
+  if (memberships.length === 0) {
+    return <Navigate to="/business/applications" replace />
+  }
 
   return (
     <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
@@ -73,27 +76,18 @@ export function BusinessDashboardPage() {
             : 'Failed to load memberships'}
         </p>
       )}
-      {memberships.length === 0 ? (
-        <p>
-          No active business memberships yet.{' '}
-          <Link to="/business/applications">Start a business application</Link>.
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {memberships.map((m) => (
-            <GarageRow
-              key={m.membershipId}
-              businessId={m.businessId}
-              displayName={m.business.displayName}
-              role={m.role}
-              verificationStatus={m.business.verificationStatus}
-            />
-          ))}
-        </ul>
-      )}
+      <ul className="space-y-3">
+        {memberships.map((m) => (
+          <GarageRow
+            key={m.membershipId}
+            businessId={m.businessId}
+            displayName={m.business.displayName}
+            role={m.role}
+            verificationStatus={m.business.verificationStatus}
+          />
+        ))}
+      </ul>
       <p className="text-sm text-text-muted">
-        <Link to="/business/applications">Apply as a garage</Link>
-        {' · '}
         Incomplete garages open Setup until location, hours, services, and bookings are ready.
       </p>
     </section>

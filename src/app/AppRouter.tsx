@@ -44,6 +44,7 @@ import { BusinessQuotationsPage } from '../pages/business/BusinessQuotationsPage
 import { BusinessInvoicesPage } from '../pages/business/BusinessInvoicesPage'
 import { BusinessTeamPage } from '../pages/business/BusinessTeamPage'
 import { BusinessAcceptInvitationPage } from '../pages/business/BusinessAcceptInvitationPage'
+import { BusinessMembershipOutlet } from '../components/business/RequireBusinessMembership'
 import {
   AdminGarageSetupPage,
   BusinessGarageSetupPage,
@@ -245,18 +246,20 @@ export function AppRouter() {
         <Route path="home" element={<Navigate to="/" replace />} />
 
         <Route path="business" element={<BusinessShell />}>
-          <Route index element={<BusinessDashboardPage />} />
           <Route path="applications" element={<BusinessApplicationsPage />} />
           <Route path="applications/new" element={<BusinessApplicationWizardPage />} />
           <Route path="applications/:applicationId" element={<BusinessApplicationWizardPage />} />
-          <Route path="appointments" element={<BusinessAppointmentsPage />} />
-          <Route path="quotations" element={<BusinessQuotationsPage />} />
-          <Route path="invoices" element={<BusinessInvoicesPage />} />
-          <Route path="garages/:businessId" element={<BusinessGaragePage />} />
-          <Route path="garages/:businessId/setup" element={<BusinessGarageSetupPage />} />
-          <Route path="garages/:businessId/products" element={<BusinessProductsPage />} />
-          <Route path="garages/:businessId/team" element={<BusinessTeamPage />} />
           <Route path="invitations/accept" element={<BusinessAcceptInvitationPage />} />
+          <Route element={<BusinessMembershipOutlet />}>
+            <Route index element={<BusinessDashboardPage />} />
+            <Route path="appointments" element={<BusinessAppointmentsPage />} />
+            <Route path="quotations" element={<BusinessQuotationsPage />} />
+            <Route path="invoices" element={<BusinessInvoicesPage />} />
+            <Route path="garages/:businessId" element={<BusinessGaragePage />} />
+            <Route path="garages/:businessId/setup" element={<BusinessGarageSetupPage />} />
+            <Route path="garages/:businessId/products" element={<BusinessProductsPage />} />
+            <Route path="garages/:businessId/team" element={<BusinessTeamPage />} />
+          </Route>
         </Route>
 
         <Route path="admin" element={<AdminShell />}>
