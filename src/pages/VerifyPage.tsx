@@ -5,8 +5,9 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
 import { useLocale } from '../i18n/LocaleProvider'
-import { isDevelopment } from '../lib/env'
-import { resendVerificationOtp, resetPassword, verifyOtp } from '../services/api/auth'
+import { resendVerificationOtp, verifyOtp } from '../services/api/auth'
+import { recordLegalAcceptances } from '../services/api/legal'
+import { CUSTOMER_SIGNUP_ACCEPTANCES } from '../legal'
 
 const OTP_RESEND_COOLDOWN_SEC = 60
 
@@ -18,6 +19,13 @@ export function VerifyPage() {
 
   const emailParam = searchParams.get('email') ?? ''
   const typeParam = (searchParams.get('type') ?? 'signup') as 'signup' | 'recovery' | 'email'
+
+  // Password reset uses the email link, not a typed OTP code
+  useEffect(() => {
+    if (typeParam !== 'recovery') return
+    const next = `/auth/reset-password${window.location.search}${window.location.hash}`
+    navigate(next, { replace: true })
+  }, [typeParam, navigate])
 
   const [email, setEmail] = useState(emailParam)
   const [token, setToken] = useState('')
@@ -39,12 +47,7 @@ export function VerifyPage() {
 
   const resendDisabled = resending || resendCooldownSec > 0
 
-  const title =
-    typeParam === 'recovery'
-      ? t('auth.verifyRecovery')
-      : typeParam === 'email'
-        ? t('auth.verifyEmail')
-        : t('auth.verifySignup')
+  const title = typeParam === 'email' ? t('auth.verifyEmail') : t('auth.verifySignup')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,8 +55,12 @@ export function VerifyPage() {
     setInfo('')
     setLoading(true)
     try {
-      await verifyOtp(email, token, typeParam)
+      await verifyOtp(email, token, typeParam === 'email' ? 'email' : 'signup')
       await refresh()
+      if (typeParam === 'signup' || sessionStorage.getItem('gf_pending_legal_accept') === '1') {
+        await recordLegalAcceptances(CUSTOMER_SIGNUP_ACCEPTANCES)
+        sessionStorage.removeItem('gf_pending_legal_accept')
+      }
       navigate('/profile', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.invalidCode'))
@@ -72,11 +79,7 @@ export function VerifyPage() {
     setInfo('')
     setResending(true)
     try {
-      if (typeParam === 'recovery') {
-        await resetPassword(email.trim())
-      } else {
-        await resendVerificationOtp(email.trim(), typeParam === 'email' ? 'email_change' : 'signup')
-      }
+      await resendVerificationOtp(email.trim(), typeParam === 'email' ? 'email_change' : 'signup')
       setInfo(t('auth.codeResent'))
       setResendCooldownSec(OTP_RESEND_COOLDOWN_SEC)
     } catch (err) {
@@ -86,19 +89,15 @@ export function VerifyPage() {
     }
   }
 
+  if (typeParam === 'recovery') {
+    return null
+  }
+
   return (
     <div className="min-h-dvh bg-background">
       <PageHeader title={title} backTo="/sign-in" />
       <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="mb-4 text-sm text-text-muted">{t('auth.verifyInstructions')}</p>
-        <p className="mb-6 rounded-xl border border-border bg-surface-secondary p-3 text-sm text-text-muted">
-          {t('auth.verifySupabaseNote')}
-        </p>
-        {isDevelopment && (
-          <p className="mb-6 rounded-xl border border-primary/30 bg-primary-light p-3 text-sm text-text-secondary">
-            {t('auth.verifyDevHint')}
-          </p>
-        )}
+        <p className="mb-6 text-sm text-text-muted">{t('auth.verifyInstructions')}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label={t('auth.email')}

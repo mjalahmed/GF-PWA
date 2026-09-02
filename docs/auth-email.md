@@ -1,16 +1,19 @@
 # Auth email & OTP (Supabase)
 
-Sign-up and password-reset **OTP codes are sent by Supabase Auth**, not by the GarageFinder API Gmail service.
+Sign-up **OTP codes** and password-reset **links** are sent by Supabase Auth, not by the GarageFinder API Gmail service.
 
 API email (invitations, appointment alerts, etc.) uses `EMAIL_SMTP_*` in the **backend** `.env`.
 
 Auth email uses **Supabase project settings**.
 
-## Why OTP might not arrive
+## Why OTP / reset mail might not arrive
 
 1. **Default Supabase mail** is rate-limited and often lands in spam.
 2. **Custom SMTP is not configured** in the Supabase dashboard.
 3. **Confirm email** is enabled but SMTP is empty.
+
+Password **reset** emails contain a **link** (not a 6-digit code). The app opens `/auth/reset-password` from that link. Add `http://localhost:5173/auth/reset-password` and your production URL to Supabase → Authentication → URL Configuration → Redirect URLs.
+
 
 ## Fix: use your Gmail app password in Supabase
 

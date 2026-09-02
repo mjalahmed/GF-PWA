@@ -28,7 +28,7 @@ export function GarageCard({ garage }: GarageCardProps) {
             <h3 className="truncate font-semibold text-text-primary">{garage.displayName}</h3>
             {garage.verificationStatus === 'verified' && (
               <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-                {t('common.verified')}
+                {t('common.verifiedProvider')}
               </span>
             )}
           </div>
