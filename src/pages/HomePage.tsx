@@ -1,5 +1,7 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { ActiveServiceCard, isActiveServiceAppointment } from '../components/customer/ActiveServiceCard'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NotificationBell } from '../components/layout/NotificationBell'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -9,6 +11,7 @@ import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { useAuth } from '../hooks/useAuth'
 import { vehicleLabelLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
+import { listAppointments } from '../services/api/appointments'
 import { listServiceCategories } from '../services/api/catalog'
 import { listAnnouncements } from '../services/api/experience'
 import { listFavorites } from '../services/api/favorites'
@@ -57,6 +60,13 @@ export function HomePage() {
     enabled: !!session,
   })
 
+  const appointmentsQuery = useQuery({
+    queryKey: ['appointments', 'home-active'],
+    queryFn: () => listAppointments(),
+    enabled: !!session,
+    refetchInterval: 60_000,
+  })
+
   const announcementsQuery = useQuery({
     queryKey: ['announcements'],
     queryFn: () => listAnnouncements(),
@@ -64,6 +74,21 @@ export function HomePage() {
 
   const defaultVehicle = vehiclesQuery.data?.find((v) => v.isDefault) ?? vehiclesQuery.data?.[0]
   const favoritePreview = favoritesQuery.data?.slice(0, 3) ?? []
+
+  const activeAppointment = useMemo(() => {
+    const items = appointmentsQuery.data ?? []
+    return (
+      items.find((a) => a.status === 'in_progress') ??
+      items.find((a) => isActiveServiceAppointment(a.status)) ??
+      null
+    )
+  }, [appointmentsQuery.data])
+
+  const activeVehicleLabel = useMemo(() => {
+    if (!activeAppointment?.vehicleId || !vehiclesQuery.data) return undefined
+    const vehicle = vehiclesQuery.data.find((v) => v.id === activeAppointment.vehicleId)
+    return vehicle ? vehicleLabelLocalized(vehicle, t) : undefined
+  }, [activeAppointment, vehiclesQuery.data, t])
 
   return (
     <div>
@@ -80,25 +105,13 @@ export function HomePage() {
           </Link>
         </section>
 
+        {activeAppointment && (
+          <ActiveServiceCard appointment={activeAppointment} vehicleLabel={activeVehicleLabel} />
+        )}
+
         {defaultVehicle && !defaultVehicle.vin && (
           <VinReminderBanner vehicleId={defaultVehicle.id} className="mt-4" />
         )}
-
-        <Link
-          to="/emergency"
-          className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-primary/30 bg-primary-light/20 p-4"
-        >
-          <span className="text-2xl" aria-hidden>
-            🚨
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              {t('comingSoon.badge')}
-            </p>
-            <p className="font-semibold text-text-primary">{t('emergency.homeCta')}</p>
-            <p className="text-xs text-text-muted">{t('emergency.homeSub')}</p>
-          </div>
-        </Link>
 
         {defaultVehicle && (
           <Link
@@ -237,6 +250,12 @@ export function HomePage() {
             {t('nav.invoices')}
           </Link>
         </nav>
+
+        <p className="mt-6 text-center text-xs text-text-subtle">
+          <Link to="/emergency" className="hover:text-primary">
+            {t('comingSoon.badge')}: {t('emergency.homeCta')}
+          </Link>
+        </p>
       </div>
     </div>
   )
