@@ -67,7 +67,7 @@ export function HomePage() {
 
   return (
     <div>
-      <PageHeader title={t('home.title')} action={<NotificationBell />} />
+      <PageHeader brand title={t('home.title')} action={<NotificationBell />} />
       <div className="mx-auto max-w-lg px-4 py-6">
         <section className="rounded-2xl bg-primary px-5 py-6 text-white">
           <h2 className="text-xl font-bold">{t('home.hero')}</h2>

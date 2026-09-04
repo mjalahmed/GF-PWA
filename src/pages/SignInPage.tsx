@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { GarageFinderLogo } from '../components/brand/GarageFinderLogo'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -65,6 +66,10 @@ export function SignInPage() {
         backTo="/"
       />
       <div className="mx-auto max-w-lg px-4 py-8">
+        <div className="mb-6 flex flex-col items-center gap-2 text-center">
+          <GarageFinderLogo height={64} className="rounded-2xl" />
+          <p className="text-sm font-semibold text-text-primary">GarageFinder</p>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'sign-up' && (
             <Input

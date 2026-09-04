@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { GarageFinderLogo } from '../brand/GarageFinderLogo'
 import { IconChevron } from '../icons/NavIcons'
 import { useLocale } from '../../i18n/LocaleProvider'
 
@@ -7,9 +8,11 @@ interface PageHeaderProps {
   subtitle?: string
   backTo?: string
   action?: React.ReactNode
+  /** Show brand logo beside the title (shells / empty headers). */
+  brand?: boolean
 }
 
-export function PageHeader({ title, subtitle, backTo, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backTo, action, brand }: PageHeaderProps) {
   const { t } = useLocale()
 
   return (
@@ -22,6 +25,11 @@ export function PageHeader({ title, subtitle, backTo, action }: PageHeaderProps)
             aria-label={t('common.backAria')}
           >
             <IconChevron className="size-5 rotate-180 rtl:rotate-0" />
+          </Link>
+        )}
+        {brand && (
+          <Link to="/" className="shrink-0" aria-label="GarageFinder home">
+            <GarageFinderLogo height={32} className="rounded-lg" />
           </Link>
         )}
         <div className="min-w-0 flex-1">

@@ -27,6 +27,7 @@ export function BusinessShell() {
   return (
     <div className="app-shell business-shell">
       <PageHeader
+        brand
         title={hasPortalAccess ? 'Garage Portal' : 'Apply as a garage'}
         subtitle={
           hasPortalAccess

@@ -52,6 +52,7 @@ export function NotificationsPage() {
   return (
     <div>
       <PageHeader
+        brand
         title={t('notifications.title')}
         backTo="/profile"
         action={

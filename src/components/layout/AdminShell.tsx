@@ -22,7 +22,7 @@ export function AdminShell() {
   return (
     <RoleProtectedRoute roles={ADMIN_ROLES}>
       <div className="app-shell admin-shell">
-        <PageHeader title="GarageFinder Admin" subtitle="Platform moderation view" />
+        <PageHeader brand title="GarageFinder Admin" subtitle="Platform moderation view" />
         <nav className="audience-nav" aria-label="Admin navigation">
           {links.map((link) => (
             <NavLink

@@ -1,8 +1,8 @@
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink } from 'react-router-dom'
+import { GarageFinderLogo } from '../brand/GarageFinderLogo'
 import {
   IconCalendar,
-  IconHome,
   IconInvoice,
   IconProfile,
   IconSearch,
@@ -13,9 +13,10 @@ import { cn } from '../../lib/utils'
 const tabs: {
   to: string
   labelKey: string
-  Icon: ComponentType<SVGProps<SVGSVGElement>>
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
+  brand?: boolean
 }[] = [
-  { to: '/', labelKey: 'nav.home', Icon: IconHome },
+  { to: '/', labelKey: 'nav.home', brand: true },
   { to: '/search', labelKey: 'nav.search', Icon: IconSearch },
   { to: '/appointments', labelKey: 'nav.appointments', Icon: IconCalendar },
   { to: '/invoices', labelKey: 'nav.invoices', Icon: IconInvoice },
@@ -28,7 +29,7 @@ export function BottomNav() {
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-lg items-stretch justify-around">
-        {tabs.map(({ to, labelKey, Icon }) => (
+        {tabs.map(({ to, labelKey, Icon, brand }) => (
           <NavLink
             key={to}
             to={to}
@@ -40,7 +41,11 @@ export function BottomNav() {
               )
             }
           >
-            <Icon className="size-5" />
+            {brand ? (
+              <GarageFinderLogo height={20} className="rounded-md" />
+            ) : (
+              Icon && <Icon className="size-5" />
+            )}
             <span>{t(labelKey)}</span>
           </NavLink>
         ))}
