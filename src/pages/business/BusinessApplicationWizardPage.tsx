@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { LocationPicker } from '../../components/ui/LocationPicker'
 import { Spinner } from '../../components/ui/Spinner'
 import { PROVIDER_ACCEPTANCE } from '../../legal'
+import { googleMapsDirectionsUrl } from '../../lib/mapsLinks'
 import { uploadFile } from '../../lib/upload'
 import { useLocale } from '../../i18n/LocaleProvider'
 import { recordLegalAcceptance } from '../../services/api/legal'
@@ -39,8 +41,9 @@ function mimeForFile(file: File): 'application/pdf' | 'image/jpeg' | 'image/png'
 }
 
 export function BusinessApplicationWizardPage() {
-  const { applicationId = '' } = useParams()
-  const isNew = applicationId === 'new'
+  const { applicationId: applicationIdParam } = useParams()
+  const applicationId = applicationIdParam?.trim() ?? ''
+  const isNew = applicationId === 'new' || applicationId === ''
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { t } = useLocale()
@@ -59,6 +62,8 @@ export function BusinessApplicationWizardPage() {
   const [addressLine, setAddressLine] = useState('')
   const [area, setArea] = useState('')
   const [city, setCity] = useState('Manama')
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
 
   const categoriesQuery = useQuery({
     queryKey: ['business-categories'],
@@ -89,6 +94,8 @@ export function BusinessApplicationWizardPage() {
     setAddressLine(b?.addressLine ?? '')
     setArea(b?.area ?? '')
     setCity(b?.city ?? 'Manama')
+    setLatitude(b?.latitude ?? null)
+    setLongitude(b?.longitude ?? null)
     if (a.currentStep && STEPS.some((s) => s.id === a.currentStep)) {
       setStep(a.currentStep as StepId)
     }
@@ -164,6 +171,9 @@ export function BusinessApplicationWizardPage() {
   const saveBranchMutation = useMutation({
     mutationFn: async () => {
       if (!addressLine.trim()) throw new Error('Branch address is required.')
+      if (latitude == null || longitude == null) {
+        throw new Error('Pin your location on the map (tap the map or use my location).')
+      }
       await updateApplicationBranch(applicationId, {
         name: displayName.trim() || null,
         phone: phone.trim() || null,
@@ -172,6 +182,8 @@ export function BusinessApplicationWizardPage() {
         area: area.trim() || null,
         city: city.trim() || null,
         countryCode: 'BH',
+        latitude,
+        longitude,
         timezone: 'Asia/Bahrain',
       })
       return updateBusinessApplication(applicationId, { currentStep: 'documents' })
@@ -224,6 +236,9 @@ export function BusinessApplicationWizardPage() {
       if (!providerAccepted) throw new Error(t('legal.providerAcceptRequired'))
       const detail = detailQuery.data
       if (!detail?.branch?.addressLine) throw new Error('Add a branch address before submitting.')
+      if (detail.branch.latitude == null || detail.branch.longitude == null) {
+        throw new Error('Pin your branch location on the map before submitting.')
+      }
       const required = (requirementsQuery.data ?? []).filter((r) => r.isRequired)
       for (const req of required) {
         const has = detail.documents.some((d) => d.documentRequirementId === req.id)
@@ -417,9 +432,37 @@ export function BusinessApplicationWizardPage() {
           />
           <Input label="Area" value={area} disabled={!editable} onChange={(e) => setArea(e.target.value)} />
           <Input label="City" value={city} disabled={!editable} onChange={(e) => setCity(e.target.value)} />
-          <p className="text-xs text-text-muted">
-            You will pin the exact map location in Garage setup after approval.
-          </p>
+          {editable ? (
+            <LocationPicker
+              latitude={latitude}
+              longitude={longitude}
+              onChange={({ latitude: lat, longitude: lng }) => {
+                setLatitude(lat)
+                setLongitude(lng)
+              }}
+            />
+          ) : (
+            <p className="text-sm text-text-muted">
+              Pin:{' '}
+              {latitude != null && longitude != null
+                ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                : 'not set'}
+            </p>
+          )}
+          {latitude != null && longitude != null && (
+            <a
+              href={googleMapsDirectionsUrl({
+                latitude,
+                longitude,
+                label: displayName || 'Garage',
+              })}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block text-sm text-primary"
+            >
+              Open pin in Google Maps
+            </a>
+          )}
           {editable && (
             <Button loading={saveBranchMutation.isPending} onClick={() => saveBranchMutation.mutate()}>
               Save & continue
@@ -510,6 +553,9 @@ export function BusinessApplicationWizardPage() {
               <dt className="text-text-muted">Address</dt>
               <dd>
                 {[addressLine, area, city].filter(Boolean).join(', ')}
+                {latitude != null && longitude != null
+                  ? ` · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                  : ''}
               </dd>
             </div>
             <div>

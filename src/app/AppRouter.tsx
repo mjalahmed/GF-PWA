@@ -247,7 +247,6 @@ export function AppRouter() {
 
         <Route path="business" element={<BusinessShell />}>
           <Route path="applications" element={<BusinessApplicationsPage />} />
-          <Route path="applications/new" element={<BusinessApplicationWizardPage />} />
           <Route path="applications/:applicationId" element={<BusinessApplicationWizardPage />} />
           <Route path="invitations/accept" element={<BusinessAcceptInvitationPage />} />
           <Route element={<BusinessMembershipOutlet />}>
