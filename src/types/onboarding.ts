@@ -138,6 +138,8 @@ export type CreateApplicationInput = {
   phone: string
   email: string
   website?: string | null
+  logoPath?: string | null
+  galleryImagePaths?: string[] | null
 }
 
 export type UpdateApplicationInput = Partial<CreateApplicationInput> & {

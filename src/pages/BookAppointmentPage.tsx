@@ -29,6 +29,7 @@ export function BookAppointmentPage() {
   const [branchId, setBranchId] = useState('')
   const [service, setService] = useState<PublicService | null>(null)
   const [vehicleId, setVehicleId] = useState('')
+  const [garageVehicleConsent, setGarageVehicleConsent] = useState(false)
   const [date, setDate] = useState('')
   const [slotStart, setSlotStart] = useState('')
   const [notes, setNotes] = useState('')
@@ -66,6 +67,8 @@ export function BookAppointmentPage() {
     enabled: !!garage && !!branchId && !!date && !!service && step === 'slot',
   })
 
+  const canBook = !service?.requiresVehicle || Boolean(vehicleId) || garageVehicleConsent
+
   const bookMutation = useMutation({
     mutationFn: () =>
       createAppointment({
@@ -75,6 +78,7 @@ export function BookAppointmentPage() {
         scheduledStart: slotStart,
         vehicleId: vehicleId || undefined,
         customerNotes: notes.trim() || undefined,
+        customerConsentsGarageVehicle: !vehicleId && garageVehicleConsent ? true : undefined,
       }),
     onSuccess: (appt) => navigate(`/appointments/${appt.id}`, { replace: true }),
     onError: (err) => setError(err instanceof Error ? err.message : t('book.failed')),
@@ -177,22 +181,13 @@ export function BookAppointmentPage() {
         {step === 'vehicle' && (
           <div className="space-y-2">
             <h2 className="font-semibold text-text-primary">{t('book.chooseVehicle')}</h2>
-            <button
-              type="button"
-              onClick={() => {
-                setVehicleId('')
-                goNext()
-              }}
-              className="block w-full rounded-xl border border-border bg-surface p-4 text-left"
-            >
-              {t('book.skipVehicle')}
-            </button>
             {vehiclesQuery.data?.map((v) => (
               <button
                 key={v.id}
                 type="button"
                 onClick={() => {
                   setVehicleId(v.id)
+                  setGarageVehicleConsent(false)
                   goNext()
                 }}
                 className="block w-full rounded-xl border border-border bg-surface p-4 text-left hover:border-primary"
@@ -204,6 +199,30 @@ export function BookAppointmentPage() {
             <Link to="/vehicles/new" className="block text-center text-sm text-primary">
               {t('book.addVehicle')}
             </Link>
+            <div className="rounded-xl border border-border bg-surface p-4">
+              <label className="flex items-start gap-3 text-sm text-text-primary">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={garageVehicleConsent && !vehicleId}
+                  onChange={(e) => {
+                    setGarageVehicleConsent(e.target.checked)
+                    if (e.target.checked) setVehicleId('')
+                  }}
+                />
+                <span>{t('book.garageVehicleConsent')}</span>
+              </label>
+              <Button
+                className="mt-3 w-full"
+                disabled={!garageVehicleConsent}
+                onClick={() => {
+                  setVehicleId('')
+                  goNext()
+                }}
+              >
+                {t('common.continue')}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -295,13 +314,27 @@ export function BookAppointmentPage() {
                   </dd>
                 </div>
               )}
+              {!vehicleId && garageVehicleConsent && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-text-muted">{t('common.vehicle')}</dt>
+                  <dd className="text-right text-sm">{t('book.consentConfirmed')}</dd>
+                </div>
+              )}
               <div className="flex justify-between gap-4">
                 <dt className="text-text-muted">{t('common.when')}</dt>
                 <dd className="text-right">{formatDateLocalized(slotStart, dateLocale)}</dd>
               </div>
             </dl>
             {error && <p className="text-sm text-error">{error}</p>}
-            <Button className="w-full" loading={bookMutation.isPending} onClick={() => bookMutation.mutate()}>
+            {!canBook && (
+              <p className="text-sm text-error">{t('book.vehicleOrConsentRequired')}</p>
+            )}
+            <Button
+              className="w-full"
+              loading={bookMutation.isPending}
+              disabled={!canBook}
+              onClick={() => bookMutation.mutate()}
+            >
               {t('book.confirm')}
             </Button>
           </div>

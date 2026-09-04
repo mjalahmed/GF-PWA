@@ -14,18 +14,55 @@ export async function getVehicle(id: string): Promise<Vehicle> {
   return mapVehicle(envelope.data!)
 }
 
-export async function createVehicle(body: {
-  makeId: string
-  modelId: string
-  year: number
+function toVehicleWriteBody(body: {
+  makeId?: string
+  modelId?: string
+  year?: number
   plateNumber?: string
+  registrationNumber?: string | null
   vin?: string
   color?: string
   trim?: string
   mileage?: number
   imagePath?: string
+  vehicleType?: string
+  bodyType?: string
+  fuelType?: string
+  transmission?: string
+}): Record<string, unknown> {
+  const { plateNumber, registrationNumber, vehicleType, bodyType, ...rest } = body
+  const payload: Record<string, unknown> = { ...rest }
+  const plate = registrationNumber !== undefined ? registrationNumber : plateNumber
+  if (plate !== undefined) payload.registrationNumber = plate || null
+  const type = vehicleType ?? bodyType
+  if (type !== undefined) {
+    payload.vehicleType = type || null
+    payload.bodyType = type || null
+  }
+  return payload
+}
+
+export async function createVehicle(body: {
+  makeId: string
+  modelId: string
+  year: number
+  plateNumber?: string
+  registrationNumber?: string | null
+  vin?: string
+  color?: string
+  trim?: string
+  mileage?: number
+  imagePath?: string
+  vehicleType?: string
+  bodyType?: string
+  fuelType?: string
+  transmission?: string
 }): Promise<Vehicle> {
-  const envelope = await apiClient.post(customerPaths.vehicles, body, (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.post(
+    customerPaths.vehicles,
+    toVehicleWriteBody(body),
+    (json) => json as Record<string, unknown>,
+  )
   return mapVehicle(envelope.data!)
 }
 
@@ -36,14 +73,23 @@ export async function updateVehicle(
     modelId: string
     year: number
     plateNumber: string
+    registrationNumber: string | null
     vin: string
     color: string
     trim: string
     mileage: number
     imagePath: string
+    vehicleType: string
+    bodyType: string
+    fuelType: string
+    transmission: string
   }>,
 ): Promise<Vehicle> {
-  const envelope = await apiClient.patch(customerPaths.vehicle(id), body, (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.patch(
+    customerPaths.vehicle(id),
+    toVehicleWriteBody(body),
+    (json) => json as Record<string, unknown>,
+  )
   return mapVehicle(envelope.data!)
 }
 

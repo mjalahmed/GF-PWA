@@ -63,14 +63,62 @@ export function normalizeBusinessSettings(raw: unknown): BusinessSettings {
     ...data,
     businessId: String(data.businessId ?? data.business_id ?? ''),
     appointmentsEnabled: Boolean(data.appointmentsEnabled ?? data.appointments_enabled),
-    publiclyVisible: metaBool(data, meta, 'publiclyVisible', 'publicly_visible', true),
-    acceptNewCustomers: metaBool(data, meta, 'acceptNewCustomers', 'accept_new_customers', true),
-    benefitPayEnabled: metaBool(data, meta, 'benefitPayEnabled', 'benefit_pay_enabled', false),
-    benefitPayPhone: metaStr(data, meta, 'benefitPayPhone', 'benefit_pay_phone') ?? null,
-    benefitPayIban: metaStr(data, meta, 'benefitPayIban', 'benefit_pay_iban') ?? null,
+    publiclyVisible:
+      data.publiclyVisible !== undefined
+        ? Boolean(data.publiclyVisible)
+        : metaBool(data, meta, 'publiclyVisible', 'publicly_visible', true),
+    acceptNewCustomers:
+      data.acceptNewCustomers !== undefined
+        ? Boolean(data.acceptNewCustomers)
+        : metaBool(data, meta, 'acceptNewCustomers', 'accept_new_customers', true),
+    benefitPayEnabled: Boolean(
+      data.benefitpayPaymentsEnabled ??
+        data.benefitPayEnabled ??
+        data.benefit_pay_enabled ??
+        meta.benefitPayEnabled ??
+        false,
+    ),
+    benefitPayPhone:
+      (data.benefitpayPhone as string | null | undefined) ??
+      metaStr(data, meta, 'benefitPayPhone', 'benefit_pay_phone') ??
+      null,
+    benefitPayIban:
+      (data.benefitpayIban as string | null | undefined) ??
+      metaStr(data, meta, 'benefitPayIban', 'benefit_pay_iban') ??
+      null,
     benefitPayInstructions:
-      metaStr(data, meta, 'benefitPayInstructions', 'benefit_pay_instructions') ?? null,
+      (data.benefitpayInstructions as string | null | undefined) ??
+      metaStr(data, meta, 'benefitPayInstructions', 'benefit_pay_instructions') ??
+      null,
   }
+}
+
+/** Map PWA settings fields to canonical backend settings keys. */
+export function toBusinessSettingsWriteBody(
+  input: Partial<BusinessSettings>,
+): Record<string, unknown> {
+  const {
+    publiclyVisible,
+    acceptNewCustomers,
+    benefitPayEnabled,
+    benefitPayPhone,
+    benefitPayIban,
+    benefitPayInstructions,
+    metadata,
+    businessId: _businessId,
+    ...rest
+  } = input
+  const body: Record<string, unknown> = { ...rest }
+  if (publiclyVisible !== undefined) body.publiclyVisible = publiclyVisible
+  if (acceptNewCustomers !== undefined) body.acceptNewCustomers = acceptNewCustomers
+  if (benefitPayEnabled !== undefined) body.benefitpayPaymentsEnabled = benefitPayEnabled
+  if (benefitPayPhone !== undefined) body.benefitpayPhone = benefitPayPhone
+  if (benefitPayIban !== undefined) body.benefitpayIban = benefitPayIban
+  if (benefitPayInstructions !== undefined) {
+    body.benefitpayInstructions = benefitPayInstructions
+  }
+  if (metadata !== undefined) body.metadata = metadata
+  return body
 }
 
 export async function listMyBusinessMemberships(): Promise<BusinessMembership[]> {
@@ -223,6 +271,8 @@ export async function updateBusinessProfile(
     phone: string
     email: string
     website: string | null
+    logoPath: string | null
+    coverPath: string | null
   }>,
 ): Promise<BusinessProfile> {
   const envelope = await apiClient.patch(
@@ -242,27 +292,9 @@ export async function updateBusinessSettings(
   businessId: string,
   input: Partial<BusinessSettings>,
 ): Promise<BusinessSettings> {
-  const {
-    publiclyVisible,
-    acceptNewCustomers,
-    benefitPayEnabled,
-    benefitPayPhone,
-    benefitPayIban,
-    benefitPayInstructions,
-    metadata,
-    ...rest
-  } = input
-  const body: Record<string, unknown> = { ...rest }
-  if (publiclyVisible !== undefined) body.publiclyVisible = publiclyVisible
-  if (acceptNewCustomers !== undefined) body.acceptNewCustomers = acceptNewCustomers
-  if (benefitPayEnabled !== undefined) body.benefitPayEnabled = benefitPayEnabled
-  if (benefitPayPhone !== undefined) body.benefitPayPhone = benefitPayPhone
-  if (benefitPayIban !== undefined) body.benefitPayIban = benefitPayIban
-  if (benefitPayInstructions !== undefined) body.benefitPayInstructions = benefitPayInstructions
-  if (metadata !== undefined) body.metadata = metadata
   const envelope = await apiClient.patch(
     businessPaths.settings(businessId),
-    body,
+    toBusinessSettingsWriteBody(input),
     (json) => json,
   )
   return normalizeBusinessSettings(envelope.data)
@@ -427,6 +459,17 @@ export async function listBusinessQuotations(
     (json) => asArray<Record<string, unknown>>(json),
   )
   return envelope.data ?? []
+}
+
+export async function getBusinessQuotation(
+  businessId: string,
+  quotationId: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.get(
+    businessPaths.quotation(businessId, quotationId),
+    (json) => json as Record<string, unknown>,
+  )
+  return envelope.data!
 }
 
 export async function createQuotationFromAppointment(
@@ -622,6 +665,19 @@ export async function confirmInvoicePayment(
   return envelope.data!
 }
 
+export async function sendInvoicePaymentReminder(
+  businessId: string,
+  invoiceId: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    businessPaths.invoicePaymentReminder(businessId, invoiceId),
+    {},
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
 export async function requestReviewDispute(
   businessId: string,
   reviewId: string,
@@ -654,11 +710,23 @@ export async function createCustomerVehicle(
     year: number
     registrationNumber?: string | null
     color?: string | null
+    vin?: string | null
+    mileage?: number | null
+    imagePath?: string | null
+    vehicleType?: string | null
+    bodyType?: string | null
+    fuelType?: string | null
+    transmission?: string | null
   },
 ): Promise<Record<string, unknown>> {
+  const { vehicleType, bodyType, ...rest } = input
+  const type = vehicleType ?? bodyType
   const envelope = await apiClient.post(
     businessPaths.customerVehicles(businessId),
-    input as Record<string, unknown>,
+    {
+      ...rest,
+      ...(type != null ? { vehicleType: type, bodyType: type } : {}),
+    } as Record<string, unknown>,
     (json) => json as Record<string, unknown>,
     crypto.randomUUID(),
   )

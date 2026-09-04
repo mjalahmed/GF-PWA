@@ -4,12 +4,13 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
+import { StatusBadge } from '../components/ui/StatusBadge'
 import { StorageImage } from '../components/ui/StorageImage'
 import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { vehicleLabelLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import { formatMoney } from '../lib/utils'
-import { getVehicleServiceHistory } from '../services/api/experience'
+import { getVehicleHistoryDetail } from '../services/api/experience'
 import { deleteVehicle, getVehicle, makeVehicleDefault } from '../services/api/vehicles'
 
 export function VehicleDetailPage() {
@@ -25,8 +26,8 @@ export function VehicleDetailPage() {
   })
 
   const historyQuery = useQuery({
-    queryKey: ['vehicle-history', id],
-    queryFn: () => getVehicleServiceHistory(id!),
+    queryKey: ['vehicle-history-detail', id],
+    queryFn: () => getVehicleHistoryDetail(id!),
     enabled: !!id,
   })
 
@@ -60,26 +61,35 @@ export function VehicleDetailPage() {
     )
   }
 
+  const verification = vehicle.verificationStatus || vehicle.confirmationStatus
+
   return (
     <div>
       <PageHeader title={vehicleLabelLocalized(vehicle, t)} backTo="/vehicles" />
       <div className="mx-auto max-w-lg px-4 py-4">
-        {vehicle.imagePath && (
+        {vehicle.imagePath ? (
           <StorageImage
             bucket="vehicle-images"
             path={vehicle.imagePath}
             alt={vehicleLabelLocalized(vehicle, t)}
             className="mb-4 aspect-video w-full rounded-2xl object-cover"
           />
+        ) : (
+          <div className="mb-4 flex aspect-video w-full items-center justify-center rounded-2xl bg-surface-secondary text-5xl">
+            🚗
+          </div>
         )}
 
         {!vehicle.vin && <VinReminderBanner vehicleId={vehicle.id} className="mb-4" />}
 
-        {vehicle.isDefault && (
-          <span className="mb-4 inline-block rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary">
-            {t('common.defaultVehicle')}
-          </span>
-        )}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {vehicle.isDefault && (
+            <span className="rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary">
+              {t('common.defaultVehicle')}
+            </span>
+          )}
+          {verification && <StatusBadge status={verification} />}
+        </div>
 
         <dl className="space-y-3 rounded-2xl border border-border bg-surface p-4 text-sm">
           <div className="flex justify-between">
@@ -96,6 +106,12 @@ export function VehicleDetailPage() {
             <div className="flex justify-between">
               <dt className="text-text-muted">{t('common.model')}</dt>
               <dd>{vehicle.modelText}</dd>
+            </div>
+          )}
+          {(vehicle.vehicleType || vehicle.bodyType) && (
+            <div className="flex justify-between">
+              <dt className="text-text-muted">{t('vehicles.vehicleType')}</dt>
+              <dd>{t(`vehicles.type.${vehicle.vehicleType || vehicle.bodyType}`)}</dd>
             </div>
           )}
           {vehicle.plateNumber && (
@@ -138,25 +154,82 @@ export function VehicleDetailPage() {
         </dl>
 
         <section className="mt-6">
-          <h2 className="mb-3 text-base font-semibold text-text-primary">{t('vehicles.serviceHistory')}</h2>
+          <h2 className="mb-3 text-base font-semibold text-text-primary">
+            {t('vehicles.serviceHistory')}
+          </h2>
           {historyQuery.isLoading && <Spinner className="py-4" />}
           {historyQuery.data?.length === 0 && (
             <p className="text-sm text-text-muted">{t('vehicles.noServiceHistory')}</p>
           )}
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {historyQuery.data?.map((item) => (
-              <li key={`${item.type}-${item.id}`} className="rounded-xl border border-border bg-surface p-3 text-sm">
+              <li
+                key={`${item.type}-${item.id}`}
+                className="rounded-xl border border-border bg-surface p-3 text-sm"
+              >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-text-primary">
                       {item.businessName ?? item.title}
                     </p>
                     <p className="text-xs text-text-muted">
-                      {new Date(item.occurredAt).toLocaleDateString()} · {statusLabel(item.status)}
+                      {item.occurredAt ? new Date(item.occurredAt).toLocaleDateString() : ''} ·{' '}
+                      {statusLabel(item.status)}
                     </p>
                   </div>
                   {item.amount != null && (
-                    <span className="font-medium">{formatMoney(item.amount, item.currency ?? 'BHD')}</span>
+                    <span className="font-medium">
+                      {formatMoney(item.amount, item.currency ?? 'BHD')}
+                    </span>
+                  )}
+                </div>
+
+                {item.media && item.media.length > 0 && (
+                  <div className="mt-2 flex gap-2 overflow-x-auto">
+                    {item.media
+                      .filter((m) => m.storagePath)
+                      .slice(0, 6)
+                      .map((m, idx) => (
+                        <StorageImage
+                          key={m.id ?? `${item.id}-m-${idx}`}
+                          bucket="appointment-media"
+                          path={m.storagePath}
+                          alt={m.caption ?? ''}
+                          className="h-16 w-20 shrink-0 rounded-lg object-cover"
+                        />
+                      ))}
+                  </div>
+                )}
+
+                {item.payments && item.payments.length > 0 && (
+                  <ul className="mt-2 space-y-1 border-t border-border pt-2 text-xs text-text-muted">
+                    {item.payments.map((p, idx) => (
+                      <li key={p.id ?? idx}>
+                        {t('vehicles.historyPayment', {
+                          amount: formatMoney(p.amount ?? 0, item.currency ?? 'BHD'),
+                          status: statusLabel(p.status ?? ''),
+                          method: p.method ? statusLabel(p.method) : '',
+                        })}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                  {item.appointmentId && (
+                    <Link to={`/appointments/${item.appointmentId}`} className="text-primary">
+                      {t('vehicles.viewAppointment')}
+                    </Link>
+                  )}
+                  {item.invoiceId && (
+                    <Link to={`/invoices/${item.invoiceId}`} className="text-primary">
+                      {t('vehicles.viewInvoice')}
+                    </Link>
+                  )}
+                  {item.quotationId && (
+                    <Link to={`/quotations/${item.quotationId}`} className="text-primary">
+                      {t('vehicles.viewQuote')}
+                    </Link>
                   )}
                 </div>
               </li>
@@ -166,7 +239,11 @@ export function VehicleDetailPage() {
 
         <div className="mt-6 space-y-2">
           {!vehicle.isDefault && (
-            <Button className="w-full" loading={defaultMutation.isPending} onClick={() => defaultMutation.mutate()}>
+            <Button
+              className="w-full"
+              loading={defaultMutation.isPending}
+              onClick={() => defaultMutation.mutate()}
+            >
               {t('vehicles.setDefault')}
             </Button>
           )}

@@ -61,8 +61,14 @@ import { AdminGarageCapabilitiesPage } from '../pages/admin/AdminGarageCapabilit
 import { AdminDisputesPage } from '../pages/admin/AdminDisputesPage'
 import { AdminReviewsPage } from '../pages/admin/AdminReviewsPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
+import { AdminUserDetailPage } from '../pages/admin/AdminUserDetailPage'
+import { AdminVehiclesPage } from '../pages/admin/AdminVehiclesPage'
+import { AdminVehicleDetailPage } from '../pages/admin/AdminVehicleDetailPage'
+import { AdminAppointmentsPage } from '../pages/admin/AdminAppointmentsPage'
+import { AdminAppointmentDetailPage } from '../pages/admin/AdminAppointmentDetailPage'
 import { AdminBusinessesPage } from '../pages/admin/AdminBusinessesPage'
 import { AdminTransactionsPage } from '../pages/admin/AdminTransactionsPage'
+import { BusinessQuotationDetailPage } from '../pages/business/BusinessQuotationDetailPage'
 
 
 export function AppRouter() {
@@ -280,6 +286,7 @@ export function AppRouter() {
             <Route path="appointments" element={<BusinessAppointmentsPage />} />
             <Route path="appointments/:appointmentId" element={<BusinessAppointmentDetailPage />} />
             <Route path="quotations" element={<BusinessQuotationsPage />} />
+            <Route path="quotations/:quotationId" element={<BusinessQuotationDetailPage />} />
             <Route path="invoices" element={<BusinessInvoicesPage />} />
             <Route path="garages/:businessId" element={<BusinessGaragePage />} />
             <Route path="garages/:businessId/setup" element={<BusinessGarageSetupPage />} />
@@ -295,6 +302,11 @@ export function AppRouter() {
           <Route path="applications" element={<AdminApplicationsPage />} />
           <Route path="applications/:applicationId" element={<AdminApplicationDetailPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:userId" element={<AdminUserDetailPage />} />
+          <Route path="vehicles" element={<AdminVehiclesPage />} />
+          <Route path="vehicles/:vehicleId" element={<AdminVehicleDetailPage />} />
+          <Route path="appointments" element={<AdminAppointmentsPage />} />
+          <Route path="appointments/:appointmentId" element={<AdminAppointmentDetailPage />} />
           <Route path="businesses" element={<AdminBusinessesPage />} />
           <Route path="businesses/:businessId/setup" element={<AdminGarageSetupPage />} />
           <Route

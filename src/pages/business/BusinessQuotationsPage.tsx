@@ -5,6 +5,9 @@ import { RequireGarageSetup } from '../../components/business/RequireGarageSetup
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
+import { StorageImage } from '../../components/ui/StorageImage'
+import { useLocale } from '../../i18n/LocaleProvider'
+import { formatMoney } from '../../lib/utils'
 import {
   cancelBusinessQuotation,
   createInvoiceFromQuotation,
@@ -16,7 +19,25 @@ import {
   updateBusinessSettings,
 } from '../../services/api/business'
 
+function quoteVehicle(q: Record<string, unknown>) {
+  const vehicle = (q.vehicle as Record<string, unknown> | undefined) ?? {}
+  return {
+    imagePath: (vehicle.imagePath ?? vehicle.image_path ?? q.vehicleImagePath) as
+      | string
+      | undefined,
+    label:
+      String(
+        q.vehicleLabel ??
+          q.vehicle_label ??
+          [vehicle.year, vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text]
+            .filter(Boolean)
+            .join(' '),
+      ) || '—',
+  }
+}
+
 export function BusinessQuotationsPage() {
+  const { t, statusLabel } = useLocale()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -48,7 +69,7 @@ export function BusinessQuotationsPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!appointmentId) throw new Error('Select an appointment.')
+      if (!appointmentId) throw new Error(t('biz.quotes.selectAppointment'))
       await updateBusinessSettings(businessId, { quotationsEnabled: true })
       return createQuotationFromAppointment(businessId, appointmentId, {
         items: [
@@ -88,7 +109,7 @@ export function BusinessQuotationsPage() {
   if (!businessId) {
     return (
       <p className="p-4 text-sm">
-        No garage selected. <Link to="/business">Dashboard</Link>
+        {t('biz.noGarageSelected')} <Link to="/business">{t('biz.nav.dashboard')}</Link>
       </p>
     )
   }
@@ -96,22 +117,22 @@ export function BusinessQuotationsPage() {
   return (
     <RequireGarageSetup businessId={businessId}>
       <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
-        <h2 className="text-xl font-semibold">Quotations</h2>
+        <h2 className="text-xl font-semibold">{t('biz.quotes.title')}</h2>
         {error && <p className="text-sm text-error">{error}</p>}
 
         <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
-          <h3 className="font-medium">Create from appointment</h3>
+          <h3 className="font-medium">{t('biz.quotes.createFromAppointment')}</h3>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium">Appointment</span>
+            <span className="mb-1 block font-medium">{t('biz.quotes.appointment')}</span>
             <select
               className="w-full rounded-xl border border-border bg-background px-3 py-2"
               value={appointmentId}
               onChange={(e) => setAppointmentId(e.target.value)}
             >
-              <option value="">Select…</option>
+              <option value="">{t('biz.quotes.select')}</option>
               {(appointmentsQuery.data ?? []).map((a) => (
                 <option key={String(a.id)} value={String(a.id)}>
-                  {String(a.status)} ·{' '}
+                  {statusLabel(String(a.status))} ·{' '}
                   {a.scheduledStart
                     ? new Date(String(a.scheduledStart)).toLocaleString()
                     : String(a.id).slice(0, 8)}
@@ -119,10 +140,18 @@ export function BusinessQuotationsPage() {
               ))}
             </select>
           </label>
-          <Input label="Line item" value={itemDesc} onChange={(e) => setItemDesc(e.target.value)} />
-          <Input label="Unit price (BHD)" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} />
+          <Input
+            label={t('biz.quotes.lineItem')}
+            value={itemDesc}
+            onChange={(e) => setItemDesc(e.target.value)}
+          />
+          <Input
+            label={t('biz.quotes.unitPrice')}
+            value={itemPrice}
+            onChange={(e) => setItemPrice(e.target.value)}
+          />
           <Button loading={createMutation.isPending} onClick={() => createMutation.mutate()}>
-            Create draft quote
+            {t('biz.quotes.createDraft')}
           </Button>
         </div>
 
@@ -131,38 +160,87 @@ export function BusinessQuotationsPage() {
           {(quotesQuery.data ?? []).map((q) => {
             const id = String(q.id ?? '')
             const status = String(q.status ?? '')
+            const amount = Number(q.grandTotal ?? q.totalAmount ?? q.total ?? 0)
+            const currency = String(q.currency ?? 'BHD')
+            const customerName = String(
+              q.customerName ??
+                q.customer_name ??
+                (q.customer as Record<string, unknown> | undefined)?.fullName ??
+                '—',
+            )
+            const serviceName = String(
+              q.serviceName ?? q.service_name ?? q.title ?? t('common.service'),
+            )
+            const vehicle = quoteVehicle(q)
+            const appointmentIdVal = String(q.appointmentId ?? q.appointment_id ?? '')
+            const issuedAt = String(q.issuedAt ?? q.issued_at ?? q.createdAt ?? q.created_at ?? '')
+
             return (
-              <li key={id} className="rounded-xl border border-border bg-surface p-4 text-sm">
-                <div className="flex justify-between gap-2">
-                  <strong className="capitalize">{status.replaceAll('_', ' ')}</strong>
-                  <span className="text-text-muted">{id.slice(0, 8)}</span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+              <li key={id} className="overflow-hidden rounded-xl border border-border bg-surface">
+                <Link
+                  to={`/business/quotations/${id}?businessId=${encodeURIComponent(businessId)}`}
+                  className="flex gap-3 p-3 no-underline"
+                >
+                  {vehicle.imagePath ? (
+                    <StorageImage
+                      bucket="vehicle-images"
+                      path={vehicle.imagePath}
+                      alt={vehicle.label}
+                      className="h-20 w-24 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-24 shrink-0 items-center justify-center rounded-lg bg-surface-secondary text-2xl">
+                      🚗
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <strong className="text-text-primary">{statusLabel(status)}</strong>
+                      <span className="font-medium text-text-primary">
+                        {formatMoney(amount, currency)}
+                      </span>
+                    </div>
+                    <p className="mt-1 font-medium text-text-primary">{customerName}</p>
+                    <p className="text-text-muted">{vehicle.label}</p>
+                    <p className="text-text-muted">{serviceName}</p>
+                    {appointmentIdVal && (
+                      <p className="text-xs text-text-subtle">
+                        {t('biz.quotes.appointment')}: {appointmentIdVal.slice(0, 8)}…
+                      </p>
+                    )}
+                    {issuedAt && (
+                      <p className="text-xs text-text-subtle">
+                        {new Date(issuedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+                <div className="flex flex-wrap gap-2 border-t border-border px-3 py-2">
                   {status === 'draft' && (
                     <Button
                       variant="secondary"
-                      loading={issueMutation.isPending}
+                      loading={issueMutation.isPending && issueMutation.variables === id}
                       onClick={() => issueMutation.mutate(id)}
                     >
-                      Issue
+                      {t('biz.quotes.issue')}
                     </Button>
                   )}
                   {(status === 'draft' || status === 'issued') && (
                     <Button
                       variant="danger"
-                      loading={cancelMutation.isPending}
+                      loading={cancelMutation.isPending && cancelMutation.variables === id}
                       onClick={() => cancelMutation.mutate(id)}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   )}
                   {(status === 'issued' || status === 'accepted') && (
                     <Button
                       variant="secondary"
-                      loading={invoiceMutation.isPending}
+                      loading={invoiceMutation.isPending && invoiceMutation.variables === id}
                       onClick={() => invoiceMutation.mutate(id)}
                     >
-                      Create invoice
+                      {t('biz.quotes.createInvoice')}
                     </Button>
                   )}
                 </div>
@@ -170,7 +248,7 @@ export function BusinessQuotationsPage() {
             )
           })}
           {!quotesQuery.isLoading && (quotesQuery.data ?? []).length === 0 && (
-            <li className="text-sm text-text-muted">No quotations yet.</li>
+            <li className="text-sm text-text-muted">{t('biz.quotes.empty')}</li>
           )}
         </ul>
       </section>

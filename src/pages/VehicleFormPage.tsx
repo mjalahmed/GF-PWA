@@ -11,6 +11,7 @@ import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { useAuth } from '../hooks/useAuth'
 import { useLocale } from '../i18n/LocaleProvider'
 import { uploadImage, vehicleImagePath } from '../lib/upload'
+import { VEHICLE_TYPE_OPTIONS, vehicleTypeLabelKey } from '../lib/vehicleTypes'
 import { listVehicleMakes, listVehicleModels } from '../services/api/catalog'
 import { createVehicle, getVehicle, updateVehicle } from '../services/api/vehicles'
 
@@ -30,6 +31,7 @@ export function VehicleFormPage() {
   const [color, setColor] = useState('')
   const [mileage, setMileage] = useState('')
   const [trim, setTrim] = useState('')
+  const [vehicleType, setVehicleType] = useState('')
   const [imagePath, setImagePath] = useState<string | null>(null)
   const [error, setError] = useState('')
 
@@ -61,6 +63,7 @@ export function VehicleFormPage() {
     setColor(v.color ?? '')
     setMileage(v.mileage != null ? String(v.mileage) : '')
     setTrim(v.trim ?? '')
+    setVehicleType(v.vehicleType ?? v.bodyType ?? '')
     setImagePath(v.imagePath ?? null)
   }, [vehicleQuery.data])
 
@@ -76,6 +79,8 @@ export function VehicleFormPage() {
         trim: trim.trim() || undefined,
         mileage: mileage ? Number(mileage) : undefined,
         imagePath: imagePath ?? undefined,
+        vehicleType: vehicleType || undefined,
+        bodyType: vehicleType || undefined,
       }
       if (isEdit) return updateVehicle(id!, payload)
       return createVehicle(payload)
@@ -152,6 +157,22 @@ export function VehicleFormPage() {
               {modelsQuery.data?.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-text-secondary">{t('vehicles.vehicleType')}</span>
+            <select
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
+            >
+              <option value="">{t('vehicles.selectType')}</option>
+              {VEHICLE_TYPE_OPTIONS.map((code) => (
+                <option key={code} value={code}>
+                  {t(vehicleTypeLabelKey(code))}
                 </option>
               ))}
             </select>

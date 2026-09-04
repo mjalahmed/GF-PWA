@@ -4,6 +4,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
+import { VehicleCard } from '../components/ui/VehicleCard'
 import { vehicleLabelLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import {
@@ -66,32 +67,29 @@ export function VehiclesPage() {
             {pending.map((vehicle) => (
               <div
                 key={vehicle.id}
-                className="rounded-2xl border border-warning/40 bg-warning/5 p-4"
+                className="overflow-hidden rounded-2xl border border-warning/40 bg-warning/5"
               >
-                <h3 className="font-semibold text-text-primary">
-                  {vehicleLabelLocalized(vehicle, t)}
-                </h3>
-                {vehicle.plateNumber && (
-                  <p className="mt-1 text-sm text-text-muted">{vehicle.plateNumber}</p>
-                )}
-                <p className="mt-1 text-xs font-medium text-warning">
-                  {t('status.pending_confirmation')}
-                </p>
-                <div className="mt-3 flex gap-2">
+                <VehicleCard vehicle={vehicle} to={`/vehicles/${vehicle.id}`} />
+                <div className="flex gap-2 border-t border-warning/20 p-4">
                   <Button
-                    loading={confirmMutation.isPending}
+                    loading={
+                      confirmMutation.isPending && confirmMutation.variables === vehicle.id
+                    }
                     onClick={() => confirmMutation.mutate(vehicle.id)}
                   >
                     {t('vehicles.confirm')}
                   </Button>
                   <Button
                     variant="secondary"
-                    loading={rejectMutation.isPending}
+                    loading={
+                      rejectMutation.isPending && rejectMutation.variables === vehicle.id
+                    }
                     onClick={() => rejectMutation.mutate(vehicle.id)}
                   >
                     {t('vehicles.reject')}
                   </Button>
                 </div>
+                <p className="sr-only">{vehicleLabelLocalized(vehicle, t)}</p>
               </div>
             ))}
           </section>
@@ -115,25 +113,7 @@ export function VehiclesPage() {
         {confirmed.length > 0 && (
           <div className="space-y-3">
             {confirmed.map((vehicle) => (
-              <Link
-                key={vehicle.id}
-                to={`/vehicles/${vehicle.id}`}
-                className="block rounded-2xl border border-border bg-surface p-4 hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-text-primary">
-                    {vehicleLabelLocalized(vehicle, t)}
-                  </h3>
-                  {vehicle.isDefault && (
-                    <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">
-                      {t('common.default')}
-                    </span>
-                  )}
-                </div>
-                {vehicle.plateNumber && (
-                  <p className="mt-1 text-sm text-text-muted">{vehicle.plateNumber}</p>
-                )}
-              </Link>
+              <VehicleCard key={vehicle.id} vehicle={vehicle} />
             ))}
           </div>
         )}

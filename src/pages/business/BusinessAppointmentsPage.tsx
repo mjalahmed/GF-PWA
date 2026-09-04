@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
+import { useLocale } from '../../i18n/LocaleProvider'
 import {
   listBusinessAppointments,
   listMyBusinessMemberships,
@@ -18,6 +19,7 @@ const ACTIONS: Record<string, Array<'confirm' | 'reject' | 'cancel' | 'arrive' |
 }
 
 export function BusinessAppointmentsPage() {
+  const { t, statusLabel } = useLocale()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -59,19 +61,19 @@ export function BusinessAppointmentsPage() {
 
   const title = useMemo(() => {
     const m = memberships.find((x) => x.businessId === businessId)
-    return m?.business.displayName ?? 'Appointments'
-  }, [memberships, businessId])
+    return m?.business.displayName ?? t('biz.nav.appointments')
+  }, [memberships, businessId, t])
 
   if (membershipsQuery.isLoading) return <Spinner />
 
   if (!businessId) {
     return (
       <section className="mx-auto max-w-lg space-y-3 px-4 py-4">
-        <h2 className="text-xl font-semibold">Appointments</h2>
+        <h2 className="text-xl font-semibold">{t('biz.nav.appointments')}</h2>
         <p className="text-sm text-text-muted">
-          No garage membership yet.{' '}
+          {t('biz.noGarageSelected')}{' '}
           <Link to="/business/applications" className="text-primary">
-            Apply as a garage
+            {t('biz.shellApplyTitle')}
           </Link>
         </p>
       </section>
@@ -83,12 +85,12 @@ export function BusinessAppointmentsPage() {
     <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
       <div>
         <h2 className="text-xl font-semibold">{title}</h2>
-        <p className="text-sm text-text-muted">Manage booking requests and visits.</p>
+        <p className="text-sm text-text-muted">{t('biz.appointments.subtitle')}</p>
       </div>
 
       {memberships.length > 1 && (
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Garage</span>
+          <span className="mb-1 block font-medium">{t('common.garage')}</span>
           <select
             className="w-full rounded-xl border border-border bg-background px-3 py-2"
             value={businessId}
@@ -108,18 +110,18 @@ export function BusinessAppointmentsPage() {
       )}
 
       <label className="block text-sm">
-        <span className="mb-1 block font-medium">Status</span>
+        <span className="mb-1 block font-medium">{t('common.status')}</span>
         <select
           className="w-full rounded-xl border border-border bg-background px-3 py-2"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="">All</option>
-          <option value="requested">Requested</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="in_progress">In progress</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled_by_business">Cancelled</option>
+          <option value="">{t('common.all')}</option>
+          <option value="requested">{statusLabel('requested')}</option>
+          <option value="confirmed">{statusLabel('confirmed')}</option>
+          <option value="in_progress">{statusLabel('in_progress')}</option>
+          <option value="completed">{statusLabel('completed')}</option>
+          <option value="cancelled_by_business">{statusLabel('cancelled_by_business')}</option>
         </select>
       </label>
 
@@ -128,7 +130,7 @@ export function BusinessAppointmentsPage() {
 
       <ul className="space-y-3">
         {items.length === 0 && !appointmentsQuery.isLoading && (
-          <li className="text-sm text-text-muted">No appointments in this view.</li>
+          <li className="text-sm text-text-muted">{t('biz.appointments.empty')}</li>
         )}
         {items.map((raw) => {
           const id = String(raw.id ?? '')
@@ -140,9 +142,9 @@ export function BusinessAppointmentsPage() {
               <div className="flex justify-between gap-2">
                 <Link
                   to={`/business/appointments/${id}?businessId=${encodeURIComponent(businessId)}`}
-                  className="text-sm font-semibold capitalize text-primary"
+                  className="text-sm font-semibold text-primary"
                 >
-                  {status.replaceAll('_', ' ')}
+                  {statusLabel(status)}
                 </Link>
                 <span className="text-xs text-text-muted">
                   {start ? new Date(start).toLocaleString() : '—'}
@@ -152,7 +154,7 @@ export function BusinessAppointmentsPage() {
                 to={`/business/appointments/${id}?businessId=${encodeURIComponent(businessId)}`}
                 className="mt-1 inline-block text-xs text-text-muted"
               >
-                View details →
+                {t('biz.appointments.viewDetails')}
               </Link>
               {actions.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -169,7 +171,7 @@ export function BusinessAppointmentsPage() {
                         disabled={actionMutation.isPending && !isThis}
                         onClick={() => actionMutation.mutate({ id, action })}
                       >
-                        {action}
+                        {t(`biz.appointment.action.${action}`)}
                       </Button>
                     )
                   })}

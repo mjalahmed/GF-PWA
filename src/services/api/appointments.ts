@@ -35,8 +35,13 @@ export async function createAppointment(body: {
   scheduledStart: string
   vehicleId?: string
   customerNotes?: string
+  customerConsentsGarageVehicle?: boolean
 }): Promise<Appointment> {
-  const envelope = await apiClient.post(customerPaths.appointments, body, (json) => json as Record<string, unknown>)
+  const envelope = await apiClient.post(
+    customerPaths.appointments,
+    body as Record<string, unknown>,
+    (json) => json as Record<string, unknown>,
+  )
   return mapAppointment(envelope.data!)
 }
 

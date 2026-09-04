@@ -1,5 +1,5 @@
 import type { ApplicationDetail, ApplicationDocument, BusinessApplication, BusinessSettings } from '../../types/onboarding'
-import { normalizeBusinessSettings } from './business'
+import { normalizeBusinessSettings, toBusinessSettingsWriteBody } from './business'
 import { apiClient, buildQuery } from './client'
 import { adminPaths } from './paths'
 
@@ -110,13 +110,9 @@ export async function updateAdminBusinessSettings(
   businessId: string,
   input: Partial<BusinessSettings>,
 ): Promise<BusinessSettings> {
-  const body = { ...input } as Record<string, unknown>
-  delete body.businessId
-  delete body.metadata
-  if (input.metadata !== undefined) body.metadata = input.metadata
   const envelope = await apiClient.patch(
     adminPaths.businessSettings(businessId),
-    body,
+    toBusinessSettingsWriteBody(input),
     (json) => json,
   )
   return normalizeBusinessSettings(envelope.data)
@@ -340,6 +336,213 @@ export async function listAdminTransactions(params?: {
 export async function getAdminTransaction(paymentId: string): Promise<Record<string, unknown>> {
   const envelope = await apiClient.get(
     adminPaths.transaction(paymentId),
+    (json) => json as Record<string, unknown>,
+  )
+  return envelope.data!
+}
+
+export type AdminUserDetail = AdminUserRow & {
+  vehicles?: Array<Record<string, unknown>>
+  appointments?: Array<Record<string, unknown>>
+  profile?: Record<string, unknown>
+}
+
+export async function getAdminUser(userId: string): Promise<AdminUserDetail> {
+  const envelope = await apiClient.get(
+    adminPaths.user(userId),
+    (json) => json as Record<string, unknown>,
+  )
+  const raw = envelope.data ?? {}
+  const profile = (raw.profile as Record<string, unknown> | undefined) ?? raw
+  return {
+    id: String(raw.id ?? userId),
+    email: (raw.email ?? profile.email) as string | undefined,
+    fullName: (raw.fullName ?? raw.full_name ?? profile.fullName ?? profile.full_name) as
+      | string
+      | undefined,
+    phone: (raw.phone ?? profile.phone) as string | undefined,
+    status: raw.status as string | undefined,
+    isSuspended:
+      Boolean(raw.isSuspended ?? raw.is_suspended) ||
+      raw.status === 'suspended' ||
+      raw.status === 'blocked',
+    roles: Array.isArray(raw.roles) ? raw.roles.map(String) : undefined,
+    createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
+    profile: profile as Record<string, unknown>,
+    vehicles: Array.isArray(raw.vehicles)
+      ? (raw.vehicles as Record<string, unknown>[])
+      : undefined,
+    appointments: Array.isArray(raw.appointments)
+      ? (raw.appointments as Record<string, unknown>[])
+      : undefined,
+  }
+}
+
+export type AdminVehicleRow = {
+  id: string
+  makeText?: string
+  modelText?: string
+  year?: number
+  plateNumber?: string
+  imagePath?: string
+  ownerName?: string
+  ownerEmail?: string
+  ownerId?: string
+  verificationStatus?: string
+  confirmationStatus?: string
+  vehicleType?: string
+}
+
+function mapAdminVehicle(raw: Record<string, unknown>): AdminVehicleRow {
+  return {
+    id: String(raw.id),
+    makeText: (raw.makeText ?? raw.make_text) as string | undefined,
+    modelText: (raw.modelText ?? raw.model_text) as string | undefined,
+    year: raw.year != null ? Number(raw.year) : undefined,
+    plateNumber: (raw.plateNumber ??
+      raw.plate_number ??
+      raw.registrationNumber ??
+      raw.registration_number) as string | undefined,
+    imagePath: (raw.imagePath ?? raw.image_path) as string | undefined,
+    ownerName: (raw.ownerName ?? raw.owner_name ?? raw.customerName ?? raw.customer_name) as
+      | string
+      | undefined,
+    ownerEmail: (raw.ownerEmail ?? raw.owner_email ?? raw.customerEmail ?? raw.customer_email) as
+      | string
+      | undefined,
+    ownerId: (raw.ownerId ?? raw.owner_id ?? raw.customerId ?? raw.customer_id) as
+      | string
+      | undefined,
+    verificationStatus: (raw.verificationStatus ?? raw.verification_status) as string | undefined,
+    confirmationStatus: (raw.confirmationStatus ?? raw.confirmation_status) as string | undefined,
+    vehicleType: (raw.vehicleType ?? raw.vehicle_type ?? raw.bodyType ?? raw.body_type) as
+      | string
+      | undefined,
+  }
+}
+
+export async function listAdminVehicles(params?: {
+  page?: number
+  pageSize?: number
+  verificationStatus?: string
+}): Promise<AdminVehicleRow[]> {
+  const envelope = await apiClient.get(
+    `${adminPaths.vehicles}${buildQuery({
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 50,
+      limit: params?.pageSize ?? 50,
+      verificationStatus: params?.verificationStatus,
+    })}`,
+    (json) => asArray<Record<string, unknown>>(json),
+  )
+  return (envelope.data ?? []).map(mapAdminVehicle)
+}
+
+export async function getAdminVehicle(vehicleId: string): Promise<{
+  vehicle: AdminVehicleRow
+  history?: Record<string, unknown>[]
+  raw: Record<string, unknown>
+}> {
+  const envelope = await apiClient.get(
+    adminPaths.vehicle(vehicleId),
+    (json) => json as Record<string, unknown>,
+  )
+  const raw = envelope.data ?? {}
+  const vehicleRaw = (raw.vehicle as Record<string, unknown> | undefined) ?? raw
+  return {
+    vehicle: mapAdminVehicle(vehicleRaw),
+    history: Array.isArray(raw.history)
+      ? (raw.history as Record<string, unknown>[])
+      : Array.isArray(raw.serviceHistory)
+        ? (raw.serviceHistory as Record<string, unknown>[])
+        : undefined,
+    raw,
+  }
+}
+
+export async function adminVerifyVehicle(vehicleId: string): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    adminPaths.vehicleAction(vehicleId, 'verify'),
+    { status: 'verified' },
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
+export async function adminRequestVehicleCorrection(
+  vehicleId: string,
+  reason?: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    adminPaths.vehicleAction(vehicleId, 'verify'),
+    { status: 'needs_correction', message: reason ?? 'Please update your vehicle details.' },
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
+export type AdminAppointmentRow = {
+  id: string
+  status: string
+  scheduledStart?: string
+  businessName?: string
+  customerName?: string
+  vehicleLabel?: string
+  businessId?: string
+  customerId?: string
+  vehicleId?: string
+}
+
+function mapAdminAppointment(raw: Record<string, unknown>): AdminAppointmentRow {
+  const vehicle = raw.vehicle as Record<string, unknown> | undefined
+  const vehicleLabel =
+    (raw.vehicleLabel as string | undefined) ??
+    (vehicle
+      ? [vehicle.year, vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text]
+          .filter(Boolean)
+          .join(' ')
+      : undefined)
+  return {
+    id: String(raw.id),
+    status: String(raw.status ?? ''),
+    scheduledStart: (raw.scheduledStart ?? raw.scheduled_start) as string | undefined,
+    businessName: (raw.businessName ?? raw.business_name) as string | undefined,
+    customerName: (raw.customerName ?? raw.customer_name) as string | undefined,
+    vehicleLabel: vehicleLabel || undefined,
+    businessId: (raw.businessId ?? raw.business_id) as string | undefined,
+    customerId: (raw.customerId ?? raw.customer_id) as string | undefined,
+    vehicleId: (raw.vehicleId ?? raw.vehicle_id) as string | undefined,
+  }
+}
+
+export async function listAdminAppointments(params?: {
+  status?: string
+  from?: string
+  to?: string
+  page?: number
+  pageSize?: number
+}): Promise<AdminAppointmentRow[]> {
+  const envelope = await apiClient.get(
+    `${adminPaths.appointments}${buildQuery({
+      status: params?.status,
+      from: params?.from,
+      to: params?.to,
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 50,
+      limit: params?.pageSize ?? 50,
+    })}`,
+    (json) => asArray<Record<string, unknown>>(json),
+  )
+  return (envelope.data ?? []).map(mapAdminAppointment)
+}
+
+export async function getAdminAppointment(
+  appointmentId: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.get(
+    adminPaths.appointment(appointmentId),
     (json) => json as Record<string, unknown>,
   )
   return envelope.data!

@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
+import { ImageUpload } from '../../components/ui/ImageUpload'
 import { Input } from '../../components/ui/Input'
 import { LocationPicker } from '../../components/ui/LocationPicker'
 import { Spinner } from '../../components/ui/Spinner'
 import { PROVIDER_ACCEPTANCE } from '../../legal'
 import { googleMapsDirectionsUrl } from '../../lib/mapsLinks'
-import { uploadFile } from '../../lib/upload'
+import { applicationMediaPath, uploadFile, uploadImage } from '../../lib/upload'
 import { useLocale } from '../../i18n/LocaleProvider'
 import { recordLegalAcceptance } from '../../services/api/legal'
 import {
@@ -64,6 +65,9 @@ export function BusinessApplicationWizardPage() {
   const [city, setCity] = useState('Manama')
   const [latitude, setLatitude] = useState<number | null>(null)
   const [longitude, setLongitude] = useState<number | null>(null)
+  const [logoPath, setLogoPath] = useState<string | null>(null)
+  const [galleryPaths, setGalleryPaths] = useState<string[]>([])
+  const [gallerySlot, setGallerySlot] = useState<string | null>(null)
 
   const categoriesQuery = useQuery({
     queryKey: ['business-categories'],
@@ -115,6 +119,10 @@ export function BusinessApplicationWizardPage() {
 
   const saveBusinessMutation = useMutation({
     mutationFn: async () => {
+      const media = {
+        logoPath: logoPath || null,
+        galleryImagePaths: galleryPaths.length ? galleryPaths : null,
+      }
       if (isNew) {
         return createBusinessApplication({
           businessCategoryId: categoryId,
@@ -125,6 +133,7 @@ export function BusinessApplicationWizardPage() {
           phone: phone.trim(),
           email: email.trim(),
           website: website.trim() || null,
+          ...media,
         })
       }
       return updateBusinessApplication(applicationId, {
@@ -137,6 +146,7 @@ export function BusinessApplicationWizardPage() {
         email: email.trim(),
         website: website.trim() || null,
         currentStep: 'contact_information',
+        ...media,
       })
     },
     onSuccess: (saved) => {
@@ -375,6 +385,55 @@ export function BusinessApplicationWizardPage() {
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
+          {editable && (
+            <>
+              <ImageUpload
+                bucket="business-media"
+                label={t('biz.setup.logoOptional')}
+                value={logoPath}
+                onChange={setLogoPath}
+                buildPath={(file) =>
+                  applicationMediaPath(applicationId || 'new', 'logo', file.name)
+                }
+                onUpload={async (file, path) => {
+                  await uploadImage('business-media', path, file)
+                }}
+                onRemove={() => setLogoPath(null)}
+              />
+              <ImageUpload
+                bucket="business-media"
+                label={t('biz.setup.garageImageOptional')}
+                value={gallerySlot}
+                onChange={(path) => {
+                  setGallerySlot(path)
+                  if (path) setGalleryPaths((prev) => [...prev, path].slice(0, 6))
+                }}
+                buildPath={(file) =>
+                  applicationMediaPath(applicationId || 'new', 'gallery', file.name)
+                }
+                onUpload={async (file, path) => {
+                  await uploadImage('business-media', path, file)
+                }}
+                onRemove={() => setGallerySlot(null)}
+              />
+              {galleryPaths.length > 0 && (
+                <ul className="space-y-1 text-xs text-text-muted">
+                  {galleryPaths.map((p) => (
+                    <li key={p} className="flex items-center justify-between gap-2">
+                      <span className="truncate">{p.split('/').pop()}</span>
+                      <button
+                        type="button"
+                        className="text-error"
+                        onClick={() => setGalleryPaths((prev) => prev.filter((x) => x !== p))}
+                      >
+                        {t('common.remove')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
           {editable && (
             <Button
               loading={saveBusinessMutation.isPending}

@@ -89,4 +89,11 @@ export interface Vehicle {
   confirmationStatus?: VehicleConfirmationStatus | string
   createdByBusinessId?: string | null
   sourceAppointmentId?: string | null
+  vehicleType?: string
+  bodyType?: string
+  fuelType?: string
+  transmission?: string
+  verificationStatus?: string
+  ownerName?: string
+  ownerEmail?: string
 }

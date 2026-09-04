@@ -13,13 +13,18 @@ export type Announcement = {
 
 export type ServiceHistoryItem = {
   id: string
-  type: 'appointment' | 'quotation' | 'invoice'
+  type: 'appointment' | 'quotation' | 'invoice' | 'payment' | string
   status: string
   title: string
   occurredAt: string
   businessName: string | null
   amount: number | null
   currency: string | null
+  appointmentId?: string | null
+  invoiceId?: string | null
+  quotationId?: string | null
+  media?: Array<{ id?: string; storagePath: string; phase?: string; caption?: string | null }>
+  payments?: Array<{ id?: string; amount?: number; status?: string; method?: string; paidAt?: string }>
 }
 
 export type RepairPhoto = {
@@ -52,20 +57,70 @@ export async function listAnnouncements(): Promise<Announcement[]> {
   }
 }
 
+function mapHistoryItem(raw: Record<string, unknown>): ServiceHistoryItem {
+  const mediaRaw = raw.media ?? raw.photos
+  const paymentsRaw = raw.payments
+  return {
+    id: String(raw.id),
+    type: String(raw.type ?? 'appointment'),
+    status: String(raw.status ?? ''),
+    title: String(raw.title ?? raw.businessName ?? raw.business_name ?? ''),
+    occurredAt: String(raw.occurredAt ?? raw.occurred_at ?? raw.createdAt ?? raw.created_at ?? ''),
+    businessName: (raw.businessName ?? raw.business_name ?? null) as string | null,
+    amount: raw.amount != null ? Number(raw.amount) : raw.grandTotal != null ? Number(raw.grandTotal) : null,
+    currency: (raw.currency as string | null) ?? null,
+    appointmentId: (raw.appointmentId ?? raw.appointment_id ?? (raw.type === 'appointment' ? raw.id : null)) as
+      | string
+      | null,
+    invoiceId: (raw.invoiceId ?? raw.invoice_id ?? (raw.type === 'invoice' ? raw.id : null)) as
+      | string
+      | null,
+    quotationId: (raw.quotationId ?? raw.quotation_id ?? (raw.type === 'quotation' ? raw.id : null)) as
+      | string
+      | null,
+    media: Array.isArray(mediaRaw)
+      ? (mediaRaw as Record<string, unknown>[]).map((m) => ({
+          id: m.id != null ? String(m.id) : undefined,
+          storagePath: String(m.storagePath ?? m.storage_path ?? ''),
+          phase: m.phase as string | undefined,
+          caption: (m.caption as string | null) ?? null,
+        }))
+      : undefined,
+    payments: Array.isArray(paymentsRaw)
+      ? (paymentsRaw as Record<string, unknown>[]).map((p) => ({
+          id: p.id != null ? String(p.id) : undefined,
+          amount: p.amount != null ? Number(p.amount) : undefined,
+          status: p.status != null ? String(p.status) : undefined,
+          method: p.method != null ? String(p.method) : undefined,
+          paidAt: (p.paidAt ?? p.paid_at ?? p.confirmedAt ?? p.confirmed_at) as string | undefined,
+        }))
+      : undefined,
+  }
+}
+
 export async function getVehicleServiceHistory(vehicleId: string): Promise<ServiceHistoryItem[]> {
   const envelope = await apiClient.get(customerPaths.vehicleServiceHistory(vehicleId), (json) =>
     json as Record<string, unknown>[],
   )
-  return (envelope.data ?? []).map((raw) => ({
-    id: String(raw.id),
-    type: raw.type as ServiceHistoryItem['type'],
-    status: String(raw.status),
-    title: String(raw.title),
-    occurredAt: String(raw.occurredAt ?? raw.occurred_at ?? ''),
-    businessName: (raw.businessName ?? raw.business_name ?? null) as string | null,
-    amount: raw.amount != null ? Number(raw.amount) : null,
-    currency: (raw.currency as string | null) ?? null,
-  }))
+  return (envelope.data ?? []).map(mapHistoryItem)
+}
+
+/** Prefer history-detail when available; fall back to service-history. */
+export async function getVehicleHistoryDetail(vehicleId: string): Promise<ServiceHistoryItem[]> {
+  try {
+    const envelope = await apiClient.get(customerPaths.vehicleHistoryDetail(vehicleId), (json) => {
+      if (Array.isArray(json)) return json as Record<string, unknown>[]
+      const obj = json as Record<string, unknown>
+      if (Array.isArray(obj.items)) return obj.items as Record<string, unknown>[]
+      if (Array.isArray(obj.history)) return obj.history as Record<string, unknown>[]
+      return []
+    })
+    const items = (envelope.data ?? []).map(mapHistoryItem)
+    if (items.length > 0) return items
+  } catch {
+    // Endpoint may not exist yet
+  }
+  return getVehicleServiceHistory(vehicleId)
 }
 
 export async function createQuoteRequest(body: {

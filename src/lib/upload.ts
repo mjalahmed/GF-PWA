@@ -35,3 +35,26 @@ export function quoteRequestImagePath(userId: string, fileName: string): string 
   const safe = fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
   return `${userId}/quotes/${Date.now()}-${safe}`
 }
+
+export function businessMediaPath(
+  businessId: string,
+  kind: 'logo' | 'cover' | 'gallery',
+  fileName: string,
+): string {
+  const safe = fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
+  return `${businessId}/${kind}/${Date.now()}-${safe}`
+}
+
+export function applicationMediaPath(
+  applicationId: string,
+  kind: 'logo' | 'gallery',
+  fileName: string,
+): string {
+  const safe = fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
+  return `applications/${applicationId}/${kind}/${Date.now()}-${safe}`
+}
+
+export async function removeStorageFile(bucket: string, path: string): Promise<void> {
+  const { error } = await supabase.storage.from(bucket).remove([path])
+  if (error) throw new Error(error.message)
+}

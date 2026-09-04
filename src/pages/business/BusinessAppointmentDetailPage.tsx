@@ -4,10 +4,12 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { BeforeAfterGallery } from '../../components/ui/BeforeAfterGallery'
 import { Button } from '../../components/ui/Button'
+import { ImageUpload } from '../../components/ui/ImageUpload'
 import { Spinner } from '../../components/ui/Spinner'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { formatMoney } from '../../lib/utils'
-import { uploadFile } from '../../lib/upload'
+import { uploadFile, uploadImage, vehicleImagePath as buildVehicleImagePath } from '../../lib/upload'
+import { VEHICLE_TYPE_OPTIONS, vehicleTypeLabelKey } from '../../lib/vehicleTypes'
 import { useLocale } from '../../i18n/LocaleProvider'
 import {
   createCustomerVehicle,
@@ -48,18 +50,21 @@ const GENERIC_FROM: Record<string, string[]> = {
   ready_for_pickup: ['completed', 'disputed'],
 }
 
-function vehicleDisplay(appt: {
-  vehicle?: {
-    displayLabel?: string
-    year?: number
-    makeText?: string
-    modelText?: string
-    plateNumber?: string
-  }
-  vehicleId?: string
-}): string {
+function vehicleDisplay(
+  appt: {
+    vehicle?: {
+      displayLabel?: string
+      year?: number
+      makeText?: string
+      modelText?: string
+      plateNumber?: string
+    }
+    vehicleId?: string
+  },
+  fallback: string,
+): string {
   const v = appt.vehicle
-  if (!v) return appt.vehicleId ? `Vehicle ${appt.vehicleId.slice(0, 8)}…` : '—'
+  if (!v) return appt.vehicleId ? fallback : '—'
   if (v.displayLabel) return v.displayLabel
   const built = [v.year, v.makeText, v.modelText].filter(Boolean).join(' ')
   return built || v.plateNumber || '—'
@@ -69,9 +74,10 @@ export function BusinessAppointmentDetailPage() {
   const { appointmentId = '' } = useParams()
   const [params] = useSearchParams()
   const queryClient = useQueryClient()
-  const { statusLabel } = useLocale()
+  const { t, statusLabel } = useLocale()
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [completedInvoiceId, setCompletedInvoiceId] = useState<string | null>(null)
   const [uploadPhase, setUploadPhase] = useState<'before' | 'after'>('before')
   const fileRef = useRef<HTMLInputElement>(null)
   const [showAddVehicle, setShowAddVehicle] = useState(false)
@@ -79,6 +85,13 @@ export function BusinessAppointmentDetailPage() {
   const [vehicleModel, setVehicleModel] = useState('')
   const [vehicleYear, setVehicleYear] = useState(String(new Date().getFullYear()))
   const [vehiclePlate, setVehiclePlate] = useState('')
+  const [vehicleVin, setVehicleVin] = useState('')
+  const [vehicleColor, setVehicleColor] = useState('')
+  const [vehicleMileage, setVehicleMileage] = useState('')
+  const [vehicleType, setVehicleType] = useState('')
+  const [vehicleFuel, setVehicleFuel] = useState('')
+  const [vehicleTransmission, setVehicleTransmission] = useState('')
+  const [vehicleImagePath, setVehicleImagePath] = useState<string | null>(null)
 
   const businessIdHint = params.get('businessId') || ''
 
@@ -125,9 +138,18 @@ export function BusinessAppointmentDetailPage() {
         action,
         action === 'reject' || action === 'cancel' ? { reason: 'Updated by garage' } : undefined,
       ),
-    onSuccess: () => {
+    onSuccess: (result, vars) => {
       setError('')
-      setMessage('Status updated.')
+      setMessage(t('biz.appointment.statusUpdated'))
+      if (vars.action === 'complete') {
+        const invoiceId = String(
+          (result as Record<string, unknown>).invoiceId ??
+            (result as Record<string, unknown>).invoice_id ??
+            ((result as Record<string, unknown>).invoice as Record<string, unknown> | undefined)?.id ??
+            '',
+        )
+        if (invoiceId) setCompletedInvoiceId(invoiceId)
+      }
       invalidate()
     },
     onError: (err: Error) => setError(err.message),
@@ -137,7 +159,7 @@ export function BusinessAppointmentDetailPage() {
     mutationFn: (status: string) => setAppointmentStatus(appointmentId, status),
     onSuccess: () => {
       setError('')
-      setMessage('Status updated.')
+      setMessage(t('biz.appointment.statusUpdated'))
       invalidate()
     },
     onError: (err: Error) => setError(err.message),
@@ -147,7 +169,11 @@ export function BusinessAppointmentDetailPage() {
     mutationFn: () => createQuotationFromAppointment(businessId, appointmentId),
     onSuccess: (result) => {
       const id = String(result.id ?? '')
-      setMessage(id ? `Quotation created (${id.slice(0, 8)}…).` : 'Quotation created.')
+      setMessage(
+        id
+          ? t('biz.appointment.quoteCreatedId', { id: id.slice(0, 8) })
+          : t('biz.appointment.quoteCreated'),
+      )
       invalidate()
     },
     onError: (err: Error) => setError(err.message),
@@ -155,7 +181,7 @@ export function BusinessAppointmentDetailPage() {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (!businessId) throw new Error('Missing business id')
+      if (!businessId) throw new Error(t('biz.appointment.missingBusiness'))
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
       const path = `${businessId}/${appointmentId}/${uploadPhase}/${Date.now()}-${safe}`
       await uploadFile('appointment-media', path, file)
@@ -165,7 +191,7 @@ export function BusinessAppointmentDetailPage() {
       })
     },
     onSuccess: () => {
-      setMessage('Photo uploaded.')
+      setMessage(t('biz.appointment.photoUploaded'))
       setError('')
       invalidate()
     },
@@ -174,14 +200,14 @@ export function BusinessAppointmentDetailPage() {
 
   const addVehicleMutation = useMutation({
     mutationFn: async () => {
-      if (!businessId) throw new Error('Missing business id')
+      if (!businessId) throw new Error(t('biz.appointment.missingBusiness'))
       const customerId = String(detailQuery.data?.customerId ?? '')
-      if (!customerId) throw new Error('Appointment has no customer id')
+      if (!customerId) throw new Error(t('biz.appointment.noCustomer'))
       if (!vehicleMake.trim() || !vehicleModel.trim()) {
-        throw new Error('Make and model are required')
+        throw new Error(t('biz.appointment.makeModelRequired'))
       }
       const year = Number(vehicleYear)
-      if (!Number.isFinite(year) || year < 1950) throw new Error('Enter a valid year')
+      if (!Number.isFinite(year) || year < 1950) throw new Error(t('biz.appointment.validYear'))
       return createCustomerVehicle(businessId, {
         customerId,
         sourceAppointmentId: appointmentId,
@@ -189,15 +215,30 @@ export function BusinessAppointmentDetailPage() {
         modelText: vehicleModel.trim(),
         year,
         registrationNumber: vehiclePlate.trim() || null,
+        vin: vehicleVin.trim() || null,
+        color: vehicleColor.trim() || null,
+        mileage: vehicleMileage ? Number(vehicleMileage) : null,
+        imagePath: vehicleImagePath,
+        vehicleType: vehicleType || null,
+        bodyType: vehicleType || null,
+        fuelType: vehicleFuel.trim() || null,
+        transmission: vehicleTransmission.trim() || null,
       })
     },
     onSuccess: () => {
-      setMessage('Vehicle added — pending customer confirmation.')
+      setMessage(t('biz.appointment.vehicleAdded'))
       setError('')
       setShowAddVehicle(false)
       setVehicleMake('')
       setVehicleModel('')
       setVehiclePlate('')
+      setVehicleVin('')
+      setVehicleColor('')
+      setVehicleMileage('')
+      setVehicleType('')
+      setVehicleFuel('')
+      setVehicleTransmission('')
+      setVehicleImagePath(null)
       invalidate()
     },
     onError: (err: Error) => setError(err.message),
@@ -207,9 +248,9 @@ export function BusinessAppointmentDetailPage() {
   if (!detailQuery.data) {
     return (
       <section className="mx-auto max-w-lg space-y-3 px-4 py-4">
-        <p className="text-error">Appointment not found.</p>
+        <p className="text-error">{t('biz.appointment.notFound')}</p>
         <Link to="/business/appointments" className="text-primary">
-          ← Back to appointments
+          ← {t('biz.nav.appointments')}
         </Link>
       </section>
     )
@@ -230,6 +271,7 @@ export function BusinessAppointmentDetailPage() {
 
   const customerName = appt.customer?.fullName
   const customerContact = [appt.customer?.phone, appt.customer?.email].filter(Boolean).join(' · ')
+  const invoiceLinkId = completedInvoiceId || appt.invoiceId || appt.invoice?.id
 
   const galleryPhotos: RepairPhoto[] =
     mediaQuery.data && mediaQuery.data.length > 0
@@ -250,11 +292,11 @@ export function BusinessAppointmentDetailPage() {
     <RequireGarageSetup businessId={businessId}>
       <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
         <Link to={backHref} className="text-sm text-primary">
-          ← Appointments
+          ← {t('biz.nav.appointments')}
         </Link>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="text-xl font-semibold">Appointment</h2>
+            <h2 className="text-xl font-semibold">{t('biz.appointment.title')}</h2>
             <p className="text-sm text-text-muted">
               {appt.scheduledStart ? new Date(appt.scheduledStart).toLocaleString() : '—'}
             </p>
@@ -264,16 +306,26 @@ export function BusinessAppointmentDetailPage() {
 
         {error && <p className="text-sm text-error">{error}</p>}
         {message && <p className="text-sm text-success">{message}</p>}
+        {invoiceLinkId && (
+          <Link
+            to={`/business/invoices?businessId=${encodeURIComponent(businessId)}`}
+            className="block rounded-xl border border-primary/30 bg-primary-light/30 px-4 py-3 text-sm font-medium text-primary"
+          >
+            {t('biz.appointment.viewInvoice')}
+          </Link>
+        )}
 
         <dl className="space-y-3 rounded-xl border border-border bg-surface p-4 text-sm">
           <div>
-            <dt className="text-text-muted">Customer</dt>
+            <dt className="text-text-muted">{t('common.customer')}</dt>
             <dd className="font-medium">{customerName || appt.customerId || '—'}</dd>
             {customerContact && <dd className="text-text-muted">{customerContact}</dd>}
           </div>
           <div>
-            <dt className="text-text-muted">Vehicle</dt>
-            <dd className="font-medium">{vehicleDisplay(appt)}</dd>
+            <dt className="text-text-muted">{t('common.vehicle')}</dt>
+            <dd className="font-medium">
+              {vehicleDisplay(appt, t('biz.appointment.vehicleFallback'))}
+            </dd>
             {appt.vehicle?.plateNumber && (
               <dd className="text-text-muted">{appt.vehicle.plateNumber}</dd>
             )}
@@ -285,42 +337,94 @@ export function BusinessAppointmentDetailPage() {
                     className="text-sm font-medium text-primary"
                     onClick={() => setShowAddVehicle(true)}
                   >
-                    Add vehicle for customer
+                    {t('biz.appointment.addVehicle')}
                   </button>
                 ) : (
                   <div className="mt-2 space-y-2 rounded-lg bg-surface-secondary p-3">
-                    <p className="text-xs text-text-muted">
-                      Creates a vehicle pending customer confirmation.
-                    </p>
+                    <p className="text-xs text-text-muted">{t('biz.appointment.addVehicleHint')}</p>
                     <Input
-                      label="Make"
+                      label={t('common.make')}
                       value={vehicleMake}
                       onChange={(e) => setVehicleMake(e.target.value)}
                     />
                     <Input
-                      label="Model"
+                      label={t('common.model')}
                       value={vehicleModel}
                       onChange={(e) => setVehicleModel(e.target.value)}
                     />
+                    <label className="block space-y-1.5">
+                      <span className="text-sm font-medium text-text-secondary">
+                        {t('vehicles.vehicleType')}
+                      </span>
+                      <select
+                        value={vehicleType}
+                        onChange={(e) => setVehicleType(e.target.value)}
+                        className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm"
+                      >
+                        <option value="">{t('vehicles.selectType')}</option>
+                        {VEHICLE_TYPE_OPTIONS.map((code) => (
+                          <option key={code} value={code}>
+                            {t(vehicleTypeLabelKey(code))}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <Input
-                      label="Year"
+                      label={t('common.year')}
                       value={vehicleYear}
                       onChange={(e) => setVehicleYear(e.target.value)}
                     />
                     <Input
-                      label="Plate (optional)"
+                      label={t('vehicles.plateNumber')}
                       value={vehiclePlate}
                       onChange={(e) => setVehiclePlate(e.target.value)}
+                    />
+                    <Input
+                      label={t('common.vin')}
+                      value={vehicleVin}
+                      onChange={(e) => setVehicleVin(e.target.value)}
+                    />
+                    <Input
+                      label={t('common.color')}
+                      value={vehicleColor}
+                      onChange={(e) => setVehicleColor(e.target.value)}
+                    />
+                    <Input
+                      label={t('vehicles.mileageKm')}
+                      value={vehicleMileage}
+                      onChange={(e) => setVehicleMileage(e.target.value)}
+                    />
+                    <Input
+                      label={t('vehicles.fuelType')}
+                      value={vehicleFuel}
+                      onChange={(e) => setVehicleFuel(e.target.value)}
+                    />
+                    <Input
+                      label={t('vehicles.transmission')}
+                      value={vehicleTransmission}
+                      onChange={(e) => setVehicleTransmission(e.target.value)}
+                    />
+                    <ImageUpload
+                      bucket="vehicle-images"
+                      label={t('vehicles.photo')}
+                      value={vehicleImagePath}
+                      onChange={setVehicleImagePath}
+                      buildPath={(file) =>
+                        buildVehicleImagePath(appt.customerId ?? 'customer', 'garage-add', file.name)
+                      }
+                      onUpload={async (file, path) => {
+                        await uploadImage('vehicle-images', path, file)
+                      }}
                     />
                     <div className="flex gap-2">
                       <Button
                         loading={addVehicleMutation.isPending}
                         onClick={() => addVehicleMutation.mutate()}
                       >
-                        Submit
+                        {t('common.save')}
                       </Button>
                       <Button variant="ghost" onClick={() => setShowAddVehicle(false)}>
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     </div>
                   </div>
@@ -330,25 +434,25 @@ export function BusinessAppointmentDetailPage() {
           </div>
           {appt.startedAt && (
             <div>
-              <dt className="text-text-muted">Started</dt>
+              <dt className="text-text-muted">{t('biz.appointment.started')}</dt>
               <dd>{new Date(appt.startedAt).toLocaleString()}</dd>
             </div>
           )}
           {expectedMinutes > 0 && (
             <div>
-              <dt className="text-text-muted">Expected duration</dt>
-              <dd>{expectedMinutes} minutes</dd>
+              <dt className="text-text-muted">{t('biz.appointment.expectedDuration')}</dt>
+              <dd>{t('common.minutes', { minutes: expectedMinutes })}</dd>
             </div>
           )}
           {appt.customerNotes && (
             <div>
-              <dt className="text-text-muted">Customer notes</dt>
+              <dt className="text-text-muted">{t('biz.appointment.customerNotes')}</dt>
               <dd>{appt.customerNotes}</dd>
             </div>
           )}
           {appt.businessNotes && (
             <div>
-              <dt className="text-text-muted">Business notes</dt>
+              <dt className="text-text-muted">{t('biz.appointment.businessNotes')}</dt>
               <dd>{appt.businessNotes}</dd>
             </div>
           )}
@@ -356,12 +460,14 @@ export function BusinessAppointmentDetailPage() {
 
         {appt.services.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-semibold">Services</h3>
+            <h3 className="font-semibold">{t('common.services')}</h3>
             <ul className="space-y-2">
               {appt.services.map((svc) => (
                 <li key={svc.id} className="rounded-xl border border-border bg-surface p-3 text-sm">
                   <p className="font-medium">{svc.serviceName}</p>
-                  <p className="text-text-muted">{svc.estimatedDurationMinutes} min</p>
+                  <p className="text-text-muted">
+                    {t('common.minutes', { minutes: svc.estimatedDurationMinutes })}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -370,10 +476,10 @@ export function BusinessAppointmentDetailPage() {
 
         {(appt.quotation || appt.invoice || appt.quotationId || appt.invoiceId) && (
           <div className="space-y-2 rounded-xl border border-border bg-surface p-4 text-sm">
-            <h3 className="font-semibold">Commerce</h3>
+            <h3 className="font-semibold">{t('biz.appointment.commerce')}</h3>
             {(appt.quotation || appt.quotationId) && (
               <p>
-                Quotation:{' '}
+                {t('biz.appointment.quotation')}:{' '}
                 <Link
                   to={`/business/quotations?businessId=${encodeURIComponent(businessId)}`}
                   className="text-primary"
@@ -387,7 +493,7 @@ export function BusinessAppointmentDetailPage() {
             )}
             {(appt.invoice || appt.invoiceId) && (
               <p>
-                Invoice:{' '}
+                {t('biz.appointment.invoice')}:{' '}
                 <Link
                   to={`/business/invoices?businessId=${encodeURIComponent(businessId)}`}
                   className="text-primary"
@@ -404,7 +510,7 @@ export function BusinessAppointmentDetailPage() {
 
         {appt.statusHistory && appt.statusHistory.length > 0 && (
           <section>
-            <h3 className="mb-2 font-semibold">Status history</h3>
+            <h3 className="mb-2 font-semibold">{t('biz.appointment.statusHistory')}</h3>
             <ol className="space-y-2 border-s-2 border-border ps-3">
               {appt.statusHistory.map((h, idx) => (
                 <li key={`${h.status}-${h.changedAt}-${idx}`} className="text-sm">
@@ -432,7 +538,7 @@ export function BusinessAppointmentDetailPage() {
                   disabled={actionMutation.isPending && !isThis}
                   onClick={() => actionMutation.mutate({ action })}
                 >
-                  {action}
+                  {t(`biz.appointment.action.${action}`)}
                 </Button>
               )
             })}
@@ -441,7 +547,7 @@ export function BusinessAppointmentDetailPage() {
 
         {genericStatuses.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-text-muted">Set status</h3>
+            <h3 className="text-sm font-semibold text-text-muted">{t('biz.appointment.setStatus')}</h3>
             <div className="flex flex-wrap gap-2">
               {genericStatuses.map((status) => {
                 const isThis =
@@ -468,12 +574,12 @@ export function BusinessAppointmentDetailPage() {
             loading={quoteMutation.isPending}
             onClick={() => quoteMutation.mutate()}
           >
-            Create quotation
+            {t('biz.appointment.createQuotation')}
           </Button>
         )}
 
         <section className="space-y-3">
-          <h3 className="font-semibold">Before / after</h3>
+          <h3 className="font-semibold">{t('repair.photos')}</h3>
           {galleryPhotos.length > 0 && <BeforeAfterGallery photos={galleryPhotos} />}
           {businessId && (
             <div className="flex flex-wrap items-center gap-2">
@@ -482,8 +588,8 @@ export function BusinessAppointmentDetailPage() {
                 value={uploadPhase}
                 onChange={(e) => setUploadPhase(e.target.value as 'before' | 'after')}
               >
-                <option value="before">Before</option>
-                <option value="after">After</option>
+                <option value="before">{t('repair.before')}</option>
+                <option value="after">{t('repair.after')}</option>
               </select>
               <input
                 ref={fileRef}
@@ -501,12 +607,9 @@ export function BusinessAppointmentDetailPage() {
                 loading={uploadMutation.isPending}
                 onClick={() => fileRef.current?.click()}
               >
-                Upload {uploadPhase} photo
+                {t('biz.appointment.uploadPhoto', { phase: t(`repair.${uploadPhase}`) })}
               </Button>
             </div>
-          )}
-          {!businessId && mediaQuery.isError && (
-            <p className="text-xs text-text-muted">Media upload requires a business context.</p>
           )}
         </section>
       </section>

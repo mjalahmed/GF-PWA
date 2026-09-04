@@ -4,6 +4,11 @@ import { Link } from 'react-router-dom'
 import { evaluateSetupChecklist } from '../../lib/garageSetup'
 import { directionsOptions } from '../../lib/mapsLinks'
 import {
+  businessMediaPath,
+  removeStorageFile,
+  uploadImage,
+} from '../../lib/upload'
+import {
   createBusinessService,
   deactivateBusinessService,
   getBusinessDashboard,
@@ -19,9 +24,11 @@ import {
 import { listServiceCategories } from '../../services/api/catalog'
 import type { CreateServiceInput, OpeningHoursDay, ServicePricingType } from '../../types/onboarding'
 import { Button } from '../ui/Button'
+import { ImageUpload } from '../ui/ImageUpload'
 import { Input } from '../ui/Input'
 import { LocationPicker } from '../ui/LocationPicker'
 import { Spinner } from '../ui/Spinner'
+import { useLocale } from '../../i18n/LocaleProvider'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -41,6 +48,7 @@ type Props = {
 
 export function GarageSetupForm({ businessId, backTo, requireComplete = false }: Props) {
   const queryClient = useQueryClient()
+  const { t } = useLocale()
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -87,6 +95,8 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
   const [description, setDescription] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
+  const [logoPath, setLogoPath] = useState<string | null>(null)
+  const [coverPath, setCoverPath] = useState<string | null>(null)
   const [addressLine, setAddressLine] = useState('')
   const [area, setArea] = useState('')
   const [city, setCity] = useState('')
@@ -110,6 +120,8 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
     setDescription(b.description ?? '')
     setPhone(b.phone ?? '')
     setEmail(b.email ?? '')
+    setLogoPath(b.logoPath ?? null)
+    setCoverPath(b.coverPath ?? null)
   }, [businessQuery.data])
 
   useEffect(() => {
@@ -151,9 +163,22 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
         description: description.trim() || null,
         phone: phone.trim(),
         email: email.trim(),
+        logoPath,
+        coverPath,
       }),
     onSuccess: () => {
-      setSuccess('Profile saved.')
+      setSuccess(t('biz.setup.profileSaved'))
+      setError('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const mediaMutation = useMutation({
+    mutationFn: (input: { logoPath?: string | null; coverPath?: string | null }) =>
+      updateBusinessProfile(businessId, input),
+    onSuccess: () => {
+      setSuccess(t('biz.setup.mediaSaved'))
       setError('')
       invalidate()
     },
@@ -328,12 +353,12 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       {success && <p className="text-sm text-success">{success}</p>}
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-        <h3 className="font-semibold">1. Profile</h3>
-        <Input label="Display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-        <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <h3 className="font-semibold">1. {t('biz.setup.profile')}</h3>
+        <Input label={t('biz.setup.displayName')} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+        <Input label={t('biz.setup.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Input label={t('biz.setup.email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-text-primary">Description</span>
+          <span className="mb-1 block font-medium text-text-primary">{t('biz.setup.description')}</span>
           <textarea
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
             rows={3}
@@ -341,8 +366,42 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
+        <ImageUpload
+          bucket="business-media"
+          label={t('biz.setup.logo')}
+          value={logoPath}
+          onChange={(path) => {
+            setLogoPath(path)
+            mediaMutation.mutate({ logoPath: path })
+          }}
+          buildPath={(file) => businessMediaPath(businessId, 'logo', file.name)}
+          onUpload={async (file, path) => {
+            await uploadImage('business-media', path, file)
+          }}
+          onRemove={async (path) => {
+            await removeStorageFile('business-media', path).catch(() => undefined)
+            await updateBusinessProfile(businessId, { logoPath: null })
+          }}
+        />
+        <ImageUpload
+          bucket="business-media"
+          label={t('biz.setup.cover')}
+          value={coverPath}
+          onChange={(path) => {
+            setCoverPath(path)
+            mediaMutation.mutate({ coverPath: path })
+          }}
+          buildPath={(file) => businessMediaPath(businessId, 'cover', file.name)}
+          onUpload={async (file, path) => {
+            await uploadImage('business-media', path, file)
+          }}
+          onRemove={async (path) => {
+            await removeStorageFile('business-media', path).catch(() => undefined)
+            await updateBusinessProfile(businessId, { coverPath: null })
+          }}
+        />
         <Button loading={profileMutation.isPending} onClick={() => profileMutation.mutate()}>
-          Save profile
+          {t('biz.setup.saveProfile')}
         </Button>
       </section>
 

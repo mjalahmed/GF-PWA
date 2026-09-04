@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom'
 import { ActiveServiceCard, isActiveServiceAppointment } from '../components/customer/ActiveServiceCard'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NotificationBell } from '../components/layout/NotificationBell'
+import { ComingSoon } from '../components/ui/ComingSoon'
 import { EmptyState } from '../components/ui/EmptyState'
 import { GarageCard } from '../components/ui/GarageCard'
 import { Spinner } from '../components/ui/Spinner'
+import { VehicleCard } from '../components/ui/VehicleCard'
 import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { useAuth } from '../hooks/useAuth'
 import { vehicleLabelLocalized } from '../i18n/format'
@@ -230,51 +232,51 @@ export function HomePage() {
         )}
 
         {defaultVehicle && (
-          <Link
-            to={`/vehicles/${defaultVehicle.id}`}
-            className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm"
-          >
-            <span className="text-lg" aria-hidden>
-              🚗
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-text-primary">
-                {vehicleLabelLocalized(defaultVehicle, t)}
-              </p>
-              {defaultVehicle.plateNumber && (
-                <p className="text-text-muted">{defaultVehicle.plateNumber}</p>
-              )}
-            </div>
-            <span className="text-xs font-medium text-primary">{t('common.default')}</span>
-          </Link>
+          <div className="mt-4">
+            <VehicleCard vehicle={defaultVehicle} compact />
+          </div>
         )}
 
-        {announcementsQuery.data && announcementsQuery.data.length > 0 && (
-          <section className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold text-text-primary">{t('comingSoon.section')}</h2>
-            <div className="space-y-2">
-              {announcementsQuery.data.slice(0, 4).map((a) => (
-                <div key={a.id} className="rounded-xl border border-dashed border-primary/30 bg-primary-light/20 p-3">
-                  <p className="text-xs font-semibold uppercase text-primary">{t('comingSoon.badge')}</p>
-                  <p className="font-medium text-text-primary">{a.title}</p>
-                  <p className="text-sm text-text-muted">{a.summary}</p>
-                </div>
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold text-text-primary">{t('comingSoon.section')}</h2>
+          <div className="space-y-3">
+            <ComingSoon
+              title={t('comingSoon.installmentsTitle')}
+              description={t('comingSoon.installmentsDesc')}
+            />
+            <ComingSoon
+              title={t('comingSoon.certifiedTitle')}
+              description={t('comingSoon.certifiedDesc')}
+            />
+            <ComingSoon
+              title={t('comingSoon.emergencyTitle')}
+              description={t('comingSoon.emergencyDesc')}
+            />
+            {announcementsQuery.data
+              ?.filter(
+                (a) =>
+                  !['vehicle-history-reports', 'vehicle-health-reminders'].includes(a.slug) &&
+                  !/vehicle.?history|vehicle.?health|localhost/i.test(`${a.slug} ${a.title} ${a.summary}`),
+              )
+              .slice(0, 2)
+              .map((a) => (
+                <ComingSoon key={a.id} title={a.title} description={a.summary} />
               ))}
-            </div>
-          </section>
-        )}
+          </div>
+        </section>
+
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-semibold text-text-primary">{t('home.browseByService')}</h2>
           {categoriesQuery.isLoading && <Spinner className="py-6" />}
           {categoriesQuery.data && categoriesQuery.data.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {categoriesQuery.data.map((cat) => (
                 <Link
                   key={cat.id}
                   to={`/search?serviceCategory=${cat.id}`}
-                  className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-secondary hover:border-primary hover:text-primary"
+                  className="rounded-2xl border border-border bg-surface px-4 py-5 text-center no-underline transition hover:border-primary"
                 >
-                  {cat.name}
+                  <p className="text-sm font-semibold text-text-primary">{cat.name}</p>
                 </Link>
               ))}
             </div>
@@ -366,12 +368,6 @@ export function HomePage() {
             {t('nav.invoices')}
           </Link>
         </nav>
-
-        <p className="mt-6 text-center text-xs text-text-subtle">
-          <Link to="/emergency" className="hover:text-primary">
-            {t('comingSoon.badge')}: {t('emergency.homeCta')}
-          </Link>
-        </p>
       </div>
     </div>
   )

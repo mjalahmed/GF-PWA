@@ -165,19 +165,6 @@ export function ProfilePage() {
               {profile?.phone && <p className="mt-1 text-sm text-text-muted">{profile.phone}</p>}
             </>
           )}
-
-          {roles.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {roles.map((role) => (
-                <span
-                  key={role}
-                  className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-text-secondary"
-                >
-                  {role}
-                </span>
-              ))}
-            </div>
-          )}
         </section>
 
         {languageSection}

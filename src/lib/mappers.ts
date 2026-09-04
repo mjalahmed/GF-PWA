@@ -427,6 +427,23 @@ export function mapVehicle(raw: Record<string, unknown>): Vehicle {
       (pick(raw, 'createdByBusinessId', 'created_by_business_id') as string | null) ?? null,
     sourceAppointmentId:
       (pick(raw, 'sourceAppointmentId', 'source_appointment_id') as string | null) ?? null,
+    vehicleType: pick(raw, 'vehicleType', 'vehicle_type', 'bodyType', 'body_type') as
+      | string
+      | undefined,
+    bodyType: pick(raw, 'bodyType', 'body_type', 'vehicleType', 'vehicle_type') as
+      | string
+      | undefined,
+    fuelType: pick(raw, 'fuelType', 'fuel_type') as string | undefined,
+    transmission: pick(raw, 'transmission') as string | undefined,
+    verificationStatus: pick(raw, 'verificationStatus', 'verification_status') as
+      | string
+      | undefined,
+    ownerName: pick(raw, 'ownerName', 'owner_name', 'customerName', 'customer_name') as
+      | string
+      | undefined,
+    ownerEmail: pick(raw, 'ownerEmail', 'owner_email', 'customerEmail', 'customer_email') as
+      | string
+      | undefined,
   }
 }
 

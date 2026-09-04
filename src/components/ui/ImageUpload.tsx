@@ -9,6 +9,8 @@ type ImageUploadProps = {
   value?: string | null
   onChange: (path: string | null) => void
   onUpload: (file: File, path: string) => Promise<void>
+  onRemove?: (path: string) => Promise<void> | void
+  label?: string
   className?: string
 }
 
@@ -18,11 +20,14 @@ export function ImageUpload({
   value,
   onChange,
   onUpload,
+  onRemove,
+  label,
   className = '',
 }: ImageUploadProps) {
   const { t } = useLocale()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [removing, setRemoving] = useState(false)
   const [error, setError] = useState('')
 
   const handleFile = async (file: File | undefined) => {
@@ -44,20 +49,41 @@ export function ImageUpload({
     }
   }
 
+  const handleRemove = async () => {
+    if (!value) return
+    setError('')
+    setRemoving(true)
+    try {
+      await onRemove?.(value)
+      onChange(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('upload.failed'))
+    } finally {
+      setRemoving(false)
+    }
+  }
+
   return (
     <div className={className}>
+      {label && <p className="mb-1.5 text-sm font-medium text-text-secondary">{label}</p>}
       {value ? (
         <div className="relative overflow-hidden rounded-xl border border-border">
           <StorageImage bucket={bucket} path={value} alt="" className="aspect-video w-full object-cover" />
-          <Button
-            type="button"
-            variant="secondary"
-            className="absolute bottom-2 end-2"
-            loading={uploading}
-            onClick={() => inputRef.current?.click()}
-          >
-            {t('upload.change')}
-          </Button>
+          <div className="absolute bottom-2 end-2 flex gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              loading={uploading}
+              onClick={() => inputRef.current?.click()}
+            >
+              {t('upload.change')}
+            </Button>
+            {onRemove && (
+              <Button type="button" variant="danger" loading={removing} onClick={() => void handleRemove()}>
+                {t('common.remove')}
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         <button

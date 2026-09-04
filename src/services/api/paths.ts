@@ -40,6 +40,7 @@ export const customerPaths = {
   vehicle: (id: string) => `${V1}/customer/vehicles/${id}`,
   vehicleDefault: (id: string) => `${V1}/customer/vehicles/${id}/make-default`,
   vehicleServiceHistory: (id: string) => `${V1}/customer/vehicles/${id}/service-history`,
+  vehicleHistoryDetail: (id: string) => `${V1}/customer/vehicles/${id}/history-detail`,
   quotations: `${V1}/customer/quotations`,
   quotation: (id: string) => `${V1}/customer/quotations/${id}`,
   quotationAction: (id: string, action: string) => `${V1}/customer/quotations/${id}/${action}`,
@@ -141,6 +142,8 @@ export const businessPaths = {
     `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/payments/cash`,
   invoicePaymentConfirm: (businessId: string, invoiceId: string, paymentId: string) =>
     `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/payments/${paymentId}/confirm`,
+  invoicePaymentReminder: (businessId: string, invoiceId: string) =>
+    `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/remind-payment`,
   disputes: (businessId: string) => `${V1}/business/businesses/${businessId}/disputes`,
 } as const
 
@@ -157,6 +160,12 @@ export const adminPaths = {
   businessSettings: (businessId: string) => `${V1}/admin/businesses/${businessId}/settings`,
   users: `${V1}/admin/users`,
   user: (userId: string) => `${V1}/admin/users/${userId}`,
+  vehicles: `${V1}/admin/vehicles`,
+  vehicle: (vehicleId: string) => `${V1}/admin/vehicles/${vehicleId}`,
+  vehicleAction: (vehicleId: string, action: string) =>
+    `${V1}/admin/vehicles/${vehicleId}/${action}`,
+  appointments: `${V1}/admin/appointments`,
+  appointment: (appointmentId: string) => `${V1}/admin/appointments/${appointmentId}`,
   reviews: `${V1}/admin/reviews`,
   review: (id: string) => `${V1}/admin/reviews/${id}`,
   reviewAction: (id: string, action: string) => `${V1}/admin/reviews/${id}/${action}`,
