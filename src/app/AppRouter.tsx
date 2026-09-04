@@ -56,6 +56,8 @@ import { AdminApplicationDetailPage } from '../pages/admin/AdminApplicationDetai
 import { AdminGarageCapabilitiesPage } from '../pages/admin/AdminGarageCapabilitiesPage'
 import { AdminDisputesPage } from '../pages/admin/AdminDisputesPage'
 import { AdminReviewsPage } from '../pages/admin/AdminReviewsPage'
+import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
+import { AdminBusinessesPage } from '../pages/admin/AdminBusinessesPage'
 
 
 export function AppRouter() {
@@ -268,6 +270,8 @@ export function AppRouter() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="applications" element={<AdminApplicationsPage />} />
           <Route path="applications/:applicationId" element={<AdminApplicationDetailPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="businesses" element={<AdminBusinessesPage />} />
           <Route path="businesses/:businessId/setup" element={<AdminGarageSetupPage />} />
           <Route
             path="businesses/:businessId/capabilities"

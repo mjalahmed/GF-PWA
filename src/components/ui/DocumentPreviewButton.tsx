@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from './Button'
 import { supabase } from '../../lib/supabase'
+import { getAdminDocumentDownloadUrl } from '../../services/api/admin'
 
 const APPLICATION_DOCS_BUCKET = 'business-application-documents'
 
@@ -8,9 +9,18 @@ type Props = {
   storagePath: string
   fileName: string
   mimeType?: string
+  /** When set, prefer admin download-url API before signing via Supabase. */
+  applicationId?: string
+  documentId?: string
 }
 
-export function DocumentPreviewButton({ storagePath, fileName, mimeType }: Props) {
+export function DocumentPreviewButton({
+  storagePath,
+  fileName,
+  mimeType,
+  applicationId,
+  documentId,
+}: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -18,6 +28,18 @@ export function DocumentPreviewButton({ storagePath, fileName, mimeType }: Props
     setError('')
     setLoading(true)
     try {
+      if (applicationId && documentId) {
+        try {
+          const { url } = await getAdminDocumentDownloadUrl(applicationId, documentId)
+          if (url) {
+            window.open(url, '_blank', 'noopener,noreferrer')
+            return
+          }
+        } catch {
+          // Fall through to direct storage signing
+        }
+      }
+
       const { data, error: signedError } = await supabase.storage
         .from(APPLICATION_DOCS_BUCKET)
         .createSignedUrl(storagePath, 3600)

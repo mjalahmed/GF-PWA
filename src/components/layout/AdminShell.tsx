@@ -5,6 +5,8 @@ import { PageHeader } from './PageHeader'
 const links = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/applications', label: 'Applications' },
+  { to: '/admin/businesses', label: 'Businesses' },
+  { to: '/admin/users', label: 'Users' },
   { to: '/admin/disputes', label: 'Disputes' },
   { to: '/admin/reviews', label: 'Reviews' },
 ]

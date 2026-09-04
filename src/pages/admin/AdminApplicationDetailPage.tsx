@@ -157,6 +157,8 @@ export function AdminApplicationDetailPage() {
                     storagePath={doc.storagePath}
                     fileName={doc.originalFileName}
                     mimeType={doc.mimeType}
+                    applicationId={applicationId}
+                    documentId={doc.id}
                   />
                 </div>
               )}
