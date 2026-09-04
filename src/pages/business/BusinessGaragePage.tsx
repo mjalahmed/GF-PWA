@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Spinner } from '../../components/ui/Spinner'
 import { fetchGarageSetupChecklist } from '../../lib/fetchGarageSetup'
 import { getBusinessDashboard, listMyBusinessMemberships } from '../../services/api/business'
@@ -37,15 +37,26 @@ export function BusinessGaragePage() {
     )
   }
 
-  if (setupQuery.data && !setupQuery.data.complete) {
-    return <Navigate to={`/business/garages/${businessId}/setup`} replace />
-  }
-
   const businessName = membership.business.displayName || businessQuery.data?.displayName || businessId
   const checklist = setupQuery.data
+  const setupIncomplete = checklist && !checklist.complete
 
   return (
     <section className="mx-auto max-w-lg space-y-6 px-4 py-4">
+      {setupIncomplete && (
+        <div
+          role="status"
+          className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-text-primary"
+        >
+          Profile setup incomplete — add hours and services when ready.{' '}
+          <Link
+            to={`/business/garages/${businessId}/setup`}
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Continue setup
+          </Link>
+        </div>
+      )}
       <div>
         <h2 className="text-xl font-semibold">{businessName}</h2>
         <p className="text-sm text-text-muted">Your role: {membership.role}</p>

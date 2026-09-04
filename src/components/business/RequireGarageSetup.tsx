@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { fetchGarageSetupChecklist } from '../../lib/fetchGarageSetup'
-import { Spinner } from '../ui/Spinner'
 
-/** Redirects business operators to Setup until the go-live checklist is complete. */
+/** Soft gate: always render portal children; show a non-blocking banner when setup is incomplete. */
 export function RequireGarageSetup({
   businessId,
   children,
@@ -18,11 +17,27 @@ export function RequireGarageSetup({
     enabled: Boolean(businessId),
   })
 
-  if (!businessId) return children
-  if (query.isLoading) return <Spinner />
-  if (query.data && !query.data.complete) {
-    return <Navigate to={`/business/garages/${businessId}/setup`} replace />
-  }
+  const showBanner = Boolean(businessId && query.data && !query.data.complete)
 
-  return children
+  return (
+    <>
+      {showBanner && (
+        <div className="mx-auto max-w-lg px-4 pt-4">
+          <div
+            role="status"
+            className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-text-primary"
+          >
+            Profile setup incomplete — add hours and services when ready.{' '}
+            <Link
+              to={`/business/garages/${businessId}/setup`}
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Continue setup
+            </Link>
+          </div>
+        </div>
+      )}
+      {children}
+    </>
+  )
 }
