@@ -54,3 +54,16 @@ export async function deleteVehicle(id: string): Promise<void> {
 export async function makeVehicleDefault(id: string): Promise<void> {
   await apiClient.post(customerPaths.vehicleDefault(id), {}, () => ({}))
 }
+
+export async function listPendingVehicleConfirmations(): Promise<Vehicle[]> {
+  const envelope = await apiClient.get(customerPaths.vehiclesPendingConfirmation, (json) => json)
+  return mapList(envelope.data, mapVehicle)
+}
+
+export async function confirmVehicle(id: string): Promise<void> {
+  await apiClient.post(customerPaths.vehicleConfirm(id), {}, () => ({}), crypto.randomUUID())
+}
+
+export async function rejectVehicle(id: string): Promise<void> {
+  await apiClient.post(customerPaths.vehicleReject(id), {}, () => ({}), crypto.randomUUID())
+}

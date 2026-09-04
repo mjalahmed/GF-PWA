@@ -65,6 +65,8 @@ export interface Appointment {
   branchName?: string
 }
 
+export type VehicleConfirmationStatus = 'confirmed' | 'pending_confirmation' | 'rejected'
+
 export interface Vehicle {
   id: string
   customerId?: string
@@ -84,4 +86,7 @@ export interface Vehicle {
   isDefault: boolean
   isActive?: boolean
   displayLabel?: string
+  confirmationStatus?: VehicleConfirmationStatus | string
+  createdByBusinessId?: string | null
+  sourceAppointmentId?: string | null
 }

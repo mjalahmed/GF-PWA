@@ -18,7 +18,7 @@ import { listFavorites } from '../services/api/favorites'
 import { searchBusinesses } from '../services/api/garages'
 import { listInvoices } from '../services/api/invoices'
 import { listQuotations } from '../services/api/quotations'
-import { listVehicles } from '../services/api/vehicles'
+import { listVehicles, listPendingVehicleConfirmations } from '../services/api/vehicles'
 
 function SectionHeader({ title, to, seeAllLabel }: { title: string; to: string; seeAllLabel: string }) {
   return (
@@ -59,6 +59,12 @@ export function HomePage() {
   const vehiclesQuery = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => listVehicles(),
+    enabled: !!session,
+  })
+
+  const pendingVehiclesQuery = useQuery({
+    queryKey: ['vehicles-pending'],
+    queryFn: () => listPendingVehicleConfirmations(),
     enabled: !!session,
   })
 
@@ -209,6 +215,18 @@ export function HomePage() {
 
         {defaultVehicle && !defaultVehicle.vin && (
           <VinReminderBanner vehicleId={defaultVehicle.id} className="mt-4" />
+        )}
+
+        {(pendingVehiclesQuery.data?.length ?? 0) > 0 && (
+          <Link
+            to="/vehicles"
+            className="mt-4 block rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 no-underline"
+          >
+            <p className="text-sm font-semibold text-warning">
+              {t('vehicles.pendingBanner', { count: pendingVehiclesQuery.data!.length })}
+            </p>
+            <p className="mt-1 text-xs text-text-muted">{t('vehicles.pendingDesc')}</p>
+          </Link>
         )}
 
         {defaultVehicle && (

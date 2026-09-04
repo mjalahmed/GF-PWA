@@ -10,6 +10,7 @@ import { formatMoney } from '../../lib/utils'
 import { uploadFile } from '../../lib/upload'
 import { useLocale } from '../../i18n/LocaleProvider'
 import {
+  createCustomerVehicle,
   createQuotationFromAppointment,
   getBusinessAppointment,
   registerAppointmentMedia,
@@ -17,6 +18,7 @@ import {
   transitionAppointment,
 } from '../../services/api/business'
 import { getAppointmentMedia, type RepairPhoto } from '../../services/api/experience'
+import { Input } from '../../components/ui/Input'
 import { GENERIC_APPOINTMENT_STATUSES } from '../../types/appointments'
 
 const ACTIONS: Record<
@@ -72,6 +74,11 @@ export function BusinessAppointmentDetailPage() {
   const [message, setMessage] = useState('')
   const [uploadPhase, setUploadPhase] = useState<'before' | 'after'>('before')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [showAddVehicle, setShowAddVehicle] = useState(false)
+  const [vehicleMake, setVehicleMake] = useState('')
+  const [vehicleModel, setVehicleModel] = useState('')
+  const [vehicleYear, setVehicleYear] = useState(String(new Date().getFullYear()))
+  const [vehiclePlate, setVehiclePlate] = useState('')
 
   const businessIdHint = params.get('businessId') || ''
 
@@ -165,6 +172,37 @@ export function BusinessAppointmentDetailPage() {
     onError: (err: Error) => setError(err.message),
   })
 
+  const addVehicleMutation = useMutation({
+    mutationFn: async () => {
+      if (!businessId) throw new Error('Missing business id')
+      const customerId = String(detailQuery.data?.customerId ?? '')
+      if (!customerId) throw new Error('Appointment has no customer id')
+      if (!vehicleMake.trim() || !vehicleModel.trim()) {
+        throw new Error('Make and model are required')
+      }
+      const year = Number(vehicleYear)
+      if (!Number.isFinite(year) || year < 1950) throw new Error('Enter a valid year')
+      return createCustomerVehicle(businessId, {
+        customerId,
+        sourceAppointmentId: appointmentId,
+        makeText: vehicleMake.trim(),
+        modelText: vehicleModel.trim(),
+        year,
+        registrationNumber: vehiclePlate.trim() || null,
+      })
+    },
+    onSuccess: () => {
+      setMessage('Vehicle added — pending customer confirmation.')
+      setError('')
+      setShowAddVehicle(false)
+      setVehicleMake('')
+      setVehicleModel('')
+      setVehiclePlate('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
   if (detailQuery.isLoading) return <Spinner />
   if (!detailQuery.data) {
     return (
@@ -238,6 +276,56 @@ export function BusinessAppointmentDetailPage() {
             <dd className="font-medium">{vehicleDisplay(appt)}</dd>
             {appt.vehicle?.plateNumber && (
               <dd className="text-text-muted">{appt.vehicle.plateNumber}</dd>
+            )}
+            {businessId && appt.customerId && (
+              <dd className="mt-2">
+                {!showAddVehicle ? (
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary"
+                    onClick={() => setShowAddVehicle(true)}
+                  >
+                    Add vehicle for customer
+                  </button>
+                ) : (
+                  <div className="mt-2 space-y-2 rounded-lg bg-surface-secondary p-3">
+                    <p className="text-xs text-text-muted">
+                      Creates a vehicle pending customer confirmation.
+                    </p>
+                    <Input
+                      label="Make"
+                      value={vehicleMake}
+                      onChange={(e) => setVehicleMake(e.target.value)}
+                    />
+                    <Input
+                      label="Model"
+                      value={vehicleModel}
+                      onChange={(e) => setVehicleModel(e.target.value)}
+                    />
+                    <Input
+                      label="Year"
+                      value={vehicleYear}
+                      onChange={(e) => setVehicleYear(e.target.value)}
+                    />
+                    <Input
+                      label="Plate (optional)"
+                      value={vehiclePlate}
+                      onChange={(e) => setVehiclePlate(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        loading={addVehicleMutation.isPending}
+                        onClick={() => addVehicleMutation.mutate()}
+                      >
+                        Submit
+                      </Button>
+                      <Button variant="ghost" onClick={() => setShowAddVehicle(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </dd>
             )}
           </div>
           {appt.startedAt && (
