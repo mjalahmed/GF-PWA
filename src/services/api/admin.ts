@@ -283,3 +283,63 @@ export async function adminDisputeAction(
   )
   return envelope.data!
 }
+
+export type AdminTransaction = {
+  paymentId: string
+  paymentReference?: string | null
+  amount: number
+  currency: string
+  method: string
+  status: string
+  customerId?: string
+  customerName?: string | null
+  businessId?: string
+  businessName?: string | null
+  invoiceId?: string
+  invoiceNumber?: string | null
+  createdAt?: string
+  confirmedAt?: string | null
+}
+
+export async function listAdminTransactions(params?: {
+  from?: string
+  to?: string
+  status?: string
+  method?: string
+  limit?: number
+}): Promise<AdminTransaction[]> {
+  const envelope = await apiClient.get(
+    `${adminPaths.transactions}${buildQuery({
+      from: params?.from,
+      to: params?.to,
+      status: params?.status,
+      method: params?.method,
+      limit: params?.limit,
+    })}`,
+    (json) => asArray<Record<string, unknown>>(json),
+  )
+  return (envelope.data ?? []).map((raw) => ({
+    paymentId: String(raw.paymentId ?? raw.payment_id ?? raw.id ?? ''),
+    paymentReference: (raw.paymentReference ?? raw.payment_reference) as string | null,
+    amount: Number(raw.amount ?? 0),
+    currency: String(raw.currency ?? 'BHD'),
+    method: String(raw.method ?? ''),
+    status: String(raw.status ?? ''),
+    customerId: (raw.customerId ?? raw.customer_id) as string | undefined,
+    customerName: (raw.customerName ?? raw.customer_name) as string | null,
+    businessId: (raw.businessId ?? raw.business_id) as string | undefined,
+    businessName: (raw.businessName ?? raw.business_name) as string | null,
+    invoiceId: (raw.invoiceId ?? raw.invoice_id) as string | undefined,
+    invoiceNumber: (raw.invoiceNumber ?? raw.invoice_number) as string | null,
+    createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
+    confirmedAt: (raw.confirmedAt ?? raw.confirmed_at) as string | null,
+  }))
+}
+
+export async function getAdminTransaction(paymentId: string): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.get(
+    adminPaths.transaction(paymentId),
+    (json) => json as Record<string, unknown>,
+  )
+  return envelope.data!
+}

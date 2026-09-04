@@ -9,6 +9,7 @@ const links = [
   { to: '/admin/users', label: 'Users' },
   { to: '/admin/disputes', label: 'Disputes' },
   { to: '/admin/reviews', label: 'Reviews' },
+  { to: '/admin/transactions', label: 'Transactions' },
 ]
 
 const ADMIN_ROLES = [

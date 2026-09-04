@@ -124,6 +124,9 @@ export function AdminDashboardPage() {
         <Link to="/admin/reviews" className="rounded-xl border border-border bg-surface px-3 py-3">
           Reviews →
         </Link>
+        <Link to="/admin/transactions" className="rounded-xl border border-border bg-surface px-3 py-3">
+          Transactions →
+        </Link>
       </nav>
     </section>
   )
