@@ -1,13 +1,15 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
+import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { StarRating } from '../components/ui/StarRating'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { formatDateLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
-import { getReview } from '../services/api/reviews'
+import { getReview, reportReview } from '../services/api/reviews'
 
 const RATING_LABEL_KEYS: Record<string, string> = {
   workQuality: 'reviews.workQuality',
@@ -21,11 +23,22 @@ export function ReviewDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t, dateLocale } = useLocale()
+  const [reportMsg, setReportMsg] = useState('')
+  const [reportErr, setReportErr] = useState('')
 
   const { data: review, isLoading, error } = useQuery({
     queryKey: ['review', id],
     queryFn: () => getReview(id!),
     enabled: !!id,
+  })
+
+  const reportMutation = useMutation({
+    mutationFn: () => reportReview(id!, 'inappropriate', 'Reported from customer app'),
+    onSuccess: () => {
+      setReportMsg(t('reviews.reportSent'))
+      setReportErr('')
+    },
+    onError: (err: Error) => setReportErr(err.message),
   })
 
   if (isLoading) return <Spinner />
@@ -42,6 +55,10 @@ export function ReviewDetailPage() {
     )
   }
 
+  const context = [review.contextLabel, review.serviceLabel, review.vehicleLabel]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
     <div>
       <PageHeader title={t('reviews.detail')} backTo="/reviews" />
@@ -51,6 +68,7 @@ export function ReviewDetailPage() {
             <h2 className="text-lg font-semibold text-text-primary">
               {review.businessName ?? t('common.garage')}
             </h2>
+            {context && <p className="mt-1 text-sm text-text-muted">{context}</p>}
             <StarRating rating={review.overallRating} className="mt-1" />
             <p className="mt-1 text-sm text-text-muted">
               {formatDateLocalized(review.createdAt, dateLocale)}
@@ -86,6 +104,19 @@ export function ReviewDetailPage() {
             </p>
           </section>
         )}
+
+        <div className="mt-6 space-y-2">
+          {reportErr && <p className="text-sm text-error">{reportErr}</p>}
+          {reportMsg && <p className="text-sm text-success">{reportMsg}</p>}
+          <Button
+            variant="secondary"
+            className="w-full"
+            loading={reportMutation.isPending}
+            onClick={() => reportMutation.mutate()}
+          >
+            {t('reviews.report')}
+          </Button>
+        </div>
       </div>
     </div>
   )

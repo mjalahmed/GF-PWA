@@ -16,6 +16,8 @@ import { listServiceCategories } from '../services/api/catalog'
 import { listAnnouncements } from '../services/api/experience'
 import { listFavorites } from '../services/api/favorites'
 import { searchBusinesses } from '../services/api/garages'
+import { listInvoices } from '../services/api/invoices'
+import { listQuotations } from '../services/api/quotations'
 import { listVehicles } from '../services/api/vehicles'
 
 function SectionHeader({ title, to, seeAllLabel }: { title: string; to: string; seeAllLabel: string }) {
@@ -67,6 +69,18 @@ export function HomePage() {
     refetchInterval: 60_000,
   })
 
+  const quotationsQuery = useQuery({
+    queryKey: ['quotations', 'home'],
+    queryFn: () => listQuotations(),
+    enabled: !!session,
+  })
+
+  const invoicesQuery = useQuery({
+    queryKey: ['invoices', 'home'],
+    queryFn: () => listInvoices(),
+    enabled: !!session,
+  })
+
   const announcementsQuery = useQuery({
     queryKey: ['announcements'],
     queryFn: () => listAnnouncements(),
@@ -83,6 +97,37 @@ export function HomePage() {
       null
     )
   }, [appointmentsQuery.data])
+
+  const upcomingAppointment = useMemo(() => {
+    const now = Date.now()
+    const upcoming = (appointmentsQuery.data ?? [])
+      .filter((a) =>
+        ['requested', 'confirmed', 'quote_pending', 'quote_accepted'].includes(a.status),
+      )
+      .filter((a) => new Date(a.scheduledStart).getTime() >= now - 60_000)
+      .sort(
+        (a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime(),
+      )
+    return upcoming[0] ?? null
+  }, [appointmentsQuery.data])
+
+  const pendingQuotes = useMemo(
+    () =>
+      (quotationsQuery.data ?? []).filter((q) =>
+        ['issued', 'viewed', 'sent'].includes(q.status),
+      ),
+    [quotationsQuery.data],
+  )
+
+  const outstandingInvoices = useMemo(
+    () =>
+      (invoicesQuery.data ?? []).filter(
+        (inv) =>
+          inv.remainingTotal > 0 &&
+          !['paid', 'cancelled', 'refunded', 'draft'].includes(inv.status),
+      ),
+    [invoicesQuery.data],
+  )
 
   const activeVehicleLabel = useMemo(() => {
     if (!activeAppointment?.vehicleId || !vehiclesQuery.data) return undefined
@@ -107,6 +152,59 @@ export function HomePage() {
 
         {activeAppointment && (
           <ActiveServiceCard appointment={activeAppointment} vehicleLabel={activeVehicleLabel} />
+        )}
+
+        {session && (
+          <section className="mt-4 grid grid-cols-2 gap-2">
+            {upcomingAppointment &&
+              (!activeAppointment || upcomingAppointment.id !== activeAppointment.id) && (
+                <Link
+                  to={`/appointments/${upcomingAppointment.id}`}
+                  className="col-span-2 rounded-xl border border-border bg-surface p-3 no-underline"
+                >
+                  <p className="text-xs font-semibold uppercase text-text-muted">
+                    {t('home.upcoming')}
+                  </p>
+                  <p className="mt-1 font-medium text-text-primary">
+                    {upcomingAppointment.businessName ?? t('common.garage')}
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {new Date(upcomingAppointment.scheduledStart).toLocaleString()}
+                  </p>
+                </Link>
+              )}
+            {pendingQuotes.length > 0 && (
+              <Link
+                to="/quotations"
+                className="rounded-xl border border-border bg-surface p-3 no-underline"
+              >
+                <p className="text-2xl font-semibold text-text-primary">{pendingQuotes.length}</p>
+                <p className="text-xs text-text-muted">{t('home.pendingQuotes')}</p>
+              </Link>
+            )}
+            {outstandingInvoices.length > 0 && (
+              <Link
+                to="/invoices"
+                className="rounded-xl border border-border bg-surface p-3 no-underline"
+              >
+                <p className="text-2xl font-semibold text-text-primary">
+                  {outstandingInvoices.length}
+                </p>
+                <p className="text-xs text-text-muted">{t('home.outstandingInvoices')}</p>
+              </Link>
+            )}
+            {(vehiclesQuery.data?.length ?? 0) > 0 && (
+              <Link
+                to="/vehicles"
+                className="rounded-xl border border-border bg-surface p-3 no-underline"
+              >
+                <p className="text-2xl font-semibold text-text-primary">
+                  {vehiclesQuery.data?.length ?? 0}
+                </p>
+                <p className="text-xs text-text-muted">{t('home.yourVehicles')}</p>
+              </Link>
+            )}
+          </section>
         )}
 
         {defaultVehicle && !defaultVehicle.vin && (

@@ -78,6 +78,13 @@ export function ReviewsPage() {
                       <p className="font-semibold text-text-primary">
                         {review.businessName ?? t('common.garage')}
                       </p>
+                      {(review.contextLabel || review.serviceLabel || review.vehicleLabel) && (
+                        <p className="mt-0.5 text-xs text-text-muted">
+                          {[review.contextLabel, review.serviceLabel, review.vehicleLabel]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      )}
                       <StarRating rating={review.overallRating} className="mt-1" />
                     </div>
                     <StatusBadge status={review.status} />

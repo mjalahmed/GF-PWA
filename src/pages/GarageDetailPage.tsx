@@ -270,22 +270,48 @@ export function GarageDetailPage() {
                 )}
                 <div className="space-y-3">
                   {productsQuery.data?.items.map((prod) => (
-                    <article key={prod.id} className="rounded-xl border border-border bg-surface p-4">
-                      <h3 className="font-semibold text-text-primary">{prod.name}</h3>
-                      {prod.description && (
-                        <p className="mt-1 text-sm text-text-muted line-clamp-2">{prod.description}</p>
-                      )}
-                      <div className="mt-2 flex flex-wrap gap-2 text-sm text-text-secondary">
+                    <article
+                      key={prod.id}
+                      className="rounded-xl border border-border bg-surface p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-text-primary">{prod.name}</h3>
+                          {prod.description && (
+                            <p className="mt-1 text-sm text-text-muted">{prod.description}</p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-end text-sm">
+                          {prod.salePrice != null ? (
+                            <>
+                              <p className="font-semibold text-primary">
+                                {formatMoney(prod.salePrice)}
+                              </p>
+                              {prod.price != null && (
+                                <p className="text-xs text-text-subtle line-through">
+                                  {formatMoney(prod.price)}
+                                </p>
+                              )}
+                            </>
+                          ) : prod.price != null ? (
+                            <p className="font-semibold">{formatMoney(prod.price)}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-text-secondary">
                         <span>{prod.category.name}</span>
-                        {prod.salePrice != null ? (
-                          <span>{formatMoney(prod.salePrice)}</span>
-                        ) : prod.price != null ? (
-                          <span>{formatMoney(prod.price)}</span>
-                        ) : null}
+                        {prod.stockStatus && (
+                          <span className="rounded-md bg-surface-secondary px-2 py-0.5 capitalize">
+                            {prod.stockStatus.replaceAll('_', ' ')}
+                          </span>
+                        )}
                       </div>
                     </article>
                   ))}
                 </div>
+                <p className="mt-3 text-xs text-text-subtle">
+                  Product ordering is not available in the app yet — contact the garage to purchase.
+                </p>
               </>
             )}
 
