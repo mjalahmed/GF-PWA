@@ -21,6 +21,22 @@ export function AdminUsersPage() {
 
   if (usersQuery.isLoading) return <Spinner />
 
+  if (usersQuery.isError) {
+    return (
+      <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
+        <h2 className="text-xl font-semibold">Users</h2>
+        <EmptyState
+          title="Could not load users"
+          description={
+            usersQuery.error instanceof Error
+              ? usersQuery.error.message
+              : 'Check that you are signed in as an admin and the API is running.'
+          }
+        />
+      </section>
+    )
+  }
+
   const items = usersQuery.data ?? []
 
   return (

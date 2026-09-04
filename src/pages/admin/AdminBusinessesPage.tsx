@@ -22,6 +22,22 @@ export function AdminBusinessesPage() {
 
   if (businessesQuery.isLoading) return <Spinner />
 
+  if (businessesQuery.isError) {
+    return (
+      <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
+        <h2 className="text-xl font-semibold">Businesses</h2>
+        <EmptyState
+          title="Could not load businesses"
+          description={
+            businessesQuery.error instanceof Error
+              ? businessesQuery.error.message
+              : 'Check that you are signed in as an admin and the API is running.'
+          }
+        />
+      </section>
+    )
+  }
+
   const items = businessesQuery.data ?? []
 
   return (

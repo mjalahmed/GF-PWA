@@ -138,28 +138,28 @@ export async function listAdminUsers(params?: {
   page?: number
   pageSize?: number
 }): Promise<AdminUserRow[]> {
-  try {
-    const envelope = await apiClient.get(
-      `${adminPaths.users}${buildQuery({
-        status: params?.status,
-        page: params?.page ?? 1,
-        pageSize: params?.pageSize ?? 50,
-      })}`,
-      (json) => asArray<Record<string, unknown>>(json),
-    )
-    return (envelope.data ?? []).map((raw) => ({
-      id: String(raw.id),
-      email: (raw.email as string | undefined) ?? undefined,
-      fullName: (raw.fullName ?? raw.full_name) as string | undefined,
-      phone: raw.phone as string | undefined,
-      status: raw.status as string | undefined,
-      isSuspended: Boolean(raw.isSuspended ?? raw.is_suspended),
-      roles: Array.isArray(raw.roles) ? raw.roles.map(String) : undefined,
-      createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
-    }))
-  } catch {
-    return []
-  }
+  const envelope = await apiClient.get(
+    `${adminPaths.users}${buildQuery({
+      status: params?.status,
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 50,
+      limit: params?.pageSize ?? 50,
+    })}`,
+    (json) => asArray<Record<string, unknown>>(json),
+  )
+  return (envelope.data ?? []).map((raw) => ({
+    id: String(raw.id),
+    email: (raw.email as string | undefined) ?? undefined,
+    fullName: (raw.fullName ?? raw.full_name) as string | undefined,
+    phone: raw.phone as string | undefined,
+    status: raw.status as string | undefined,
+    isSuspended:
+      Boolean(raw.isSuspended ?? raw.is_suspended) ||
+      raw.status === 'suspended' ||
+      raw.status === 'blocked',
+    roles: Array.isArray(raw.roles) ? raw.roles.map(String) : undefined,
+    createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
+  }))
 }
 
 export async function setAdminUserSuspended(
@@ -168,7 +168,7 @@ export async function setAdminUserSuspended(
 ): Promise<AdminUserRow | null> {
   const envelope = await apiClient.patch(
     adminPaths.user(userId),
-    { isSuspended: suspended, status: suspended ? 'suspended' : 'active' },
+    { status: suspended ? 'suspended' : 'active' },
     (json) => json as Record<string, unknown>,
   )
   const raw = envelope.data
@@ -178,7 +178,9 @@ export async function setAdminUserSuspended(
     email: raw.email as string | undefined,
     fullName: (raw.fullName ?? raw.full_name) as string | undefined,
     status: raw.status as string | undefined,
-    isSuspended: Boolean(raw.isSuspended ?? raw.is_suspended ?? suspended),
+    isSuspended: Boolean(
+      raw.isSuspended ?? raw.is_suspended ?? suspended,
+    ),
   }
 }
 
@@ -197,27 +199,26 @@ export async function listAdminBusinesses(params?: {
   page?: number
   pageSize?: number
 }): Promise<AdminBusinessRow[]> {
-  try {
-    const envelope = await apiClient.get(
-      `${adminPaths.businesses}${buildQuery({
-        status: params?.status,
-        page: params?.page ?? 1,
-        pageSize: params?.pageSize ?? 50,
-      })}`,
-      (json) => asArray<Record<string, unknown>>(json),
-    )
-    return (envelope.data ?? []).map((raw) => ({
-      id: String(raw.id),
-      slug: raw.slug as string | undefined,
-      displayName: String(raw.displayName ?? raw.display_name ?? 'Business'),
-      status: raw.status as string | undefined,
-      verificationStatus: (raw.verificationStatus ?? raw.verification_status) as string | undefined,
-      phone: raw.phone as string | undefined,
-      createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
-    }))
-  } catch {
-    return []
-  }
+  const envelope = await apiClient.get(
+    `${adminPaths.businesses}${buildQuery({
+      status: params?.status,
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 50,
+      limit: params?.pageSize ?? 50,
+    })}`,
+    (json) => asArray<Record<string, unknown>>(json),
+  )
+  return (envelope.data ?? []).map((raw) => ({
+    id: String(raw.id),
+    slug: raw.slug as string | undefined,
+    displayName: String(raw.displayName ?? raw.display_name ?? 'Business'),
+    status: raw.status as string | undefined,
+    verificationStatus: (raw.verificationStatus ?? raw.verification_status) as
+      | string
+      | undefined,
+    phone: raw.phone as string | undefined,
+    createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
+  }))
 }
 
 export async function setAdminBusinessStatus(
