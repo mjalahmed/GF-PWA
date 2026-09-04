@@ -98,6 +98,10 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
   const [pricingType, setPricingType] = useState<ServicePricingType>('fixed')
   const [price, setPrice] = useState('25')
   const [duration, setDuration] = useState('60')
+  const [benefitPayEnabled, setBenefitPayEnabled] = useState(false)
+  const [benefitPayPhone, setBenefitPayPhone] = useState('')
+  const [benefitPayIban, setBenefitPayIban] = useState('')
+  const [benefitPayInstructions, setBenefitPayInstructions] = useState('')
 
   useEffect(() => {
     const b = businessQuery.data
@@ -121,6 +125,15 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
     if (!hoursQuery.data) return
     setSchedule(hoursQuery.data.length ? hoursQuery.data : defaultSchedule())
   }, [hoursQuery.data])
+
+  useEffect(() => {
+    const s = settingsQuery.data
+    if (!s) return
+    setBenefitPayEnabled(Boolean(s.benefitPayEnabled))
+    setBenefitPayPhone(s.benefitPayPhone ?? '')
+    setBenefitPayIban(s.benefitPayIban ?? '')
+    setBenefitPayInstructions(s.benefitPayInstructions ?? '')
+  }, [settingsQuery.data])
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['business-profile', businessId] })
@@ -243,6 +256,22 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       }),
     onSuccess: () => {
       setSuccess('Bookings enabled.')
+      setError('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const benefitPayMutation = useMutation({
+    mutationFn: () =>
+      updateBusinessSettings(businessId, {
+        benefitPayEnabled,
+        benefitPayPhone: benefitPayPhone.trim() || null,
+        benefitPayIban: benefitPayIban.trim() || null,
+        benefitPayInstructions: benefitPayInstructions.trim() || null,
+      }),
+    onSuccess: () => {
+      setSuccess('BenefitPay settings saved.')
       setError('')
       invalidate()
     },
@@ -494,6 +523,47 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
           onClick={() => bookingsMutation.mutate()}
         >
           {checklist.appointmentsEnabled ? 'Bookings already on' : 'Enable appointments'}
+        </Button>
+      </section>
+
+      <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
+        <h3 className="font-semibold">6. BenefitPay</h3>
+        <p className="text-sm text-text-muted">
+          Show settlement details so customers can pay invoices via BenefitPay.
+        </p>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={benefitPayEnabled}
+            onChange={(e) => setBenefitPayEnabled(e.target.checked)}
+          />
+          Enable BenefitPay
+        </label>
+        {benefitPayEnabled && (
+          <>
+            <Input
+              label="BenefitPay phone"
+              value={benefitPayPhone}
+              onChange={(e) => setBenefitPayPhone(e.target.value)}
+            />
+            <Input
+              label="IBAN"
+              value={benefitPayIban}
+              onChange={(e) => setBenefitPayIban(e.target.value)}
+            />
+            <label className="block text-sm">
+              <span className="mb-1 block text-text-muted">Payment instructions</span>
+              <textarea
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                rows={3}
+                value={benefitPayInstructions}
+                onChange={(e) => setBenefitPayInstructions(e.target.value)}
+              />
+            </label>
+          </>
+        )}
+        <Button loading={benefitPayMutation.isPending} onClick={() => benefitPayMutation.mutate()}>
+          Save BenefitPay settings
         </Button>
       </section>
 
