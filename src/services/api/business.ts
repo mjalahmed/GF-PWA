@@ -4,6 +4,7 @@ import type {
   BusinessTeamMember,
   InvitableRole,
 } from '../../types/business'
+import type { Appointment } from '../../types/appointments'
 import type {
   ApplicationDetail,
   ApplicationDocument,
@@ -20,11 +21,54 @@ import type {
   UpdateApplicationBranchInput,
   UpdateApplicationInput,
 } from '../../types/onboarding'
+import { mapAppointment } from '../../lib/mappers'
 import { apiClient, buildQuery } from './client'
 import { businessPaths, platformPaths } from './paths'
 
 function asArray<T>(json: unknown): T[] {
   return Array.isArray(json) ? (json as T[]) : []
+}
+
+function metaBool(
+  data: Record<string, unknown>,
+  meta: Record<string, unknown>,
+  camel: string,
+  snake: string,
+  fallback: boolean,
+): boolean {
+  if (typeof data[camel] === 'boolean') return data[camel] as boolean
+  if (typeof data[snake] === 'boolean') return data[snake] as boolean
+  if (typeof meta[camel] === 'boolean') return meta[camel] as boolean
+  if (typeof meta[snake] === 'boolean') return meta[snake] as boolean
+  return fallback
+}
+
+function metaStr(
+  data: Record<string, unknown>,
+  meta: Record<string, unknown>,
+  camel: string,
+  snake: string,
+): string | null | undefined {
+  const v = data[camel] ?? data[snake] ?? meta[camel] ?? meta[snake]
+  if (v == null) return v as null | undefined
+  return String(v)
+}
+
+export function normalizeBusinessSettings(raw: unknown): BusinessSettings {
+  const data = (raw ?? {}) as BusinessSettings & Record<string, unknown>
+  const meta = (data.metadata ?? {}) as Record<string, unknown>
+  return {
+    ...data,
+    businessId: String(data.businessId ?? data.business_id ?? ''),
+    appointmentsEnabled: Boolean(data.appointmentsEnabled ?? data.appointments_enabled),
+    publiclyVisible: metaBool(data, meta, 'publiclyVisible', 'publicly_visible', true),
+    acceptNewCustomers: metaBool(data, meta, 'acceptNewCustomers', 'accept_new_customers', true),
+    benefitPayEnabled: metaBool(data, meta, 'benefitPayEnabled', 'benefit_pay_enabled', false),
+    benefitPayPhone: metaStr(data, meta, 'benefitPayPhone', 'benefit_pay_phone') ?? null,
+    benefitPayIban: metaStr(data, meta, 'benefitPayIban', 'benefit_pay_iban') ?? null,
+    benefitPayInstructions:
+      metaStr(data, meta, 'benefitPayInstructions', 'benefit_pay_instructions') ?? null,
+  }
 }
 
 export async function listMyBusinessMemberships(): Promise<BusinessMembership[]> {
@@ -188,52 +232,38 @@ export async function updateBusinessProfile(
 }
 
 export async function getBusinessSettings(businessId: string): Promise<BusinessSettings> {
-  const envelope = await apiClient.get(businessPaths.settings(businessId), (json) =>
-    json as BusinessSettings & { metadata?: Record<string, unknown> },
-  )
-  const data = envelope.data!
-  const meta = data.metadata ?? {}
-  return {
-    ...data,
-    publiclyVisible:
-      typeof meta.publiclyVisible === 'boolean'
-        ? meta.publiclyVisible
-        : typeof meta.publicly_visible === 'boolean'
-          ? meta.publicly_visible
-          : true,
-  }
+  const envelope = await apiClient.get(businessPaths.settings(businessId), (json) => json)
+  return normalizeBusinessSettings(envelope.data)
 }
 
 export async function updateBusinessSettings(
   businessId: string,
   input: Partial<BusinessSettings>,
 ): Promise<BusinessSettings> {
-  const { publiclyVisible, metadata, ...rest } = input
+  const {
+    publiclyVisible,
+    acceptNewCustomers,
+    benefitPayEnabled,
+    benefitPayPhone,
+    benefitPayIban,
+    benefitPayInstructions,
+    metadata,
+    ...rest
+  } = input
   const body: Record<string, unknown> = { ...rest }
-  if (publiclyVisible !== undefined || metadata !== undefined) {
-    const current = await getBusinessSettings(businessId)
-    body.metadata = {
-      ...(current.metadata ?? {}),
-      ...(metadata ?? {}),
-      ...(publiclyVisible !== undefined ? { publiclyVisible } : {}),
-    }
-  }
+  if (publiclyVisible !== undefined) body.publiclyVisible = publiclyVisible
+  if (acceptNewCustomers !== undefined) body.acceptNewCustomers = acceptNewCustomers
+  if (benefitPayEnabled !== undefined) body.benefitPayEnabled = benefitPayEnabled
+  if (benefitPayPhone !== undefined) body.benefitPayPhone = benefitPayPhone
+  if (benefitPayIban !== undefined) body.benefitPayIban = benefitPayIban
+  if (benefitPayInstructions !== undefined) body.benefitPayInstructions = benefitPayInstructions
+  if (metadata !== undefined) body.metadata = metadata
   const envelope = await apiClient.patch(
     businessPaths.settings(businessId),
     body,
-    (json) => json as BusinessSettings & { metadata?: Record<string, unknown> },
+    (json) => json,
   )
-  const data = envelope.data!
-  const meta = data.metadata ?? {}
-  return {
-    ...data,
-    publiclyVisible:
-      typeof meta.publiclyVisible === 'boolean'
-        ? meta.publiclyVisible
-        : typeof meta.publicly_visible === 'boolean'
-          ? meta.publicly_visible
-          : true,
-  }
+  return normalizeBusinessSettings(envelope.data)
 }
 
 export async function listBusinessBranches(businessId: string): Promise<BusinessBranch[]> {
@@ -519,6 +549,17 @@ export async function listBusinessAppointments(
   return envelope.data ?? []
 }
 
+export async function getBusinessAppointment(
+  businessId: string,
+  appointmentId: string,
+): Promise<Appointment> {
+  const envelope = await apiClient.get(
+    businessPaths.appointment(businessId, appointmentId),
+    (json) => json as Record<string, unknown>,
+  )
+  return mapAppointment(envelope.data!)
+}
+
 export async function transitionAppointment(
   appointmentId: string,
   action: 'confirm' | 'reject' | 'cancel' | 'arrive' | 'start' | 'complete' | 'no-show',
@@ -529,6 +570,65 @@ export async function transitionAppointment(
     (body ?? {}) as Record<string, unknown>,
     (json) => json as Record<string, unknown>,
     crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
+export async function setAppointmentStatus(
+  appointmentId: string,
+  status: string,
+  note?: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    platformPaths.appointmentStatus(appointmentId),
+    { status, ...(note ? { note } : {}) },
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
+export async function registerAppointmentMedia(
+  businessId: string,
+  appointmentId: string,
+  input: {
+    phase: 'before' | 'during' | 'after'
+    storagePath: string
+    caption?: string | null
+    sortOrder?: number
+  },
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    businessPaths.appointmentMedia(businessId, appointmentId),
+    input as Record<string, unknown>,
+    (json) => json as Record<string, unknown>,
+  )
+  return envelope.data!
+}
+
+export async function confirmInvoicePayment(
+  businessId: string,
+  invoiceId: string,
+  paymentId: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    businessPaths.invoicePaymentConfirm(businessId, invoiceId, paymentId),
+    {},
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
+export async function requestReviewDispute(
+  businessId: string,
+  reviewId: string,
+  reason?: string,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    businessPaths.reviewDispute(businessId, reviewId),
+    { reason: reason ?? null },
+    (json) => json as Record<string, unknown>,
   )
   return envelope.data!
 }

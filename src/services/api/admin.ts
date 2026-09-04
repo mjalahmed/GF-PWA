@@ -1,4 +1,5 @@
-import type { ApplicationDetail, ApplicationDocument, BusinessApplication } from '../../types/onboarding'
+import type { ApplicationDetail, ApplicationDocument, BusinessApplication, BusinessSettings } from '../../types/onboarding'
+import { normalizeBusinessSettings } from './business'
 import { apiClient, buildQuery } from './client'
 import { adminPaths } from './paths'
 
@@ -85,6 +86,159 @@ export async function reviewApplicationDocument(
   return envelope.data!
 }
 
+export async function getAdminDocumentDownloadUrl(
+  applicationId: string,
+  documentId: string,
+): Promise<{ url: string; expiresAt?: string }> {
+  const envelope = await apiClient.get(
+    adminPaths.applicationDocumentDownloadUrl(applicationId, documentId),
+    (json) => json as Record<string, unknown>,
+  )
+  const data = envelope.data!
+  return {
+    url: String(data.url ?? data.signedUrl ?? data.signed_url ?? ''),
+    expiresAt: (data.expiresAt ?? data.expires_at) as string | undefined,
+  }
+}
+
+export async function getAdminBusinessSettings(businessId: string): Promise<BusinessSettings> {
+  const envelope = await apiClient.get(adminPaths.businessSettings(businessId), (json) => json)
+  return normalizeBusinessSettings(envelope.data)
+}
+
+export async function updateAdminBusinessSettings(
+  businessId: string,
+  input: Partial<BusinessSettings>,
+): Promise<BusinessSettings> {
+  const body = { ...input } as Record<string, unknown>
+  delete body.businessId
+  delete body.metadata
+  if (input.metadata !== undefined) body.metadata = input.metadata
+  const envelope = await apiClient.patch(
+    adminPaths.businessSettings(businessId),
+    body,
+    (json) => json,
+  )
+  return normalizeBusinessSettings(envelope.data)
+}
+
+export type AdminUserRow = {
+  id: string
+  email?: string
+  fullName?: string
+  phone?: string
+  status?: string
+  isSuspended?: boolean
+  roles?: string[]
+  createdAt?: string
+}
+
+export async function listAdminUsers(params?: {
+  status?: string
+  page?: number
+  pageSize?: number
+}): Promise<AdminUserRow[]> {
+  try {
+    const envelope = await apiClient.get(
+      `${adminPaths.users}${buildQuery({
+        status: params?.status,
+        page: params?.page ?? 1,
+        pageSize: params?.pageSize ?? 50,
+      })}`,
+      (json) => asArray<Record<string, unknown>>(json),
+    )
+    return (envelope.data ?? []).map((raw) => ({
+      id: String(raw.id),
+      email: (raw.email as string | undefined) ?? undefined,
+      fullName: (raw.fullName ?? raw.full_name) as string | undefined,
+      phone: raw.phone as string | undefined,
+      status: raw.status as string | undefined,
+      isSuspended: Boolean(raw.isSuspended ?? raw.is_suspended),
+      roles: Array.isArray(raw.roles) ? raw.roles.map(String) : undefined,
+      createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
+    }))
+  } catch {
+    return []
+  }
+}
+
+export async function setAdminUserSuspended(
+  userId: string,
+  suspended: boolean,
+): Promise<AdminUserRow | null> {
+  const envelope = await apiClient.patch(
+    adminPaths.user(userId),
+    { isSuspended: suspended, status: suspended ? 'suspended' : 'active' },
+    (json) => json as Record<string, unknown>,
+  )
+  const raw = envelope.data
+  if (!raw) return null
+  return {
+    id: String(raw.id),
+    email: raw.email as string | undefined,
+    fullName: (raw.fullName ?? raw.full_name) as string | undefined,
+    status: raw.status as string | undefined,
+    isSuspended: Boolean(raw.isSuspended ?? raw.is_suspended ?? suspended),
+  }
+}
+
+export type AdminBusinessRow = {
+  id: string
+  slug?: string
+  displayName: string
+  status?: string
+  verificationStatus?: string
+  phone?: string
+  createdAt?: string
+}
+
+export async function listAdminBusinesses(params?: {
+  status?: string
+  page?: number
+  pageSize?: number
+}): Promise<AdminBusinessRow[]> {
+  try {
+    const envelope = await apiClient.get(
+      `${adminPaths.businesses}${buildQuery({
+        status: params?.status,
+        page: params?.page ?? 1,
+        pageSize: params?.pageSize ?? 50,
+      })}`,
+      (json) => asArray<Record<string, unknown>>(json),
+    )
+    return (envelope.data ?? []).map((raw) => ({
+      id: String(raw.id),
+      slug: raw.slug as string | undefined,
+      displayName: String(raw.displayName ?? raw.display_name ?? 'Business'),
+      status: raw.status as string | undefined,
+      verificationStatus: (raw.verificationStatus ?? raw.verification_status) as string | undefined,
+      phone: raw.phone as string | undefined,
+      createdAt: (raw.createdAt ?? raw.created_at) as string | undefined,
+    }))
+  } catch {
+    return []
+  }
+}
+
+export async function setAdminBusinessStatus(
+  businessId: string,
+  status: 'active' | 'suspended',
+): Promise<AdminBusinessRow | null> {
+  const envelope = await apiClient.patch(
+    adminPaths.business(businessId),
+    { status },
+    (json) => json as Record<string, unknown>,
+  )
+  const raw = envelope.data
+  if (!raw) return null
+  return {
+    id: String(raw.id),
+    displayName: String(raw.displayName ?? raw.display_name ?? 'Business'),
+    status: String(raw.status ?? status),
+    verificationStatus: (raw.verificationStatus ?? raw.verification_status) as string | undefined,
+  }
+}
+
 export async function listAdminDisputes(params?: {
   status?: string
 }): Promise<Record<string, unknown>[]> {
@@ -103,4 +257,29 @@ export async function listAdminReviews(params?: {
     (json) => asArray<Record<string, unknown>>(json),
   )
   return envelope.data ?? []
+}
+
+export async function adminReviewAction(
+  reviewId: string,
+  action: 'hide' | 'restore' | 'remove',
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    adminPaths.reviewAction(reviewId, action),
+    {},
+    (json) => json as Record<string, unknown>,
+  )
+  return envelope.data!
+}
+
+export async function adminDisputeAction(
+  disputeId: string,
+  action: string,
+  body?: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    adminPaths.disputeAction(disputeId, action),
+    body ?? {},
+    (json) => json as Record<string, unknown>,
+  )
+  return envelope.data!
 }

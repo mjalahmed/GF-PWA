@@ -49,3 +49,20 @@ export async function listInvoicePayments(invoiceId: string): Promise<Payment[]>
   const envelope = await apiClient.get(customerPaths.invoicePayments(invoiceId), (json) => json)
   return mapList(envelope.data, mapPayment)
 }
+
+/** Customer marks BenefitPay transfer as submitted; garage confirms later. */
+export async function submitBenefitPayPayment(
+  invoiceId: string,
+  input?: { amount?: number; note?: string },
+): Promise<Payment> {
+  const envelope = await apiClient.post(
+    customerPaths.invoiceBenefitPay(invoiceId),
+    {
+      ...(input?.amount != null ? { amount: input.amount } : {}),
+      ...(input?.note ? { note: input.note } : {}),
+    },
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return mapPayment(envelope.data!)
+}

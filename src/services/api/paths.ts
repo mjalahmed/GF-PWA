@@ -13,6 +13,7 @@ export const platformPaths = {
   legalAcceptances: `${V1}/legal/acceptances`,
   appointment: (id: string) => `${V1}/appointments/${id}`,
   appointmentAction: (id: string, action: string) => `${V1}/appointments/${id}/${action}`,
+  appointmentStatus: (id: string) => `${V1}/appointments/${id}/status`,
 } as const
 
 export const customerPaths = {
@@ -46,6 +47,8 @@ export const customerPaths = {
   invoice: (id: string) => `${V1}/customer/invoices/${id}`,
   invoiceAction: (id: string, action: string) => `${V1}/customer/invoices/${id}/${action}`,
   invoicePayments: (invoiceId: string) => `${V1}/customer/invoices/${invoiceId}/payments`,
+  invoiceBenefitPay: (invoiceId: string) =>
+    `${V1}/customer/invoices/${invoiceId}/payments/benefitpay`,
   payments: `${V1}/customer/payments`,
   payment: (id: string) => `${V1}/customer/payments/${id}`,
   reviewEligibilities: `${V1}/customer/review-eligibilities`,
@@ -93,9 +96,16 @@ export const businessPaths = {
   service: (businessId: string, serviceId: string) =>
     `${V1}/business/businesses/${businessId}/services/${serviceId}`,
   appointments: (businessId: string) => `${V1}/business/businesses/${businessId}/appointments`,
+  appointment: (businessId: string, appointmentId: string) =>
+    `${V1}/business/businesses/${businessId}/appointments/${appointmentId}`,
+  appointmentMedia: (businessId: string, appointmentId: string) =>
+    `${V1}/business/businesses/${businessId}/appointments/${appointmentId}/media`,
   products: (businessId: string) => `${V1}/business/businesses/${businessId}/products`,
   product: (businessId: string, productId: string) =>
     `${V1}/business/businesses/${businessId}/products/${productId}`,
+  reviews: (businessId: string) => `${V1}/business/businesses/${businessId}/reviews`,
+  reviewDispute: (businessId: string, reviewId: string) =>
+    `${V1}/business/businesses/${businessId}/reviews/${reviewId}/dispute`,
   quotations: (businessId: string) => `${V1}/business/businesses/${businessId}/quotations`,
   quotation: (businessId: string, quotationId: string) =>
     `${V1}/business/businesses/${businessId}/quotations/${quotationId}`,
@@ -116,6 +126,8 @@ export const businessPaths = {
     `${V1}/business/businesses/${businessId}/quotations/${quotationId}/invoice`,
   invoiceCashPayment: (businessId: string, invoiceId: string) =>
     `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/payments/cash`,
+  invoicePaymentConfirm: (businessId: string, invoiceId: string, paymentId: string) =>
+    `${V1}/business/businesses/${businessId}/invoices/${invoiceId}/payments/${paymentId}/confirm`,
   disputes: (businessId: string) => `${V1}/business/businesses/${businessId}/disputes`,
 } as const
 
@@ -125,6 +137,13 @@ export const adminPaths = {
   applicationAction: (id: string, action: string) => `${V1}/admin/applications/${id}/${action}`,
   applicationDocumentReview: (id: string, documentId: string) =>
     `${V1}/admin/applications/${id}/documents/${documentId}/review`,
+  applicationDocumentDownloadUrl: (id: string, documentId: string) =>
+    `${V1}/admin/applications/${id}/documents/${documentId}/download-url`,
+  businesses: `${V1}/admin/businesses`,
+  business: (businessId: string) => `${V1}/admin/businesses/${businessId}`,
+  businessSettings: (businessId: string) => `${V1}/admin/businesses/${businessId}/settings`,
+  users: `${V1}/admin/users`,
+  user: (userId: string) => `${V1}/admin/users/${userId}`,
   reviews: `${V1}/admin/reviews`,
   review: (id: string) => `${V1}/admin/reviews/${id}`,
   reviewAction: (id: string, action: string) => `${V1}/admin/reviews/${id}/${action}`,

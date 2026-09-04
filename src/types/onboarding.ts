@@ -192,8 +192,15 @@ export type BusinessSettings = {
   currency?: string
   locale?: string
   timezone?: string
-  /** Soft discovery visibility flag stored in settings.metadata until a first-class column exists. */
+  /** Soft discovery visibility (first-class column; metadata fallback for older backends). */
   publiclyVisible?: boolean
+  /** Whether the garage accepts new customer bookings. */
+  acceptNewCustomers?: boolean
+  /** BenefitPay settlement details (first-class). */
+  benefitPayEnabled?: boolean
+  benefitPayPhone?: string | null
+  benefitPayIban?: string | null
+  benefitPayInstructions?: string | null
   metadata?: Record<string, unknown>
 }
 

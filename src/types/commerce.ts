@@ -19,6 +19,12 @@ export interface Invoice {
   items: LineItem[]
   issuedAt?: string
   dueAt?: string
+  /** Optional payment capability hints from enriched invoice payloads */
+  cashPaymentsEnabled?: boolean
+  benefitPayEnabled?: boolean
+  benefitPayPhone?: string | null
+  benefitPayIban?: string | null
+  benefitPayInstructions?: string | null
 }
 
 export interface Payment {

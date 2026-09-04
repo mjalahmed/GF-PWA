@@ -31,4 +31,9 @@ export interface Review {
   status: string
   createdAt: string
   response?: ReviewResponse
+  /** Service / vehicle context when backend provides it */
+  appointmentId?: string
+  vehicleLabel?: string
+  serviceLabel?: string
+  contextLabel?: string
 }

@@ -138,6 +138,19 @@ function mapServiceLine(raw: Record<string, unknown>): AppointmentServiceLine {
 }
 
 export function mapAppointment(raw: Record<string, unknown>): Appointment {
+  const customerRaw = (raw.customer ?? raw.customerProfile) as Record<string, unknown> | undefined
+  const vehicleRaw = raw.vehicle as Record<string, unknown> | undefined
+  const quotationRaw = raw.quotation as Record<string, unknown> | undefined
+  const invoiceRaw = raw.invoice as Record<string, unknown> | undefined
+  const mediaRaw = (raw.media ?? raw.photos) as unknown
+
+  const mapHistory = (list: Record<string, unknown>[]) =>
+    list.map((h) => ({
+      status: String(h.toStatus ?? h.to_status ?? h.status),
+      changedAt: String(h.createdAt ?? h.created_at ?? ''),
+      note: (h.note ?? h.reason) as string | undefined,
+    }))
+
   return {
     id: String(raw.id),
     customerId: pick(raw, 'customerId', 'customer_id') as string | undefined,
@@ -162,16 +175,57 @@ export function mapAppointment(raw: Record<string, unknown>): Appointment {
       ? raw.services.map((s) => mapServiceLine(s as Record<string, unknown>))
       : [],
     statusHistory: Array.isArray(raw.statusHistory)
-      ? (raw.statusHistory as Record<string, unknown>[]).map((h) => ({
-          status: String(h.toStatus ?? h.to_status ?? h.status),
-          changedAt: String(h.createdAt ?? h.created_at ?? ''),
-        }))
+      ? mapHistory(raw.statusHistory as Record<string, unknown>[])
       : Array.isArray(raw.status_history)
-        ? (raw.status_history as Record<string, unknown>[]).map((h) => ({
-            status: String(h.to_status ?? h.status),
-            changedAt: String(h.created_at ?? ''),
-          }))
+        ? mapHistory(raw.status_history as Record<string, unknown>[])
         : undefined,
+    customer: customerRaw
+      ? {
+          id: customerRaw.id != null ? String(customerRaw.id) : undefined,
+          fullName: pick(customerRaw, 'fullName', 'full_name') as string | undefined,
+          phone: customerRaw.phone as string | undefined,
+          email: customerRaw.email as string | undefined,
+        }
+      : undefined,
+    vehicle: vehicleRaw
+      ? {
+          id: vehicleRaw.id != null ? String(vehicleRaw.id) : undefined,
+          displayLabel: pick(vehicleRaw, 'displayLabel', 'display_label') as string | undefined,
+          makeText: pick(vehicleRaw, 'makeText', 'make_text') as string | undefined,
+          modelText: pick(vehicleRaw, 'modelText', 'model_text') as string | undefined,
+          year: pickNum(vehicleRaw, 'year'),
+          plateNumber: pick(vehicleRaw, 'plateNumber', 'plate_number') as string | undefined,
+          vin: vehicleRaw.vin as string | undefined,
+        }
+      : undefined,
+    quotation: quotationRaw
+      ? {
+          id: String(quotationRaw.id),
+          number: pick(quotationRaw, 'quotationNumber', 'quotation_number') as string | undefined,
+          status: String(quotationRaw.status ?? ''),
+          grandTotal: pickNum(quotationRaw, 'grandTotal', 'grand_total'),
+          currency: pick(quotationRaw, 'currency') as string | undefined,
+        }
+      : undefined,
+    invoice: invoiceRaw
+      ? {
+          id: String(invoiceRaw.id),
+          number: pick(invoiceRaw, 'invoiceNumber', 'invoice_number') as string | undefined,
+          status: String(invoiceRaw.status ?? ''),
+          grandTotal: pickNum(invoiceRaw, 'grandTotal', 'grand_total'),
+          currency: pick(invoiceRaw, 'currency') as string | undefined,
+        }
+      : undefined,
+    media: Array.isArray(mediaRaw)
+      ? (mediaRaw as Record<string, unknown>[]).map((m) => ({
+          id: String(m.id),
+          phase: String(m.phase ?? 'during'),
+          storagePath: String(pick(m, 'storagePath', 'storage_path') ?? ''),
+          caption: (m.caption as string | null) ?? null,
+          sortOrder: pickNum(m, 'sortOrder', 'sort_order'),
+          createdAt: pick(m, 'createdAt', 'created_at') as string | undefined,
+        }))
+      : undefined,
   }
 }
 
@@ -214,6 +268,12 @@ export function mapInvoice(raw: Record<string, unknown>): Invoice {
     items: Array.isArray(raw.items) ? raw.items.map((i) => mapLineItem(i as Record<string, unknown>)) : [],
     issuedAt: pick(raw, 'issuedAt', 'issued_at') as string | undefined,
     dueAt: pick(raw, 'dueAt', 'due_at') as string | undefined,
+    cashPaymentsEnabled: pickBool(raw, 'cashPaymentsEnabled', 'cash_payments_enabled') || undefined,
+    benefitPayEnabled: pickBool(raw, 'benefitPayEnabled', 'benefit_pay_enabled') || undefined,
+    benefitPayPhone: (pick(raw, 'benefitPayPhone', 'benefit_pay_phone') as string | null) ?? null,
+    benefitPayIban: (pick(raw, 'benefitPayIban', 'benefit_pay_iban') as string | null) ?? null,
+    benefitPayInstructions:
+      (pick(raw, 'benefitPayInstructions', 'benefit_pay_instructions') as string | null) ?? null,
   }
 }
 
@@ -282,6 +342,10 @@ export function mapReview(raw: Record<string, unknown>): Review {
           respondedAt: String(pick(resp, 'respondedAt', 'responded_at', 'createdAt', 'created_at') ?? ''),
         }
       : undefined,
+    appointmentId: pick(raw, 'appointmentId', 'appointment_id') as string | undefined,
+    vehicleLabel: pick(raw, 'vehicleLabel', 'vehicle_label') as string | undefined,
+    serviceLabel: pick(raw, 'serviceLabel', 'service_label') as string | undefined,
+    contextLabel: pick(raw, 'contextLabel', 'context_label') as string | undefined,
   }
 }
 
