@@ -152,6 +152,12 @@ export function mapAppointment(raw: Record<string, unknown>): Appointment {
     cancellationReason: pick(raw, 'cancellationReason', 'cancellation_reason') as string | undefined,
     businessName: pick(raw, 'businessName', 'business_name') as string | undefined,
     branchName: pick(raw, 'branchName', 'branch_name') as string | undefined,
+    confirmedAt: (pick(raw, 'confirmedAt', 'confirmed_at') as string | null | undefined) ?? null,
+    arrivedAt: (pick(raw, 'arrivedAt', 'arrived_at') as string | null | undefined) ?? null,
+    startedAt: (pick(raw, 'startedAt', 'started_at') as string | null | undefined) ?? null,
+    completedAt: (pick(raw, 'completedAt', 'completed_at') as string | null | undefined) ?? null,
+    quotationId: pick(raw, 'quotationId', 'quotation_id') as string | undefined,
+    invoiceId: pick(raw, 'invoiceId', 'invoice_id') as string | undefined,
     services: Array.isArray(raw.services)
       ? raw.services.map((s) => mapServiceLine(s as Record<string, unknown>))
       : [],

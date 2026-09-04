@@ -20,6 +20,12 @@ export interface Appointment {
   cancellationReason?: string
   businessName?: string
   branchName?: string
+  confirmedAt?: string | null
+  arrivedAt?: string | null
+  startedAt?: string | null
+  completedAt?: string | null
+  quotationId?: string
+  invoiceId?: string
   services: AppointmentServiceLine[]
   statusHistory?: Array<{ status: string; changedAt: string }>
 }

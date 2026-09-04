@@ -38,6 +38,7 @@ import { BusinessDashboardPage } from '../pages/business/BusinessDashboardPage'
 import { BusinessApplicationsPage } from '../pages/business/BusinessApplicationsPage'
 import { BusinessApplicationWizardPage } from '../pages/business/BusinessApplicationWizardPage'
 import { BusinessAppointmentsPage } from '../pages/business/BusinessAppointmentsPage'
+import { BusinessAppointmentDetailPage } from '../pages/business/BusinessAppointmentDetailPage'
 import { BusinessGaragePage } from '../pages/business/BusinessGaragePage'
 import { BusinessProductsPage } from '../pages/business/BusinessProductsPage'
 import { BusinessQuotationsPage } from '../pages/business/BusinessQuotationsPage'
@@ -252,6 +253,7 @@ export function AppRouter() {
           <Route element={<BusinessMembershipOutlet />}>
             <Route index element={<BusinessDashboardPage />} />
             <Route path="appointments" element={<BusinessAppointmentsPage />} />
+            <Route path="appointments/:appointmentId" element={<BusinessAppointmentDetailPage />} />
             <Route path="quotations" element={<BusinessQuotationsPage />} />
             <Route path="invoices" element={<BusinessInvoicesPage />} />
             <Route path="garages/:businessId" element={<BusinessGaragePage />} />
