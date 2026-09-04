@@ -51,15 +51,7 @@ export function VehicleCard({ vehicle, to, compact }: VehicleCardProps) {
       <div className="space-y-1 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
-              {[vehicle.makeText, vehicle.modelText].filter(Boolean).join(' · ') || t('common.vehicle')}
-            </p>
-            <h3 className="truncate text-base font-semibold text-text-primary">
-              {vehicle.year ? `${vehicle.year}` : ''}{' '}
-              {vehicle.makeText || vehicle.modelText
-                ? [vehicle.makeText, vehicle.modelText].filter(Boolean).join(' ')
-                : label}
-            </h3>
+            <h3 className="truncate text-base font-semibold text-text-primary">{label}</h3>
           </div>
           {vehicle.isDefault && (
             <span className="shrink-0 rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">

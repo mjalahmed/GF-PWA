@@ -45,7 +45,7 @@ export function AdminAppointmentDetailPage() {
     customer.fullName ?? customer.full_name ?? raw.customerName ?? raw.customer_name ?? '—',
   )
   const vehicleLabel =
-    [vehicle.year, vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text]
+    [vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text, vehicle.year]
       .filter(Boolean)
       .join(' ') ||
     String(raw.vehicleLabel ?? '—')

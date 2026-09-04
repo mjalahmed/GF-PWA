@@ -48,8 +48,10 @@ export function vehicleLabelLocalized(
   t: TranslateFn,
 ): string {
   if (v.displayLabel) return v.displayLabel
-  const built = `${v.year} ${v.makeText ?? ''} ${v.modelText ?? ''}`.trim()
-  return built || t('fmt.vehicle')
+  const parts = [v.makeText, v.modelText, v.year != null ? String(v.year) : '']
+    .map((p) => (p ?? '').toString().trim())
+    .filter(Boolean)
+  return parts.join(' ') || t('fmt.vehicle')
 }
 
 /** Keep for non-React callers / tests — English defaults. */

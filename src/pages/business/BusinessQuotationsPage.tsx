@@ -29,7 +29,7 @@ function quoteVehicle(q: Record<string, unknown>) {
       String(
         q.vehicleLabel ??
           q.vehicle_label ??
-          [vehicle.year, vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text]
+          [vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text, vehicle.year]
             .filter(Boolean)
             .join(' '),
       ) || '—',

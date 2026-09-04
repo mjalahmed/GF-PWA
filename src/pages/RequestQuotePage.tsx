@@ -72,7 +72,7 @@ export function RequestQuotePage() {
             <option value="">{t('quotes.noVehicle')}</option>
             {vehiclesQuery.data?.map((v) => (
               <option key={v.id} value={v.id}>
-                {[v.year, v.makeText, v.modelText].filter(Boolean).join(' ')}
+                {[v.makeText, v.modelText, v.year].filter(Boolean).join(' ')}
               </option>
             ))}
           </select>

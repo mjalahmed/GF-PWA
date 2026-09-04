@@ -66,7 +66,7 @@ function vehicleDisplay(
   const v = appt.vehicle
   if (!v) return appt.vehicleId ? fallback : '—'
   if (v.displayLabel) return v.displayLabel
-  const built = [v.year, v.makeText, v.modelText].filter(Boolean).join(' ')
+  const built = [v.makeText, v.modelText, v.year].filter(Boolean).join(' ')
   return built || v.plateNumber || '—'
 }
 

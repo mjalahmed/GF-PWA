@@ -74,7 +74,7 @@ export function BusinessQuotationDetailPage() {
   const vehicleLabel =
     String(
       q.vehicleLabel ??
-        [vehicle.year, vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text]
+        [vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text, vehicle.year]
           .filter(Boolean)
           .join(' '),
     ) || '—'

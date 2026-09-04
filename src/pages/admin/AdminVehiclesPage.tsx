@@ -67,11 +67,9 @@ export function AdminVehiclesPage() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1 p-3">
-                  <p className="font-semibold text-text-primary">
-                    {[v.makeText, v.modelText].filter(Boolean).join(' ') || label}
-                  </p>
+                  <p className="font-semibold text-text-primary">{label}</p>
                   <p className="text-sm text-text-muted">
-                    {[v.year, v.plateNumber].filter(Boolean).join(' · ')}
+                    {v.plateNumber || null}
                   </p>
                   <p className="mt-1 text-xs text-text-muted">
                     {v.ownerName || v.ownerEmail || t('admin.vehicles.unknownOwner')}

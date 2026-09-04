@@ -34,7 +34,10 @@ export function vehicleLabel(v: {
   displayLabel?: string
 }): string {
   if (v.displayLabel) return v.displayLabel
-  return `${v.year} ${v.makeText ?? ''} ${v.modelText ?? ''}`.trim() || 'Vehicle'
+  const parts = [v.makeText, v.modelText, v.year != null ? String(v.year) : '']
+    .map((p) => (p ?? '').toString().trim())
+    .filter(Boolean)
+  return parts.join(' ') || 'Vehicle'
 }
 
 export function cn(...classes: (string | false | null | undefined)[]): string {

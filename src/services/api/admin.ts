@@ -371,10 +371,14 @@ export async function getAdminUser(userId: string): Promise<AdminUserDetail> {
     profile: profile as Record<string, unknown>,
     vehicles: Array.isArray(raw.vehicles)
       ? (raw.vehicles as Record<string, unknown>[])
-      : undefined,
+      : Array.isArray(raw.vehiclesSummary)
+        ? (raw.vehiclesSummary as Record<string, unknown>[])
+        : undefined,
     appointments: Array.isArray(raw.appointments)
       ? (raw.appointments as Record<string, unknown>[])
-      : undefined,
+      : Array.isArray(raw.appointmentsSummary)
+        ? (raw.appointmentsSummary as Record<string, unknown>[])
+        : undefined,
   }
 }
 
@@ -394,6 +398,7 @@ export type AdminVehicleRow = {
 }
 
 function mapAdminVehicle(raw: Record<string, unknown>): AdminVehicleRow {
+  const owner = raw.owner as Record<string, unknown> | undefined
   return {
     id: String(raw.id),
     makeText: (raw.makeText ?? raw.make_text) as string | undefined,
@@ -404,15 +409,22 @@ function mapAdminVehicle(raw: Record<string, unknown>): AdminVehicleRow {
       raw.registrationNumber ??
       raw.registration_number) as string | undefined,
     imagePath: (raw.imagePath ?? raw.image_path) as string | undefined,
-    ownerName: (raw.ownerName ?? raw.owner_name ?? raw.customerName ?? raw.customer_name) as
-      | string
-      | undefined,
-    ownerEmail: (raw.ownerEmail ?? raw.owner_email ?? raw.customerEmail ?? raw.customer_email) as
-      | string
-      | undefined,
-    ownerId: (raw.ownerId ?? raw.owner_id ?? raw.customerId ?? raw.customer_id) as
-      | string
-      | undefined,
+    ownerName: (raw.ownerName ??
+      raw.owner_name ??
+      raw.customerName ??
+      raw.customer_name ??
+      owner?.fullName ??
+      owner?.full_name) as string | undefined,
+    ownerEmail: (raw.ownerEmail ??
+      raw.owner_email ??
+      raw.customerEmail ??
+      raw.customer_email ??
+      owner?.email) as string | undefined,
+    ownerId: (raw.ownerId ??
+      raw.owner_id ??
+      raw.customerId ??
+      raw.customer_id ??
+      owner?.id) as string | undefined,
     verificationStatus: (raw.verificationStatus ?? raw.verification_status) as string | undefined,
     confirmationStatus: (raw.confirmationStatus ?? raw.confirmation_status) as string | undefined,
     vehicleType: (raw.vehicleType ?? raw.vehicle_type ?? raw.bodyType ?? raw.body_type) as
@@ -500,7 +512,7 @@ function mapAdminAppointment(raw: Record<string, unknown>): AdminAppointmentRow 
   const vehicleLabel =
     (raw.vehicleLabel as string | undefined) ??
     (vehicle
-      ? [vehicle.year, vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text]
+      ? [vehicle.makeText ?? vehicle.make_text, vehicle.modelText ?? vehicle.model_text, vehicle.year]
           .filter(Boolean)
           .join(' ')
       : undefined)
