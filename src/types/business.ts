@@ -13,6 +13,21 @@ export type BusinessMembership = {
   }
 }
 
+export type BusinessTeamMember = {
+  id: string
+  businessId: string
+  userId: string
+  role: string
+  status: string
+  invitedBy: string | null
+  invitedAt: string
+  acceptedAt: string | null
+  suspendedAt: string | null
+  removedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export type BusinessInvitation = {
   id: string
   businessId: string

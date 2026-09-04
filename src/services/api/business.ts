@@ -1,6 +1,7 @@
 import type {
   BusinessInvitation,
   BusinessMembership,
+  BusinessTeamMember,
   InvitableRole,
 } from '../../types/business'
 import type {
@@ -188,21 +189,51 @@ export async function updateBusinessProfile(
 
 export async function getBusinessSettings(businessId: string): Promise<BusinessSettings> {
   const envelope = await apiClient.get(businessPaths.settings(businessId), (json) =>
-    json as BusinessSettings,
+    json as BusinessSettings & { metadata?: Record<string, unknown> },
   )
-  return envelope.data!
+  const data = envelope.data!
+  const meta = data.metadata ?? {}
+  return {
+    ...data,
+    publiclyVisible:
+      typeof meta.publiclyVisible === 'boolean'
+        ? meta.publiclyVisible
+        : typeof meta.publicly_visible === 'boolean'
+          ? meta.publicly_visible
+          : true,
+  }
 }
 
 export async function updateBusinessSettings(
   businessId: string,
   input: Partial<BusinessSettings>,
 ): Promise<BusinessSettings> {
+  const { publiclyVisible, metadata, ...rest } = input
+  const body: Record<string, unknown> = { ...rest }
+  if (publiclyVisible !== undefined || metadata !== undefined) {
+    const current = await getBusinessSettings(businessId)
+    body.metadata = {
+      ...(current.metadata ?? {}),
+      ...(metadata ?? {}),
+      ...(publiclyVisible !== undefined ? { publiclyVisible } : {}),
+    }
+  }
   const envelope = await apiClient.patch(
     businessPaths.settings(businessId),
-    input as unknown as Record<string, unknown>,
-    (json) => json as BusinessSettings,
+    body,
+    (json) => json as BusinessSettings & { metadata?: Record<string, unknown> },
   )
-  return envelope.data!
+  const data = envelope.data!
+  const meta = data.metadata ?? {}
+  return {
+    ...data,
+    publiclyVisible:
+      typeof meta.publiclyVisible === 'boolean'
+        ? meta.publiclyVisible
+        : typeof meta.publicly_visible === 'boolean'
+          ? meta.publicly_visible
+          : true,
+  }
 }
 
 export async function listBusinessBranches(businessId: string): Promise<BusinessBranch[]> {
@@ -500,6 +531,13 @@ export async function transitionAppointment(
     crypto.randomUUID(),
   )
   return envelope.data!
+}
+
+export async function listBusinessMembers(businessId: string): Promise<BusinessTeamMember[]> {
+  const envelope = await apiClient.get(businessPaths.members(businessId), (json) =>
+    asArray<BusinessTeamMember>(json),
+  )
+  return envelope.data ?? []
 }
 
 export async function listBusinessInvitations(businessId: string): Promise<BusinessInvitation[]> {

@@ -9,10 +9,16 @@ import { isDevelopment } from '../../lib/env'
 import {
   createBusinessInvitation,
   listBusinessInvitations,
+  listBusinessMembers,
   listMyBusinessMemberships,
   revokeBusinessInvitation,
 } from '../../services/api/business'
 import { INVITABLE_ROLES, type InvitableRole } from '../../types/business'
+
+function roleLabel(role: string): string {
+  if (role === 'mechanic' || role === 'staff') return `Worker (${role})`
+  return role.replace(/_/g, ' ')
+}
 
 export function BusinessTeamPage() {
   const { businessId = '' } = useParams()
@@ -28,6 +34,12 @@ export function BusinessTeamPage() {
     queryFn: listMyBusinessMemberships,
   })
 
+  const membersQuery = useQuery({
+    queryKey: ['business-members', businessId],
+    queryFn: () => listBusinessMembers(businessId),
+    enabled: Boolean(businessId),
+  })
+
   const invitationsQuery = useQuery({
     queryKey: ['business-invitations', businessId],
     queryFn: () => listBusinessInvitations(businessId),
@@ -36,6 +48,9 @@ export function BusinessTeamPage() {
 
   const membership = membershipQuery.data?.find((m) => m.businessId === businessId)
   const canInvite = membership && ['owner', 'manager'].includes(membership.role)
+  const activeMembers = (membersQuery.data ?? []).filter(
+    (m) => m.status === 'active' || m.status === 'pending',
+  )
 
   const inviteMutation = useMutation({
     mutationFn: () =>
@@ -64,7 +79,9 @@ export function BusinessTeamPage() {
     },
   })
 
-  if (membershipQuery.isLoading || invitationsQuery.isLoading) return <Spinner />
+  if (membershipQuery.isLoading || invitationsQuery.isLoading || membersQuery.isLoading) {
+    return <Spinner />
+  }
 
   if (!membership) {
     return (
@@ -94,11 +111,32 @@ export function BusinessTeamPage() {
         <Link to={`/business/garages/${businessId}`} className="text-sm text-primary">
           ← {membership.business.displayName}
         </Link>
-        <h2 className="mt-2 text-xl font-semibold">Team invitations</h2>
+        <h2 className="mt-2 text-xl font-semibold">Team</h2>
         <p className="text-sm text-text-muted">
-          Invites are delivered by email from GarageFinder. Use a real inbox you can open to
-          verify SMTP.
+          Active members and invitations. Invites are delivered by email from GarageFinder.
         </p>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="font-semibold">Members</h3>
+        {activeMembers.length === 0 ? (
+          <p className="text-sm text-text-muted">No members listed yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {activeMembers.map((member) => (
+              <li
+                key={member.id}
+                className="rounded-xl border border-border bg-surface p-3"
+              >
+                <p className="font-medium capitalize">{roleLabel(member.role)}</p>
+                <p className="text-sm text-text-muted">
+                  {member.status.replace(/_/g, ' ')}
+                  {member.userId ? ` · ${member.userId.slice(0, 8)}…` : ''}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {!canInvite ? (
@@ -107,6 +145,7 @@ export function BusinessTeamPage() {
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-surface p-4">
+          <h3 className="font-semibold">Invite someone</h3>
           <Input
             label="Email"
             type="email"
@@ -124,7 +163,7 @@ export function BusinessTeamPage() {
             >
               {INVITABLE_ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {r.replace(/_/g, ' ')}
+                  {roleLabel(r)}
                 </option>
               ))}
             </select>
@@ -159,13 +198,15 @@ export function BusinessTeamPage() {
                 <div>
                   <p className="font-medium">{invitation.email}</p>
                   <p className="text-sm text-text-muted">
-                    {invitation.role} · {invitation.status}
+                    {roleLabel(invitation.role)} · {invitation.status}
                   </p>
                 </div>
                 {invitation.status === 'pending' && canInvite && (
                   <Button
                     variant="ghost"
-                    loading={revokeMutation.isPending}
+                    loading={
+                      revokeMutation.isPending && revokeMutation.variables === invitation.id
+                    }
                     onClick={() => revokeMutation.mutate(invitation.id)}
                   >
                     Revoke
