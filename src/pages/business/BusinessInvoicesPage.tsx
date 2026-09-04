@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 import {
   cancelBusinessInvoice,
+  confirmInvoicePayment,
   issueBusinessInvoice,
   listBusinessInvoices,
   listMyBusinessMemberships,
@@ -58,6 +59,12 @@ export function BusinessInvoicesPage() {
     onSuccess: invalidate,
     onError: (err: Error) => setError(err.message),
   })
+  const confirmMutation = useMutation({
+    mutationFn: ({ invoiceId, paymentId }: { invoiceId: string; paymentId: string }) =>
+      confirmInvoicePayment(businessId, invoiceId, paymentId),
+    onSuccess: invalidate,
+    onError: (err: Error) => setError(err.message),
+  })
 
   if (membershipsQuery.isLoading) return <Spinner />
   if (!businessId) {
@@ -83,6 +90,10 @@ export function BusinessInvoicesPage() {
             const id = String(inv.id ?? '')
             const status = String(inv.status ?? '')
             const total = inv.totalAmount ?? inv.total ?? inv.amountDue
+            const payments = Array.isArray(inv.payments) ? (inv.payments as Record<string, unknown>[]) : []
+            const pendingPays = payments.filter((p) =>
+              ['pending', 'requires_action', 'created', 'authorized'].includes(String(p.status)),
+            )
             return (
               <li key={id} className="rounded-xl border border-border bg-surface p-4 text-sm">
                 <div className="flex justify-between gap-2">
@@ -111,10 +122,28 @@ export function BusinessInvoicesPage() {
                     </Button>
                   )}
                 </div>
+                {pendingPays.map((p) => (
+                  <div key={String(p.id)} className="mt-3 flex items-center justify-between gap-2">
+                    <p className="text-xs text-warning">
+                      Pending {String(p.method ?? 'payment')} · {String(p.amount ?? '')} BHD
+                    </p>
+                    <Button
+                      variant="secondary"
+                      loading={confirmMutation.isPending}
+                      onClick={() =>
+                        confirmMutation.mutate({ invoiceId: id, paymentId: String(p.id) })
+                      }
+                    >
+                      Confirm payment
+                    </Button>
+                  </div>
+                ))}
                 {(status === 'issued' ||
                   status === 'awaiting_payment' ||
                   status === 'partially_paid' ||
-                  status === 'approved') && (
+                  status === 'approved' ||
+                  status === 'customer_approved' ||
+                  status === 'viewed') && (
                   <div className="mt-3 flex items-end gap-2">
                     <Input
                       label="Cash payment"
@@ -133,7 +162,7 @@ export function BusinessInvoicesPage() {
                         })
                       }
                     >
-                      Record
+                      Record cash
                     </Button>
                   </div>
                 )}

@@ -7,10 +7,15 @@ const ACTIVE_STATUSES = new Set([
   'in_progress',
   'customer_arrived',
   'waiting',
+  'waiting_for_parts',
+  'waiting_for_customer',
   'waiting_parts',
   'waiting_customer',
   'awaiting_customer',
   'awaiting_business',
+  'quote_pending',
+  'quote_accepted',
+  'ready_for_pickup',
 ])
 
 export function isActiveServiceAppointment(status: string): boolean {

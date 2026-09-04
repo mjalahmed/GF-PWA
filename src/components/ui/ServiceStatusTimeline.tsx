@@ -5,6 +5,7 @@ const FLOW = [
   'confirmed',
   'customer_arrived',
   'in_progress',
+  'ready_for_pickup',
   'completed',
 ] as const
 
@@ -15,13 +16,31 @@ type ServiceStatusTimelineProps = {
 
 export function ServiceStatusTimeline({ status, statusHistory }: ServiceStatusTimelineProps) {
   const { t, statusLabel } = useLocale()
-  const terminal = new Set(['cancelled', 'rejected', 'no_show', 'expired'])
+  const terminal = new Set([
+    'cancelled',
+    'cancelled_by_customer',
+    'cancelled_by_business',
+    'rejected',
+    'no_show',
+    'expired',
+    'disputed',
+  ])
   const currentIdx = FLOW.indexOf(status as (typeof FLOW)[number])
+  const waitingLike =
+    status.startsWith('waiting') || status === 'quote_pending' || status === 'quote_accepted'
 
   if (terminal.has(status)) {
     return (
       <p className="rounded-xl border border-border bg-surface-secondary p-3 text-sm text-text-muted">
         {t('status.timelineEnded', { status: statusLabel(status) })}
+      </p>
+    )
+  }
+
+  if (waitingLike && currentIdx === -1) {
+    return (
+      <p className="rounded-xl border border-border bg-surface p-3 text-sm">
+        Current: <strong>{statusLabel(status)}</strong>
       </p>
     )
   }
