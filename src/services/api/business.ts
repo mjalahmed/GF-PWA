@@ -21,7 +21,9 @@ import type {
   UpdateApplicationBranchInput,
   UpdateApplicationInput,
 } from '../../types/onboarding'
-import { mapAppointment } from '../../lib/mappers'
+import { mapAppointment, mapReview } from '../../lib/mappers'
+import { mapList } from '../../lib/map'
+import type { Review } from '../../types/reviews'
 import { apiClient, buildQuery } from './client'
 import { businessPaths, platformPaths } from './paths'
 
@@ -623,12 +625,42 @@ export async function confirmInvoicePayment(
 export async function requestReviewDispute(
   businessId: string,
   reviewId: string,
-  reason?: string,
+  reasonCode = 'other',
+  details?: string,
 ): Promise<Record<string, unknown>> {
   const envelope = await apiClient.post(
-    businessPaths.reviewDispute(businessId, reviewId),
-    { reason: reason ?? null },
+    businessPaths.reviewReport(businessId, reviewId),
+    { reasonCode, details: details ?? null },
     (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
+  )
+  return envelope.data!
+}
+
+export async function listGarageReviews(businessId: string): Promise<Review[]> {
+  const envelope = await apiClient.get(businessPaths.reviews(businessId), (json) => json)
+  return mapList(envelope.data, mapReview)
+}
+
+export async function createCustomerVehicle(
+  businessId: string,
+  input: {
+    customerId: string
+    sourceAppointmentId?: string | null
+    makeText?: string
+    modelText?: string
+    makeId?: string | null
+    modelId?: string | null
+    year: number
+    registrationNumber?: string | null
+    color?: string | null
+  },
+): Promise<Record<string, unknown>> {
+  const envelope = await apiClient.post(
+    businessPaths.customerVehicles(businessId),
+    input as Record<string, unknown>,
+    (json) => json as Record<string, unknown>,
+    crypto.randomUUID(),
   )
   return envelope.data!
 }

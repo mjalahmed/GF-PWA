@@ -79,6 +79,16 @@ export function BusinessGaragePage() {
               desc: 'Parts and products shown on your public garage page.',
             },
             {
+              to: `/business/garages/${businessId}/orders`,
+              title: 'Product orders',
+              desc: 'Fulfill pickup and delivery requests.',
+            },
+            {
+              to: `/business/garages/${businessId}/reviews`,
+              title: 'Reviews',
+              desc: 'View reviews and request disputes.',
+            },
+            {
               to: `/business/appointments?businessId=${businessId}`,
               title: 'Appointments',
               desc: 'Confirm, start, and complete bookings.',
