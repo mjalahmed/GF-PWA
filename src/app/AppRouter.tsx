@@ -20,6 +20,8 @@ import { HomePage } from '../pages/HomePage'
 import { InvoiceDetailPage } from '../pages/InvoiceDetailPage'
 import { InvoicesPage } from '../pages/InvoicesPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
+import { OrderDetailPage } from '../pages/OrderDetailPage'
+import { OrdersPage } from '../pages/OrdersPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { QuotationDetailPage } from '../pages/QuotationDetailPage'
 import { QuotationsPage } from '../pages/QuotationsPage'
@@ -41,6 +43,8 @@ import { BusinessAppointmentsPage } from '../pages/business/BusinessAppointments
 import { BusinessAppointmentDetailPage } from '../pages/business/BusinessAppointmentDetailPage'
 import { BusinessGaragePage } from '../pages/business/BusinessGaragePage'
 import { BusinessProductsPage } from '../pages/business/BusinessProductsPage'
+import { BusinessOrdersPage } from '../pages/business/BusinessOrdersPage'
+import { BusinessReviewsPage } from '../pages/business/BusinessReviewsPage'
 import { BusinessQuotationsPage } from '../pages/business/BusinessQuotationsPage'
 import { BusinessInvoicesPage } from '../pages/business/BusinessInvoicesPage'
 import { BusinessTeamPage } from '../pages/business/BusinessTeamPage'
@@ -58,6 +62,7 @@ import { AdminDisputesPage } from '../pages/admin/AdminDisputesPage'
 import { AdminReviewsPage } from '../pages/admin/AdminReviewsPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
 import { AdminBusinessesPage } from '../pages/admin/AdminBusinessesPage'
+import { AdminTransactionsPage } from '../pages/admin/AdminTransactionsPage'
 
 
 export function AppRouter() {
@@ -133,6 +138,23 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <InvoiceDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="orders"
+            element={
+              <ProtectedRoute>
+                <OrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="orders/:id"
+            element={
+              <ProtectedRoute>
+                <OrderDetailPage />
               </ProtectedRoute>
             }
           />
@@ -262,6 +284,8 @@ export function AppRouter() {
             <Route path="garages/:businessId" element={<BusinessGaragePage />} />
             <Route path="garages/:businessId/setup" element={<BusinessGarageSetupPage />} />
             <Route path="garages/:businessId/products" element={<BusinessProductsPage />} />
+            <Route path="garages/:businessId/orders" element={<BusinessOrdersPage />} />
+            <Route path="garages/:businessId/reviews" element={<BusinessReviewsPage />} />
             <Route path="garages/:businessId/team" element={<BusinessTeamPage />} />
           </Route>
         </Route>
@@ -279,6 +303,8 @@ export function AppRouter() {
           />
           <Route path="disputes" element={<AdminDisputesPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="transactions" element={<AdminTransactionsPage />} />
+          <Route path="transactions/:paymentId" element={<AdminTransactionsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

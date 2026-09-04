@@ -66,6 +66,10 @@ export const customerPaths = {
   announcements: `${V1}/customer/announcements`,
   appointmentMedia: (appointmentId: string) =>
     `${V1}/customer/appointments/${appointmentId}/media`,
+  productOrders: `${V1}/customer/product-orders`,
+  vehiclesPendingConfirmation: `${V1}/customer/vehicles/pending-confirmation`,
+  vehicleConfirm: (id: string) => `${V1}/customer/vehicles/${id}/confirm`,
+  vehicleReject: (id: string) => `${V1}/customer/vehicles/${id}/reject`,
 } as const
 
 export const businessPaths = {
@@ -104,8 +108,17 @@ export const businessPaths = {
   product: (businessId: string, productId: string) =>
     `${V1}/business/businesses/${businessId}/products/${productId}`,
   reviews: (businessId: string) => `${V1}/business/businesses/${businessId}/reviews`,
+  reviewReport: (businessId: string, reviewId: string) =>
+    `${V1}/business/businesses/${businessId}/reviews/${reviewId}/report`,
+  /** @deprecated use reviewReport */
   reviewDispute: (businessId: string, reviewId: string) =>
-    `${V1}/business/businesses/${businessId}/reviews/${reviewId}/dispute`,
+    `${V1}/business/businesses/${businessId}/reviews/${reviewId}/report`,
+  productOrders: (businessId: string) =>
+    `${V1}/business/businesses/${businessId}/product-orders`,
+  productOrderStatus: (businessId: string, orderId: string) =>
+    `${V1}/business/businesses/${businessId}/product-orders/${orderId}/status`,
+  customerVehicles: (businessId: string) =>
+    `${V1}/business/businesses/${businessId}/customer-vehicles`,
   quotations: (businessId: string) => `${V1}/business/businesses/${businessId}/quotations`,
   quotation: (businessId: string, quotationId: string) =>
     `${V1}/business/businesses/${businessId}/quotations/${quotationId}`,
@@ -153,4 +166,6 @@ export const adminPaths = {
   disputes: `${V1}/admin/disputes`,
   dispute: (id: string) => `${V1}/admin/disputes/${id}`,
   disputeAction: (id: string, action: string) => `${V1}/admin/disputes/${id}/${action}`,
+  transactions: `${V1}/admin/transactions`,
+  transaction: (paymentId: string) => `${V1}/admin/transactions/${paymentId}`,
 } as const

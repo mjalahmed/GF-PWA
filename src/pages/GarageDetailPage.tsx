@@ -21,6 +21,8 @@ import { formatMoney, primaryBranch } from '../lib/utils'
 import { listBusinessReviews, listPublicProducts, listPublicServices } from '../services/api/catalog'
 import { addFavorite, listFavorites, removeFavorite } from '../services/api/favorites'
 import { getBusinessBySlug } from '../services/api/garages'
+import { createProductOrder } from '../services/api/orders'
+import type { ProductOrderFulfillmentMethod } from '../types/orders'
 
 type TabId = 'overview' | 'services' | 'products' | 'reviews'
 
@@ -32,6 +34,11 @@ export function GarageDetailPage() {
   const { t, dateLocale } = useLocale()
   const { state: geo } = useGeolocation()
   const [tab, setTab] = useState<TabId>('overview')
+  const [orderingProductId, setOrderingProductId] = useState<string | null>(null)
+  const [fulfillment, setFulfillment] = useState<ProductOrderFulfillmentMethod>('pickup')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [orderNotes, setOrderNotes] = useState('')
+  const [orderError, setOrderError] = useState('')
 
   const coords =
     geo.status === 'granted' ? { latitude: geo.latitude, longitude: geo.longitude } : undefined
@@ -77,6 +84,36 @@ export function GarageDetailPage() {
       else await addFavorite(garage.id)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+  })
+
+  const orderMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      if (!garage) throw new Error('Garage not found')
+      if (!session) {
+        navigate(`/sign-in?redirect=${encodeURIComponent(`/garages/${slug}`)}`)
+        return null
+      }
+      const branch = primaryBranch(garage)
+      return createProductOrder({
+        businessId: garage.id,
+        branchId: branch?.id,
+        fulfillmentMethod: fulfillment,
+        customerNotes: orderNotes.trim() || undefined,
+        deliveryAddress:
+          fulfillment === 'delivery' ? deliveryAddress.trim() || undefined : undefined,
+        items: [{ productId, quantity: 1 }],
+      })
+    },
+    onSuccess: (order) => {
+      if (!order) return
+      setOrderingProductId(null)
+      setOrderNotes('')
+      setDeliveryAddress('')
+      setOrderError('')
+      void queryClient.invalidateQueries({ queryKey: ['product-orders'] })
+      navigate(`/orders/${order.id}`)
+    },
+    onError: (err: Error) => setOrderError(err.message),
   })
 
   if (garageQuery.isLoading) return <Spinner />
@@ -268,50 +305,129 @@ export function GarageDetailPage() {
                     description={t('garage.noProductsDesc')}
                   />
                 )}
+                {orderError && <p className="mb-2 text-sm text-error">{orderError}</p>}
                 <div className="space-y-3">
-                  {productsQuery.data?.items.map((prod) => (
-                    <article
-                      key={prod.id}
-                      className="rounded-xl border border-border bg-surface p-4"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-text-primary">{prod.name}</h3>
-                          {prod.description && (
-                            <p className="mt-1 text-sm text-text-muted">{prod.description}</p>
+                  {productsQuery.data?.items.map((prod) => {
+                    const canOrder =
+                      prod.stockStatus !== 'out_of_stock' && prod.stockStatus !== 'discontinued'
+                    return (
+                      <article
+                        key={prod.id}
+                        className="rounded-xl border border-border bg-surface p-4"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-text-primary">{prod.name}</h3>
+                            {prod.description && (
+                              <p className="mt-1 text-sm text-text-muted">{prod.description}</p>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-end text-sm">
+                            {prod.salePrice != null ? (
+                              <>
+                                <p className="font-semibold text-primary">
+                                  {formatMoney(prod.salePrice)}
+                                </p>
+                                {prod.price != null && (
+                                  <p className="text-xs text-text-subtle line-through">
+                                    {formatMoney(prod.price)}
+                                  </p>
+                                )}
+                              </>
+                            ) : prod.price != null ? (
+                              <p className="font-semibold">{formatMoney(prod.price)}</p>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-text-secondary">
+                          <span>{prod.category.name}</span>
+                          {prod.stockStatus && (
+                            <span className="rounded-md bg-surface-secondary px-2 py-0.5 capitalize">
+                              {prod.stockStatus.replaceAll('_', ' ')}
+                            </span>
                           )}
                         </div>
-                        <div className="shrink-0 text-end text-sm">
-                          {prod.salePrice != null ? (
-                            <>
-                              <p className="font-semibold text-primary">
-                                {formatMoney(prod.salePrice)}
-                              </p>
-                              {prod.price != null && (
-                                <p className="text-xs text-text-subtle line-through">
-                                  {formatMoney(prod.price)}
-                                </p>
-                              )}
-                            </>
-                          ) : prod.price != null ? (
-                            <p className="font-semibold">{formatMoney(prod.price)}</p>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-text-secondary">
-                        <span>{prod.category.name}</span>
-                        {prod.stockStatus && (
-                          <span className="rounded-md bg-surface-secondary px-2 py-0.5 capitalize">
-                            {prod.stockStatus.replaceAll('_', ' ')}
-                          </span>
+                        {canOrder && (
+                          <>
+                            {orderingProductId === prod.id ? (
+                              <div className="mt-3 space-y-2 rounded-lg bg-surface-secondary p-3">
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    className={`flex-1 rounded-lg border px-2 py-2 text-sm ${
+                                      fulfillment === 'pickup'
+                                        ? 'border-primary bg-primary/10 text-primary'
+                                        : 'border-border'
+                                    }`}
+                                    onClick={() => setFulfillment('pickup')}
+                                  >
+                                    {t('orders.pickup')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`flex-1 rounded-lg border px-2 py-2 text-sm ${
+                                      fulfillment === 'delivery'
+                                        ? 'border-primary bg-primary/10 text-primary'
+                                        : 'border-border'
+                                    }`}
+                                    onClick={() => setFulfillment('delivery')}
+                                  >
+                                    {t('orders.delivery')}
+                                  </button>
+                                </div>
+                                {fulfillment === 'delivery' && (
+                                  <input
+                                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                                    placeholder={t('orders.deliveryAddress')}
+                                    value={deliveryAddress}
+                                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                                  />
+                                )}
+                                <input
+                                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                                  placeholder={t('orders.notesOptional')}
+                                  value={orderNotes}
+                                  onChange={(e) => setOrderNotes(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    loading={orderMutation.isPending}
+                                    onClick={() => orderMutation.mutate(prod.id)}
+                                  >
+                                    {t('orders.submit')}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => setOrderingProductId(null)}
+                                  >
+                                    {t('common.cancel')}
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <Button
+                                className="mt-3"
+                                variant="secondary"
+                                onClick={() => {
+                                  if (!session) {
+                                    navigate(
+                                      `/sign-in?redirect=${encodeURIComponent(`/garages/${slug}`)}`,
+                                    )
+                                    return
+                                  }
+                                  setOrderingProductId(prod.id)
+                                  setOrderError('')
+                                }}
+                              >
+                                {t('orders.request')}
+                              </Button>
+                            )}
+                          </>
                         )}
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    )
+                  })}
                 </div>
-                <p className="mt-3 text-xs text-text-subtle">
-                  Product ordering is not available in the app yet — contact the garage to purchase.
-                </p>
               </>
             )}
 

@@ -9,6 +9,7 @@ import type {
 import type { Invoice, Payment, Quotation, LineItem } from '../types/commerce'
 import type { Review, ReviewEligibility, ReviewRatingDimensions } from '../types/reviews'
 import type { Dispute, DisputeEvidence, DisputeMessage } from '../types/disputes'
+import type { ProductOrder, ProductOrderItem } from '../types/orders'
 import type {
   CategoryRef,
   PublicImage,
@@ -420,6 +421,12 @@ export function mapVehicle(raw: Record<string, unknown>): Vehicle {
     isDefault: pickBool(raw, 'isDefault', 'is_default'),
     isActive: pickBool(raw, 'isActive', 'is_active') || raw.isActive === undefined,
     displayLabel: pick(raw, 'displayLabel', 'display_label') as string | undefined,
+    confirmationStatus: (pick(raw, 'confirmationStatus', 'confirmation_status') as string) ??
+      'confirmed',
+    createdByBusinessId:
+      (pick(raw, 'createdByBusinessId', 'created_by_business_id') as string | null) ?? null,
+    sourceAppointmentId:
+      (pick(raw, 'sourceAppointmentId', 'source_appointment_id') as string | null) ?? null,
   }
 }
 
@@ -445,5 +452,48 @@ export function mapProfile(raw: Record<string, unknown>): Profile {
     isSuspended: pickBool(raw, 'isSuspended', 'is_suspended'),
     avatarPath: pick(raw, 'avatarPath', 'avatar_path') as string | undefined,
     preferredLanguage: pick(raw, 'preferredLanguage', 'preferred_language') as string | undefined,
+  }
+}
+
+function mapProductOrderItem(raw: Record<string, unknown>): ProductOrderItem {
+  return {
+    id: String(raw.id),
+    productId: (pick(raw, 'productId', 'product_id') as string | null) ?? null,
+    productName: String(pick(raw, 'productName', 'product_name', 'productNameSnapshot') ?? ''),
+    sku: (pick(raw, 'sku', 'skuSnapshot') as string | null) ?? null,
+    quantity: pickNum(raw, 'quantity') ?? 0,
+    unitPrice: pickNum(raw, 'unitPrice', 'unit_price') ?? 0,
+    discountAmount: pickNum(raw, 'discountAmount', 'discount_amount') ?? 0,
+    taxAmount: pickNum(raw, 'taxAmount', 'tax_amount') ?? 0,
+    lineTotal: pickNum(raw, 'lineTotal', 'line_total') ?? 0,
+    sortOrder: pickNum(raw, 'sortOrder', 'sort_order') ?? 0,
+  }
+}
+
+export function mapProductOrder(raw: Record<string, unknown>): ProductOrder {
+  const itemsRaw = raw.items
+  return {
+    id: String(raw.id),
+    orderNumber: String(pick(raw, 'orderNumber', 'order_number') ?? ''),
+    customerId: String(pick(raw, 'customerId', 'customer_id') ?? ''),
+    businessId: String(pick(raw, 'businessId', 'business_id') ?? ''),
+    branchId: (pick(raw, 'branchId', 'branch_id') as string | null) ?? null,
+    status: String(raw.status ?? 'created'),
+    fulfillmentMethod: String(pick(raw, 'fulfillmentMethod', 'fulfillment_method') ?? 'pickup'),
+    subtotal: pickNum(raw, 'subtotal') ?? 0,
+    discountTotal: pickNum(raw, 'discountTotal', 'discount_total') ?? 0,
+    taxTotal: pickNum(raw, 'taxTotal', 'tax_total') ?? 0,
+    grandTotal: pickNum(raw, 'grandTotal', 'grand_total') ?? 0,
+    currency: String(raw.currency ?? 'BHD'),
+    customerNotes: (pick(raw, 'customerNotes', 'customer_notes') as string | null) ?? null,
+    businessNotes: (pick(raw, 'businessNotes', 'business_notes') as string | null) ?? null,
+    deliveryAddress: (pick(raw, 'deliveryAddress', 'delivery_address') as string | null) ?? null,
+    cancelledAt: (pick(raw, 'cancelledAt', 'cancelled_at') as string | null) ?? null,
+    completedAt: (pick(raw, 'completedAt', 'completed_at') as string | null) ?? null,
+    createdAt: String(pick(raw, 'createdAt', 'created_at') ?? ''),
+    updatedAt: String(pick(raw, 'updatedAt', 'updated_at') ?? ''),
+    items: Array.isArray(itemsRaw)
+      ? itemsRaw.map((i) => mapProductOrderItem(i as Record<string, unknown>))
+      : [],
   }
 }

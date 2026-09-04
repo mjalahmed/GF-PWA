@@ -110,6 +110,7 @@ export function ProfilePage() {
     { to: '/vehicles', labelKey: 'profile.vehicles' },
     { to: '/favorites', labelKey: 'profile.favorites' },
     { to: '/appointments', labelKey: 'profile.appointments' },
+    { to: '/orders', labelKey: 'profile.orders' },
     { to: '/invoices', labelKey: 'profile.invoices' },
     { to: '/quotations', labelKey: 'profile.quotations' },
     { to: '/reviews', labelKey: 'profile.reviews' },

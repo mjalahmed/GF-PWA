@@ -173,6 +173,12 @@ function GarageDashboard({
           Quotations
         </Link>
         <Link
+          to={`/business/garages/${businessId}/orders`}
+          className="rounded-lg border border-border px-3 py-2 text-primary"
+        >
+          Product orders
+        </Link>
+        <Link
           to={`/business/garages/${businessId}`}
           className="rounded-lg border border-border px-3 py-2 text-primary"
         >

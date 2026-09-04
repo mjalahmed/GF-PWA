@@ -41,6 +41,7 @@ function notificationLink(n: AppNotification, roles: string[]): string | null {
     }
     if (n.entityType === 'quotation') return `/business/quotations`
     if (n.entityType === 'invoice') return `/business/invoices`
+    if (n.entityType === 'product_order') return `/business`
   }
 
   const map: Record<string, string> = {
@@ -49,6 +50,8 @@ function notificationLink(n: AppNotification, roles: string[]): string | null {
     invoice: `/invoices/${n.entityId}`,
     review: `/reviews/${n.entityId}`,
     dispute: `/disputes/${n.entityId}`,
+    product_order: `/orders/${n.entityId}`,
+    vehicle: `/vehicles`,
   }
   return map[n.entityType] ?? null
 }
