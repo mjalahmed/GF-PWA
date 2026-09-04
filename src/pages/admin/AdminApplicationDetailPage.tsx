@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui/Button'
+import { DocumentPreviewButton } from '../../components/ui/DocumentPreviewButton'
 import { Spinner } from '../../components/ui/Spinner'
 import {
   approveApplication,
@@ -88,7 +89,7 @@ export function AdminApplicationDetailPage() {
     onSuccess: (result) => {
       setMessage('Approved.')
       invalidate()
-      navigate(`/admin/businesses/${result.businessId}/setup`)
+      navigate(`/admin/businesses/${result.businessId}/capabilities`)
     },
     onError: (err: Error) => setError(err.message),
   })
@@ -150,6 +151,15 @@ export function AdminApplicationDetailPage() {
               <p className="text-text-muted">
                 {doc.originalFileName} · {doc.status}
               </p>
+              {doc.storagePath && (
+                <div className="mt-2">
+                  <DocumentPreviewButton
+                    storagePath={doc.storagePath}
+                    fileName={doc.originalFileName}
+                    mimeType={doc.mimeType}
+                  />
+                </div>
+              )}
               {doc.status === 'pending' || doc.status === 'under_review' ? (
                 <div className="mt-2 flex gap-2">
                   <Button
@@ -228,12 +238,20 @@ export function AdminApplicationDetailPage() {
       )}
 
       {application.createdBusinessId && (
-        <Link
-          to={`/admin/businesses/${application.createdBusinessId}/setup`}
-          className="inline-block text-sm text-primary"
-        >
-          Configure garage setup →
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            to={`/admin/businesses/${application.createdBusinessId}/setup`}
+            className="inline-block text-sm text-primary"
+          >
+            Configure garage setup →
+          </Link>
+          <Link
+            to={`/admin/businesses/${application.createdBusinessId}/capabilities`}
+            className="inline-block text-sm text-primary"
+          >
+            Configure capabilities →
+          </Link>
+        </div>
       )}
     </section>
   )

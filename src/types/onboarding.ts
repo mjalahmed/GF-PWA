@@ -192,6 +192,9 @@ export type BusinessSettings = {
   currency?: string
   locale?: string
   timezone?: string
+  /** Soft discovery visibility flag stored in settings.metadata until a first-class column exists. */
+  publiclyVisible?: boolean
+  metadata?: Record<string, unknown>
 }
 
 export type OpeningHoursDay = {
