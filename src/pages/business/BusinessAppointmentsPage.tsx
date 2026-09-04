@@ -138,23 +138,41 @@ export function BusinessAppointmentsPage() {
           return (
             <li key={id} className="rounded-xl border border-border bg-surface p-4">
               <div className="flex justify-between gap-2">
-                <strong className="text-sm capitalize">{status.replaceAll('_', ' ')}</strong>
+                <Link
+                  to={`/business/appointments/${id}?businessId=${encodeURIComponent(businessId)}`}
+                  className="text-sm font-semibold capitalize text-primary"
+                >
+                  {status.replaceAll('_', ' ')}
+                </Link>
                 <span className="text-xs text-text-muted">
                   {start ? new Date(start).toLocaleString() : '—'}
                 </span>
               </div>
+              <Link
+                to={`/business/appointments/${id}?businessId=${encodeURIComponent(businessId)}`}
+                className="mt-1 inline-block text-xs text-text-muted"
+              >
+                View details →
+              </Link>
               {actions.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {actions.map((action) => (
-                    <Button
-                      key={action}
-                      variant={action === 'reject' || action === 'cancel' ? 'danger' : 'secondary'}
-                      loading={actionMutation.isPending}
-                      onClick={() => actionMutation.mutate({ id, action })}
-                    >
-                      {action}
-                    </Button>
-                  ))}
+                  {actions.map((action) => {
+                    const isThis =
+                      actionMutation.isPending &&
+                      actionMutation.variables?.id === id &&
+                      actionMutation.variables?.action === action
+                    return (
+                      <Button
+                        key={action}
+                        variant={action === 'reject' || action === 'cancel' ? 'danger' : 'secondary'}
+                        loading={isThis}
+                        disabled={actionMutation.isPending && !isThis}
+                        onClick={() => actionMutation.mutate({ id, action })}
+                      >
+                        {action}
+                      </Button>
+                    )
+                  })}
                 </div>
               )}
             </li>
