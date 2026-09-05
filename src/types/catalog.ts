@@ -2,6 +2,7 @@ export interface CategoryRef {
   id: string
   code: string
   name: string
+  nameAr?: string | null
 }
 
 export interface PublicImage {
@@ -16,7 +17,9 @@ export interface PublicService {
   id: string
   slug: string
   name: string
+  nameAr?: string | null
   description?: string
+  descriptionAr?: string | null
   category: CategoryRef
   pricingType: string
   price?: number
@@ -32,7 +35,9 @@ export interface PublicProduct {
   id: string
   slug: string
   name: string
+  nameAr?: string | null
   description?: string
+  descriptionAr?: string | null
   category: CategoryRef
   price?: number
   salePrice?: number

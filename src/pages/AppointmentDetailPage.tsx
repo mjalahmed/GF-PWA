@@ -32,7 +32,7 @@ export function AppointmentDetailPage() {
   })
 
   const mediaQuery = useQuery({
-    queryKey: ['appointment-media', id],
+    queryKey: ['repair-photos', id],
     queryFn: () => getAppointmentMedia(id!),
     enabled: !!id,
   })

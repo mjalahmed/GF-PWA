@@ -1,12 +1,14 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
+import { MakeLogo } from '../components/ui/MakeLogo'
 import { Spinner } from '../components/ui/Spinner'
 import { formatDateLocalized, formatTimeLocalized, vehicleLabelLocalized } from '../i18n/format'
+import { localizedText } from '../i18n/localized'
 import { useLocale } from '../i18n/LocaleProvider'
 import { formatMoney, primaryBranch } from '../lib/utils'
 import {
@@ -24,10 +26,11 @@ type Step = (typeof STEPS)[number]
 export function BookAppointmentPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const { t, dateLocale } = useLocale()
+  const { t, dateLocale, locale } = useLocale()
   const [step, setStep] = useState<Step>('branch')
   const [branchId, setBranchId] = useState('')
   const [service, setService] = useState<PublicService | null>(null)
+  const [serviceQuery, setServiceQuery] = useState('')
   const [vehicleId, setVehicleId] = useState('')
   const [garageVehicleConsent, setGarageVehicleConsent] = useState(false)
   const [date, setDate] = useState('')
@@ -101,6 +104,16 @@ export function BookAppointmentPage() {
   const stepIndex = STEPS.indexOf(step)
   const selectedBranch = garage.branches.find((b) => b.id === branchId) ?? primaryBranch(garage)
 
+  const filteredServices = useMemo(() => {
+    const items = servicesQuery.data?.items ?? []
+    const q = serviceQuery.trim().toLowerCase()
+    if (!q) return items
+    return items.filter((svc) => {
+      const name = localizedText(locale, svc.name, svc.nameAr).toLowerCase()
+      return name.includes(q)
+    })
+  }, [servicesQuery.data?.items, serviceQuery, locale])
+
   const goNext = () => {
     setError('')
     const next = STEPS[stepIndex + 1]
@@ -149,8 +162,14 @@ export function BookAppointmentPage() {
         {step === 'service' && (
           <div className="space-y-2">
             <h2 className="font-semibold text-text-primary">{t('book.chooseService')}</h2>
+            <Input
+              type="search"
+              placeholder={t('common.search')}
+              value={serviceQuery}
+              onChange={(e) => setServiceQuery(e.target.value)}
+            />
             {servicesQuery.isLoading && <Spinner />}
-            {servicesQuery.data?.items.map((svc) => (
+            {filteredServices.map((svc) => (
               <button
                 key={svc.id}
                 type="button"
@@ -164,7 +183,7 @@ export function BookAppointmentPage() {
                 }}
                 className="block w-full rounded-xl border border-border bg-surface p-4 text-left hover:border-primary"
               >
-                <p className="font-medium">{svc.name}</p>
+                <p className="font-medium">{localizedText(locale, svc.name, svc.nameAr)}</p>
                 <p className="text-sm text-text-muted">
                   {svc.price != null ? formatMoney(svc.price) : t('common.priceOnRequest')}
                   {svc.estimatedDurationMinutes != null &&
@@ -172,8 +191,17 @@ export function BookAppointmentPage() {
                 </p>
               </button>
             ))}
-            {servicesQuery.data?.items.length === 0 && (
-              <EmptyState title={t('book.noServices')} description={t('book.noServicesDesc')} />
+            {!servicesQuery.isLoading && filteredServices.length === 0 && (
+              <EmptyState
+                title={
+                  servicesQuery.data?.items.length ? t('common.noResults') : t('book.noServices')
+                }
+                description={
+                  servicesQuery.data?.items.length
+                    ? undefined
+                    : t('book.noServicesDesc')
+                }
+              />
             )}
           </div>
         )}
@@ -186,14 +214,21 @@ export function BookAppointmentPage() {
                 key={v.id}
                 type="button"
                 onClick={() => {
+                  // Reselecting/changing vehicle clears notes per product flow
+                  setNotes('')
                   setVehicleId(v.id)
                   setGarageVehicleConsent(false)
                   goNext()
                 }}
                 className="block w-full rounded-xl border border-border bg-surface p-4 text-left hover:border-primary"
               >
-                <p className="font-medium">{vehicleLabelLocalized(v, t)}</p>
-                {v.plateNumber && <p className="text-sm text-text-muted">{v.plateNumber}</p>}
+                <div className="flex items-center gap-2">
+                  <MakeLogo make={v.makeText} size={28} />
+                  <div className="min-w-0">
+                    <p className="font-medium">{vehicleLabelLocalized(v, t)}</p>
+                    {v.plateNumber && <p className="text-sm text-text-muted">{v.plateNumber}</p>}
+                  </div>
+                </div>
               </button>
             ))}
             <Link to="/vehicles/new" className="block text-center text-sm text-primary">
@@ -301,7 +336,9 @@ export function BookAppointmentPage() {
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-text-muted">{t('common.service')}</dt>
-                <dd className="text-right">{service?.name}</dd>
+                <dd className="text-right">
+                  {service ? localizedText(locale, service.name, service.nameAr) : ''}
+                </dd>
               </div>
               {vehicleId && (
                 <div className="flex justify-between gap-4">
@@ -324,6 +361,12 @@ export function BookAppointmentPage() {
                 <dt className="text-text-muted">{t('common.when')}</dt>
                 <dd className="text-right">{formatDateLocalized(slotStart, dateLocale)}</dd>
               </div>
+              {notes.trim() && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-text-muted">{t('book.notesLabel')}</dt>
+                  <dd className="max-w-[60%] text-right whitespace-pre-wrap">{notes.trim()}</dd>
+                </div>
+              )}
             </dl>
             {error && <p className="text-sm text-error">{error}</p>}
             {!canBook && (

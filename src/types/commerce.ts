@@ -12,6 +12,13 @@ export interface Invoice {
   status: string
   businessId: string
   businessName?: string
+  customerName?: string
+  customerPhone?: string
+  vehicleMake?: string
+  vehicleModel?: string
+  vehicleYear?: number
+  vehicleLabel?: string
+  vehicleImagePath?: string
   grandTotal: number
   remainingTotal: number
   currency: string
@@ -42,6 +49,13 @@ export interface Quotation {
   status: string
   businessId: string
   businessName?: string
+  customerName?: string
+  customerPhone?: string
+  vehicleMake?: string
+  vehicleModel?: string
+  vehicleYear?: number
+  vehicleLabel?: string
+  vehicleImagePath?: string
   grandTotal: number
   currency: string
   items: LineItem[]

@@ -1,19 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useMemo } from 'react'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ImageUpload } from '../components/ui/ImageUpload'
 import { Input } from '../components/ui/Input'
+import { MakeLogo } from '../components/ui/MakeLogo'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { Spinner } from '../components/ui/Spinner'
 import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { useAuth } from '../hooks/useAuth'
 import { useLocale } from '../i18n/LocaleProvider'
+import { hasMotomarksLogo } from '../lib/motomarks'
 import { uploadImage, vehicleImagePath } from '../lib/upload'
 import { VEHICLE_TYPE_OPTIONS, vehicleTypeLabelKey } from '../lib/vehicleTypes'
 import { listVehicleMakes, listVehicleModels } from '../services/api/catalog'
 import { createVehicle, getVehicle, updateVehicle } from '../services/api/vehicles'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 export function VehicleFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -46,11 +50,23 @@ export function VehicleFormPage() {
     queryFn: () => listVehicleMakes(),
   })
 
+  const supportedMakes = useMemo(() => {
+    const all = makesQuery.data ?? []
+    const filtered = all.filter((m) => hasMotomarksLogo(m.slug || m.name))
+    if (makeId && !filtered.some((m) => m.id === makeId)) {
+      const current = all.find((m) => m.id === makeId)
+      if (current) return [current, ...filtered]
+    }
+    return filtered
+  }, [makesQuery.data, makeId])
+
   const modelsQuery = useQuery({
     queryKey: ['vehicle-models', makeId],
     queryFn: () => listVehicleModels(makeId),
     enabled: !!makeId,
   })
+
+  const selectedMake = supportedMakes.find((m) => m.id === makeId)
 
   useEffect(() => {
     const v = vehicleQuery.data
@@ -124,59 +140,54 @@ export function VehicleFormPage() {
       />
       <div className="mx-auto max-w-lg px-4 py-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">{t('common.make')}</span>
-            <select
-              value={makeId}
-              onChange={(e) => {
-                setMakeId(e.target.value)
-                setModelId('')
-              }}
-              required
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
-            >
-              <option value="">{t('vehicles.selectMake')}</option>
-              {makesQuery.data?.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            label={t('common.make')}
+            value={makeId}
+            required
+            placeholder={t('vehicles.selectMake')}
+            onChange={(v) => {
+              setMakeId(v)
+              setModelId('')
+            }}
+            options={supportedMakes.map((m) => ({
+              value: m.id,
+              label: m.name,
+              searchText: `${m.name} ${m.slug}`,
+              leading: <MakeLogo make={m.name} slug={m.slug} size={24} />,
+            }))}
+          />
 
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">{t('common.model')}</span>
-            <select
-              value={modelId}
-              onChange={(e) => setModelId(e.target.value)}
-              required
-              disabled={!makeId}
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary disabled:opacity-50"
-            >
-              <option value="">{t('vehicles.selectModel')}</option>
-              {modelsQuery.data?.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            label={t('common.model')}
+            value={modelId}
+            required
+            disabled={!makeId}
+            placeholder={t('vehicles.selectModel')}
+            onChange={setModelId}
+            options={(modelsQuery.data ?? []).map((m) => ({
+              value: m.id,
+              label: m.name,
+              searchText: m.name,
+            }))}
+          />
 
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-text-secondary">{t('vehicles.vehicleType')}</span>
-            <select
-              value={vehicleType}
-              onChange={(e) => setVehicleType(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
-            >
-              <option value="">{t('vehicles.selectType')}</option>
-              {VEHICLE_TYPE_OPTIONS.map((code) => (
-                <option key={code} value={code}>
-                  {t(vehicleTypeLabelKey(code))}
-                </option>
-              ))}
-            </select>
-          </label>
+          {selectedMake && (
+            <div className="flex items-center gap-2 text-sm text-text-muted">
+              <MakeLogo make={selectedMake.name} slug={selectedMake.slug} size={28} />
+              <span>{selectedMake.name}</span>
+            </div>
+          )}
+
+          <SearchableSelect
+            label={t('vehicles.vehicleType')}
+            value={vehicleType}
+            placeholder={t('vehicles.selectType')}
+            onChange={setVehicleType}
+            options={VEHICLE_TYPE_OPTIONS.map((code) => ({
+              value: code,
+              label: t(vehicleTypeLabelKey(code)),
+            }))}
+          />
 
           <Input
             label={t('common.year')}

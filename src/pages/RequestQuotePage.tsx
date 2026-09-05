@@ -1,9 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
+import { MakeLogo } from '../components/ui/MakeLogo'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { Spinner } from '../components/ui/Spinner'
+import { vehicleLabelLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import { getBusinessBySlug } from '../services/api/garages'
 import { createQuoteRequest } from '../services/api/experience'
@@ -26,6 +29,19 @@ export function RequestQuotePage() {
     queryKey: ['vehicles'],
     queryFn: () => listVehicles(),
   })
+
+  const vehicleOptions = useMemo(
+    () => [
+      { value: '', label: t('quotes.noVehicle') },
+      ...(vehiclesQuery.data ?? []).map((v) => ({
+        value: v.id,
+        label: vehicleLabelLocalized(v, t),
+        searchText: [v.makeText, v.modelText, v.plateNumber, String(v.year)].filter(Boolean).join(' '),
+        leading: <MakeLogo make={v.makeText} size={24} />,
+      })),
+    ],
+    [vehiclesQuery.data, t],
+  )
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -62,21 +78,12 @@ export function RequestQuotePage() {
         <p className="text-sm text-text-muted">
           {t('quotes.requestHint', { name: garage.displayName })}
         </p>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-text-secondary">{t('common.vehicle')}</span>
-          <select
-            className="w-full rounded-xl border border-border bg-surface px-3 py-2"
-            value={vehicleId}
-            onChange={(e) => setVehicleId(e.target.value)}
-          >
-            <option value="">{t('quotes.noVehicle')}</option>
-            {vehiclesQuery.data?.map((v) => (
-              <option key={v.id} value={v.id}>
-                {[v.makeText, v.modelText, v.year].filter(Boolean).join(' ')}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SearchableSelect
+          label={t('common.vehicle')}
+          value={vehicleId}
+          onChange={setVehicleId}
+          options={vehicleOptions}
+        />
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-text-secondary">{t('quotes.describeWork')}</span>
           <textarea

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { MakeLogo } from './MakeLogo'
 import { StorageImage } from './StorageImage'
 import { vehicleLabelLocalized } from '../../i18n/format'
 import { useLocale } from '../../i18n/LocaleProvider'
@@ -50,7 +51,8 @@ export function VehicleCard({ vehicle, to, compact }: VehicleCardProps) {
       )}
       <div className="space-y-1 p-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <MakeLogo make={vehicle.makeText} size={28} />
             <h3 className="truncate text-base font-semibold text-text-primary">{label}</h3>
           </div>
           {vehicle.isDefault && (

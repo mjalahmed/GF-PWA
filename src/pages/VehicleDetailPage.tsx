@@ -192,7 +192,7 @@ export function VehicleDetailPage() {
                       .map((m, idx) => (
                         <StorageImage
                           key={m.id ?? `${item.id}-m-${idx}`}
-                          bucket="appointment-media"
+                          bucket="repair-photos"
                           path={m.storagePath}
                           alt={m.caption ?? ''}
                           className="h-16 w-20 shrink-0 rounded-lg object-cover"

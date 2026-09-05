@@ -1,14 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { GarageCard } from '../components/ui/GarageCard'
 import { Input } from '../components/ui/Input'
+import { MakeLogo } from '../components/ui/MakeLogo'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { Spinner } from '../components/ui/Spinner'
 import { useAuth } from '../hooks/useAuth'
 import { useGeolocation } from '../hooks/useGeolocation'
+import { vehicleLabelLocalized } from '../i18n/format'
+import { localizedCategoryName } from '../i18n/localized'
 import { useLocale } from '../i18n/LocaleProvider'
 import { listProductCategories, listServiceCategories } from '../services/api/catalog'
 import { searchBusinesses } from '../services/api/garages'
@@ -17,7 +21,7 @@ import { listVehicles } from '../services/api/vehicles'
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { session } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const { state: geo, requestLocation } = useGeolocation()
 
   const [query, setQuery] = useState(searchParams.get('query') ?? '')
@@ -109,6 +113,43 @@ export function SearchPage() {
     !!vehicleId ||
     coords != null
 
+  const serviceCategoryOptions = useMemo(
+    () => [
+      { value: '', label: t('search.anyService') },
+      ...(serviceCategoriesQuery.data ?? []).map((cat) => ({
+        value: cat.id,
+        label: localizedCategoryName(locale, cat),
+        searchText: `${cat.name} ${cat.nameAr ?? ''}`,
+      })),
+    ],
+    [serviceCategoriesQuery.data, locale, t],
+  )
+
+  const productCategoryOptions = useMemo(
+    () => [
+      { value: '', label: t('search.anyProduct') },
+      ...(productCategoriesQuery.data ?? []).map((cat) => ({
+        value: cat.id,
+        label: localizedCategoryName(locale, cat),
+        searchText: `${cat.name} ${cat.nameAr ?? ''}`,
+      })),
+    ],
+    [productCategoriesQuery.data, locale, t],
+  )
+
+  const vehicleOptions = useMemo(
+    () => [
+      { value: '', label: t('search.anyVehicle') },
+      ...(vehiclesQuery.data ?? []).map((v) => ({
+        value: v.id,
+        label: v.displayLabel ?? vehicleLabelLocalized(v, t),
+        searchText: [v.makeText, v.modelText, v.plateNumber, String(v.year)].filter(Boolean).join(' '),
+        leading: <MakeLogo make={v.makeText} size={24} />,
+      })),
+    ],
+    [vehiclesQuery.data, t],
+  )
+
   return (
     <div>
       <PageHeader title={t('search.title')} />
@@ -122,36 +163,18 @@ export function SearchPage() {
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">{t('search.serviceCategory')}</span>
-              <select
-                value={serviceCategory}
-                onChange={(e) => setServiceCategory(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
-              >
-                <option value="">{t('search.anyService')}</option>
-                {serviceCategoriesQuery.data?.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">{t('search.productCategory')}</span>
-              <select
-                value={productCategory}
-                onChange={(e) => setProductCategory(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
-              >
-                <option value="">{t('search.anyProduct')}</option>
-                {productCategoriesQuery.data?.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SearchableSelect
+              label={t('search.serviceCategory')}
+              value={serviceCategory}
+              onChange={setServiceCategory}
+              options={serviceCategoryOptions}
+            />
+            <SearchableSelect
+              label={t('search.productCategory')}
+              value={productCategory}
+              onChange={setProductCategory}
+              options={productCategoryOptions}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -186,21 +209,12 @@ export function SearchPage() {
           </div>
 
           {session && vehiclesQuery.data && vehiclesQuery.data.length > 0 && (
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-text-secondary">{t('search.vehicle')}</span>
-              <select
-                value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text-primary"
-              >
-                <option value="">{t('search.anyVehicle')}</option>
-                {vehiclesQuery.data.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.displayLabel ?? t('search.yearVehicle', { year: v.year })}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SearchableSelect
+              label={t('search.vehicle')}
+              value={vehicleId}
+              onChange={setVehicleId}
+              options={vehicleOptions}
+            />
           )}
 
           <label className="flex items-center gap-2 text-sm text-text-secondary">

@@ -406,10 +406,10 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-        <h3 className="font-semibold">2. Location</h3>
-        <Input label="Address" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} />
-        <Input label="Area" value={area} onChange={(e) => setArea(e.target.value)} />
-        <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
+        <h3 className="font-semibold">2. {t('biz.setup.location')}</h3>
+        <Input label={t('biz.apply.labels.address')} value={addressLine} onChange={(e) => setAddressLine(e.target.value)} />
+        <Input label={t('biz.apply.labels.area')} value={area} onChange={(e) => setArea(e.target.value)} />
+        <Input label={t('biz.apply.labels.city')} value={city} onChange={(e) => setCity(e.target.value)} />
         <LocationPicker
           latitude={latitude}
           longitude={longitude}
@@ -429,7 +429,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-        <h3 className="font-semibold">3. Opening hours</h3>
+        <h3 className="font-semibold">3. {t('biz.setup.openingHours')}</h3>
         <div className="space-y-2">
           {schedule.map((day) => (
             <div key={day.dayOfWeek} className="flex flex-wrap items-center gap-2 text-sm">
@@ -490,7 +490,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-        <h3 className="font-semibold">4. Services</h3>
+        <h3 className="font-semibold">4. {t('biz.setup.services')}</h3>
         <ul className="space-y-2 text-sm">
           {(servicesQuery.data ?? []).filter((s) => s.isActive !== false).length === 0 && (
             <li className="text-text-muted">No active services yet.</li>
@@ -567,7 +567,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-        <h3 className="font-semibold">5. Bookings</h3>
+        <h3 className="font-semibold">5. {t('biz.setup.bookings')}</h3>
         <p className="text-sm text-text-muted">
           Status:{' '}
           {checklist.appointmentsEnabled ? (
@@ -586,7 +586,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-        <h3 className="font-semibold">6. BenefitPay</h3>
+        <h3 className="font-semibold">6. {t('biz.setup.benefitPay')}</h3>
         <p className="text-sm text-text-muted">
           Show settlement details so customers can pay invoices via BenefitPay.
         </p>

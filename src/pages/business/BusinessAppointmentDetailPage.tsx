@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { BeforeAfterGallery } from '../../components/ui/BeforeAfterGallery'
 import { Button } from '../../components/ui/Button'
 import { ImageUpload } from '../../components/ui/ImageUpload'
+import { MakeLogo } from '../../components/ui/MakeLogo'
+import { SearchableSelect } from '../../components/ui/SearchableSelect'
 import { Spinner } from '../../components/ui/Spinner'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { formatMoney } from '../../lib/utils'
+import { hasMotomarksLogo } from '../../lib/motomarks'
 import { uploadFile, uploadImage, vehicleImagePath as buildVehicleImagePath } from '../../lib/upload'
 import { VEHICLE_TYPE_OPTIONS, vehicleTypeLabelKey } from '../../lib/vehicleTypes'
 import { useLocale } from '../../i18n/LocaleProvider'
@@ -19,6 +22,7 @@ import {
   setAppointmentStatus,
   transitionAppointment,
 } from '../../services/api/business'
+import { listVehicleMakes, listVehicleModels } from '../../services/api/catalog'
 import { getAppointmentMedia, type RepairPhoto } from '../../services/api/experience'
 import { Input } from '../../components/ui/Input'
 import { GENERIC_APPOINTMENT_STATUSES } from '../../types/appointments'
@@ -81,6 +85,8 @@ export function BusinessAppointmentDetailPage() {
   const [uploadPhase, setUploadPhase] = useState<'before' | 'after'>('before')
   const fileRef = useRef<HTMLInputElement>(null)
   const [showAddVehicle, setShowAddVehicle] = useState(false)
+  const [vehicleMakeId, setVehicleMakeId] = useState('')
+  const [vehicleModelId, setVehicleModelId] = useState('')
   const [vehicleMake, setVehicleMake] = useState('')
   const [vehicleModel, setVehicleModel] = useState('')
   const [vehicleYear, setVehicleYear] = useState(String(new Date().getFullYear()))
@@ -94,6 +100,21 @@ export function BusinessAppointmentDetailPage() {
   const [vehicleImagePath, setVehicleImagePath] = useState<string | null>(null)
 
   const businessIdHint = params.get('businessId') || ''
+
+  const makesQuery = useQuery({
+    queryKey: ['vehicle-makes'],
+    queryFn: listVehicleMakes,
+    enabled: showAddVehicle,
+  })
+  const supportedMakes = useMemo(
+    () => (makesQuery.data ?? []).filter((m) => hasMotomarksLogo(m.slug || m.name)),
+    [makesQuery.data],
+  )
+  const modelsQuery = useQuery({
+    queryKey: ['vehicle-models', vehicleMakeId],
+    queryFn: () => listVehicleModels(vehicleMakeId),
+    enabled: showAddVehicle && !!vehicleMakeId,
+  })
 
   const detailQuery = useQuery({
     queryKey: ['business-appointment', businessIdHint, appointmentId],
@@ -114,7 +135,7 @@ export function BusinessAppointmentDetailPage() {
   const businessId = businessIdHint || detailQuery.data?.businessId || ''
 
   const mediaQuery = useQuery({
-    queryKey: ['appointment-media', appointmentId],
+    queryKey: ['repair-photos', appointmentId],
     queryFn: () => getAppointmentMedia(appointmentId),
     enabled: Boolean(appointmentId),
     retry: false,
@@ -124,7 +145,7 @@ export function BusinessAppointmentDetailPage() {
     void queryClient.invalidateQueries({ queryKey: ['business-appointment'] })
     void queryClient.invalidateQueries({ queryKey: ['appointment', appointmentId] })
     void queryClient.invalidateQueries({ queryKey: ['business-appointments'] })
-    void queryClient.invalidateQueries({ queryKey: ['appointment-media', appointmentId] })
+    void queryClient.invalidateQueries({ queryKey: ['repair-photos', appointmentId] })
   }
 
   const actionMutation = useMutation({
@@ -184,7 +205,7 @@ export function BusinessAppointmentDetailPage() {
       if (!businessId) throw new Error(t('biz.appointment.missingBusiness'))
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
       const path = `${businessId}/${appointmentId}/${uploadPhase}/${Date.now()}-${safe}`
-      await uploadFile('appointment-media', path, file)
+      await uploadFile('repair-photos', path, file)
       await registerAppointmentMedia(businessId, appointmentId, {
         phase: uploadPhase,
         storagePath: path,
@@ -211,6 +232,8 @@ export function BusinessAppointmentDetailPage() {
       return createCustomerVehicle(businessId, {
         customerId,
         sourceAppointmentId: appointmentId,
+        makeId: vehicleMakeId || null,
+        modelId: vehicleModelId || null,
         makeText: vehicleMake.trim(),
         modelText: vehicleModel.trim(),
         year,
@@ -229,6 +252,8 @@ export function BusinessAppointmentDetailPage() {
       setMessage(t('biz.appointment.vehicleAdded'))
       setError('')
       setShowAddVehicle(false)
+      setVehicleMakeId('')
+      setVehicleModelId('')
       setVehicleMake('')
       setVehicleModel('')
       setVehiclePlate('')
@@ -342,15 +367,38 @@ export function BusinessAppointmentDetailPage() {
                 ) : (
                   <div className="mt-2 space-y-2 rounded-lg bg-surface-secondary p-3">
                     <p className="text-xs text-text-muted">{t('biz.appointment.addVehicleHint')}</p>
-                    <Input
+                    <SearchableSelect
                       label={t('common.make')}
-                      value={vehicleMake}
-                      onChange={(e) => setVehicleMake(e.target.value)}
+                      value={vehicleMakeId}
+                      placeholder={t('vehicles.selectMake')}
+                      onChange={(id) => {
+                        setVehicleMakeId(id)
+                        setVehicleModelId('')
+                        setVehicleModel('')
+                        const make = supportedMakes.find((m) => m.id === id)
+                        setVehicleMake(make?.name ?? '')
+                      }}
+                      options={supportedMakes.map((m) => ({
+                        value: m.id,
+                        label: m.name,
+                        searchText: `${m.name} ${m.slug}`,
+                        leading: <MakeLogo make={m.name} slug={m.slug} size={22} />,
+                      }))}
                     />
-                    <Input
+                    <SearchableSelect
                       label={t('common.model')}
-                      value={vehicleModel}
-                      onChange={(e) => setVehicleModel(e.target.value)}
+                      value={vehicleModelId}
+                      disabled={!vehicleMakeId}
+                      placeholder={t('vehicles.selectModel')}
+                      onChange={(id) => {
+                        setVehicleModelId(id)
+                        const model = modelsQuery.data?.find((m) => m.id === id)
+                        setVehicleModel(model?.name ?? '')
+                      }}
+                      options={(modelsQuery.data ?? []).map((m) => ({
+                        value: m.id,
+                        label: m.name,
+                      }))}
                     />
                     <label className="block space-y-1.5">
                       <span className="text-sm font-medium text-text-secondary">
