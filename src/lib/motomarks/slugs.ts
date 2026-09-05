@@ -1,5 +1,5 @@
 /** Motomarks published logo slugs (from https://motomarks.io/sitemap.xml). */
-export const MOTOMARKS_SLUGS = new Set([
+export const MOTOMARKS_SLUGS: ReadonlySet<string> = new Set([
   '9ff',
   'abadal',
   'abarth',

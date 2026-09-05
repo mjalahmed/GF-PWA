@@ -2,7 +2,7 @@ import type { Locale } from '../i18n/locale'
 
 /** Prefer Arabic fields when locale is ar; fall back to English. */
 export function localizedText(
-  locale: Locale,
+  locale: Locale | null | undefined,
   en: string | null | undefined,
   ar?: string | null,
 ): string {
@@ -11,7 +11,7 @@ export function localizedText(
 }
 
 export function localizedCategoryName(
-  locale: Locale,
+  locale: Locale | null | undefined,
   cat: { name: string; nameAr?: string | null },
 ): string {
   return localizedText(locale, cat.name, cat.nameAr)

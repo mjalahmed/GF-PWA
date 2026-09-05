@@ -11,6 +11,7 @@ import { LanguageToggle } from '../i18n/LanguageToggle'
 import { InstallAppSection } from '../components/layout/InstallAppSection'
 import { useLocale } from '../i18n/LocaleProvider'
 import { signOut, updateProfile } from '../services/api/auth'
+import { APP_VERSION } from '../version'
 
 function ProfileNavLink({ to, label }: { to: string; label: string }) {
   return (
@@ -196,6 +197,10 @@ export function ProfilePage() {
         >
           {t('profile.signOut')}
         </Button>
+
+        <p className="pb-2 text-center text-xs text-text-subtle">
+          GarageFinder {APP_VERSION}
+        </p>
       </div>
     </div>
   )
