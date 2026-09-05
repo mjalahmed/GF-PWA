@@ -1,7 +1,7 @@
 /**
- * Motomarks car logo helpers.
- * CDN: https://motomarks.io/img/{slug}?token=...&type=badge
- * Requires VITE_MOTOMARKS_TOKEN (publishable pk_ key).
+ * Motomarks car logo helpers — local static assets.
+ * Files live at: public/vehicle-logos/{slug}.webp
+ * Download/refresh via: npm run logos:download
  */
 import { MOTOMARKS_SLUGS } from './slugs'
 
@@ -36,19 +36,12 @@ export function hasMotomarksLogo(nameOrSlug: string | null | undefined): boolean
   return toMotomarksSlug(nameOrSlug) != null
 }
 
+/** Local static URL — no CDN/token at runtime. */
 export function motomarksLogoUrl(
   nameOrSlug: string | null | undefined,
-  options?: { type?: 'badge' | 'full' | 'wordmark'; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' },
+  _options?: { type?: 'badge' | 'full' | 'wordmark'; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' },
 ): string | null {
   const slug = toMotomarksSlug(nameOrSlug)
   if (!slug) return null
-  const token = import.meta.env.VITE_MOTOMARKS_TOKEN as string | undefined
-  if (!token) return null
-  const params = new URLSearchParams({
-    token,
-    type: options?.type ?? 'badge',
-    format: 'webp',
-    size: options?.size ?? 'sm',
-  })
-  return `https://motomarks.io/img/${slug}?${params.toString()}`
+  return `/vehicle-logos/${slug}.webp`
 }
