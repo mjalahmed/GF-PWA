@@ -348,8 +348,9 @@ export function BusinessAppointmentDetailPage() {
           </div>
           <div>
             <dt className="text-text-muted">{t('common.vehicle')}</dt>
-            <dd className="font-medium">
-              {vehicleDisplay(appt, t('biz.appointment.vehicleFallback'))}
+            <dd className="flex items-center gap-2 font-medium">
+              <MakeLogo make={appt.vehicle?.makeText} size={24} />
+              <span>{vehicleDisplay(appt, t('biz.appointment.vehicleFallback'))}</span>
             </dd>
             {appt.vehicle?.plateNumber && (
               <dd className="text-text-muted">{appt.vehicle.plateNumber}</dd>
