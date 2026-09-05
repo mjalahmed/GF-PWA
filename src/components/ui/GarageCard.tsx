@@ -4,6 +4,7 @@ import { primaryBranch } from '../../lib/utils'
 import { useLocale } from '../../i18n/LocaleProvider'
 import { formatDistanceLocalized, formatRatingLocalized } from '../../i18n/format'
 import { StarRating } from './StarRating'
+import { StorageImage } from './StorageImage'
 
 interface GarageCardProps {
   garage: DiscoveryBusiness
@@ -20,8 +21,20 @@ export function GarageCard({ garage }: GarageCardProps) {
       className="block rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="flex gap-3">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary-light text-lg font-bold text-primary">
-          {garage.displayName.charAt(0)}
+        <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-primary-light">
+          {garage.logoPath ? (
+            <StorageImage
+              bucket="business-media"
+              path={garage.logoPath}
+              alt={garage.displayName}
+              className="size-14 object-cover"
+              fallback={garage.displayName.charAt(0)}
+            />
+          ) : (
+            <div className="flex size-14 items-center justify-center text-lg font-bold text-primary">
+              {garage.displayName.charAt(0)}
+            </div>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
