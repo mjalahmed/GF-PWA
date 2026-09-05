@@ -12,6 +12,7 @@ import { VehicleCard } from '../components/ui/VehicleCard'
 import { VinReminderBanner } from '../components/ui/VinReminderBanner'
 import { useAuth } from '../hooks/useAuth'
 import { vehicleLabelLocalized } from '../i18n/format'
+import { localizedCategoryName } from '../i18n/localized'
 import { useLocale } from '../i18n/LocaleProvider'
 import { listAppointments } from '../services/api/appointments'
 import { listServiceCategories } from '../services/api/catalog'
@@ -35,7 +36,7 @@ function SectionHeader({ title, to, seeAllLabel }: { title: string; to: string; 
 
 export function HomePage() {
   const { session } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
 
   const categoriesQuery = useQuery({
     queryKey: ['service-categories'],
@@ -276,7 +277,9 @@ export function HomePage() {
                   to={`/search?serviceCategory=${cat.id}`}
                   className="rounded-2xl border border-border bg-surface px-4 py-5 text-center no-underline transition hover:border-primary"
                 >
-                  <p className="text-sm font-semibold text-text-primary">{cat.name}</p>
+                  <p className="text-sm font-semibold text-text-primary">
+                    {localizedCategoryName(locale, cat)}
+                  </p>
                 </Link>
               ))}
             </div>

@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { MakeLogo } from '../../components/ui/MakeLogo'
 import { Spinner } from '../../components/ui/Spinner'
 import { StorageImage } from '../../components/ui/StorageImage'
 import { useLocale } from '../../i18n/LocaleProvider'
@@ -25,6 +26,9 @@ function quoteVehicle(q: Record<string, unknown>) {
     imagePath: (vehicle.imagePath ?? vehicle.image_path ?? q.vehicleImagePath) as
       | string
       | undefined,
+    make: String(
+      q.vehicleMake ?? q.vehicle_make ?? vehicle.makeText ?? vehicle.make_text ?? '',
+    ),
     label:
       String(
         q.vehicleLabel ??
@@ -201,7 +205,10 @@ export function BusinessQuotationsPage() {
                       </span>
                     </div>
                     <p className="mt-1 font-medium text-text-primary">{customerName}</p>
-                    <p className="text-text-muted">{vehicle.label}</p>
+                    <p className="flex items-center gap-2 text-text-muted">
+                      <MakeLogo make={vehicle.make} size={20} />
+                      <span>{vehicle.label}</span>
+                    </p>
                     <p className="text-text-muted">{serviceName}</p>
                     {appointmentIdVal && (
                       <p className="text-xs text-text-subtle">

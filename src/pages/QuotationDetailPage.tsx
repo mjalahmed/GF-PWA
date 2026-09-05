@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
+import { MakeLogo } from '../components/ui/MakeLogo'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { StorageImage } from '../components/ui/StorageImage'
 import { formatDateLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import { formatMoney } from '../lib/utils'
@@ -59,6 +61,9 @@ export function QuotationDetailPage() {
   }
 
   const pending = ['issued', 'viewed', 'sent'].includes(q.status)
+  const vehicleLabel =
+    q.vehicleLabel ??
+    ([q.vehicleMake, q.vehicleModel, q.vehicleYear].filter(Boolean).join(' ') || undefined)
 
   return (
     <div>
@@ -68,6 +73,31 @@ export function QuotationDetailPage() {
           <div>{q.businessName && <p className="text-sm text-text-muted">{q.businessName}</p>}</div>
           <StatusBadge status={q.status} />
         </div>
+
+        {vehicleLabel && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface">
+            {q.vehicleImagePath && (
+              <StorageImage
+                bucket="vehicle-images"
+                path={q.vehicleImagePath}
+                alt={vehicleLabel}
+                className="aspect-video w-full object-cover"
+              />
+            )}
+            <div className="flex items-center gap-3 p-4">
+              <MakeLogo make={q.vehicleMake} size={32} />
+              <div>
+                <p className="text-xs font-medium uppercase text-text-muted">{t('common.vehicle')}</p>
+                <p className="font-semibold text-text-primary">{vehicleLabel}</p>
+                {(q.vehicleMake || q.vehicleModel) && (
+                  <p className="text-sm text-text-muted">
+                    {[q.vehicleMake, q.vehicleModel, q.vehicleYear].filter(Boolean).join(' ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <dl className="mt-4 space-y-2 rounded-2xl border border-border bg-surface p-4 text-sm">
           {q.validUntil && (

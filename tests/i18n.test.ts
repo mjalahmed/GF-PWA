@@ -44,7 +44,7 @@ describe('translate', () => {
   })
 
   it('exposes language symbols', () => {
-    expect(translate('en', 'lang.symbolEn')).toBe('A')
+    expect(translate('en', 'lang.symbolEn')).toBe('E')
     expect(translate('en', 'lang.symbolAr')).toBe('ع')
   })
 

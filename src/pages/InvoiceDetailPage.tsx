@@ -4,8 +4,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
+import { MakeLogo } from '../components/ui/MakeLogo'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { StorageImage } from '../components/ui/StorageImage'
 import { formatDateLocalized } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleProvider'
 import { formatMoney } from '../lib/utils'
@@ -110,6 +112,10 @@ export function InvoiceDetailPage() {
     ['captured', 'paid', 'confirmed'].includes(p.status),
   )
 
+  const vehicleLabel =
+    inv.vehicleLabel ??
+    ([inv.vehicleMake, inv.vehicleModel, inv.vehicleYear].filter(Boolean).join(' ') || undefined)
+
   return (
     <div>
       <PageHeader title={inv.invoiceNumber} backTo="/invoices" />
@@ -120,6 +126,31 @@ export function InvoiceDetailPage() {
           </div>
           <StatusBadge status={inv.status} />
         </div>
+
+        {vehicleLabel && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface">
+            {inv.vehicleImagePath && (
+              <StorageImage
+                bucket="vehicle-images"
+                path={inv.vehicleImagePath}
+                alt={vehicleLabel}
+                className="aspect-video w-full object-cover"
+              />
+            )}
+            <div className="flex items-center gap-3 p-4">
+              <MakeLogo make={inv.vehicleMake} size={32} />
+              <div>
+                <p className="text-xs font-medium uppercase text-text-muted">{t('common.vehicle')}</p>
+                <p className="font-semibold text-text-primary">{vehicleLabel}</p>
+                {(inv.vehicleMake || inv.vehicleModel) && (
+                  <p className="text-sm text-text-muted">
+                    {[inv.vehicleMake, inv.vehicleModel, inv.vehicleYear].filter(Boolean).join(' ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <section className="mt-4 rounded-2xl border border-border bg-surface p-4">
           <h3 className="font-semibold text-text-primary">{t('invoices.paymentSummary')}</h3>

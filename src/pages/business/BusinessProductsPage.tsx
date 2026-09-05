@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { SearchableSelect } from '../../components/ui/SearchableSelect'
 import { Spinner } from '../../components/ui/Spinner'
+import { localizedCategoryName } from '../../i18n/localized'
+import { useLocale } from '../../i18n/LocaleProvider'
 import {
   createBusinessProduct,
   deactivateBusinessProduct,
@@ -16,6 +19,7 @@ import { listProductCategories } from '../../services/api/catalog'
 export function BusinessProductsPage() {
   const { businessId = '' } = useParams()
   const queryClient = useQueryClient()
+  const { t, locale } = useLocale()
   const [error, setError] = useState('')
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -31,6 +35,18 @@ export function BusinessProductsPage() {
     queryKey: ['product-categories'],
     queryFn: listProductCategories,
   })
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: '', label: t('common.select') },
+      ...(categoriesQuery.data ?? []).map((c) => ({
+        value: c.id,
+        label: localizedCategoryName(locale, c),
+        searchText: `${c.name} ${c.nameAr ?? ''}`,
+      })),
+    ],
+    [categoriesQuery.data, locale, t],
+  )
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -65,15 +81,15 @@ export function BusinessProductsPage() {
     <RequireGarageSetup businessId={businessId}>
       <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
         <Link to={`/business/garages/${businessId}`} className="text-sm text-primary">
-          ← Garage
+          ← {t('common.garage')}
         </Link>
-        <h2 className="text-xl font-semibold">Products</h2>
-        <p className="text-sm text-text-muted">Parts and products listed on your public page.</p>
+        <h2 className="text-xl font-semibold">{t('biz.products.title')}</h2>
+        <p className="text-sm text-text-muted">{t('biz.products.hint')}</p>
         {error && <p className="text-sm text-error">{error}</p>}
 
         <ul className="space-y-2">
           {(productsQuery.data ?? []).filter((p) => p.isActive !== false).length === 0 && (
-            <li className="text-sm text-text-muted">No products yet.</li>
+            <li className="text-sm text-text-muted">{t('biz.products.empty')}</li>
           )}
           {(productsQuery.data ?? [])
             .filter((p) => p.isActive !== false)
@@ -91,37 +107,40 @@ export function BusinessProductsPage() {
                   className="text-xs text-error"
                   onClick={() => removeMutation.mutate(p.id)}
                 >
-                  Remove
+                  {t('common.remove')}
                 </button>
               </li>
             ))}
         </ul>
 
         <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Brand (optional)" value={brand} onChange={(e) => setBrand(e.target.value)} />
-          <Input label="Price (BHD)" value={price} onChange={(e) => setPrice(e.target.value)} />
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">Category</span>
-            <select
-              className="w-full rounded-xl border border-border bg-background px-3 py-2"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">Select…</option>
-              {(categoriesQuery.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Input
+            label={t('biz.products.name')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            label={t('biz.products.brandOptional')}
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+          />
+          <Input
+            label={t('biz.products.price')}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+          <SearchableSelect
+            label={t('biz.products.category')}
+            value={categoryId}
+            onChange={setCategoryId}
+            options={categoryOptions}
+          />
           <Button
             loading={createMutation.isPending}
             disabled={!name.trim() || !categoryId}
             onClick={() => createMutation.mutate()}
           >
-            Add product
+            {t('biz.products.add')}
           </Button>
         </div>
       </section>

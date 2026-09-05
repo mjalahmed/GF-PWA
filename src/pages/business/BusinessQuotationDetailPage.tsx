@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { Button } from '../../components/ui/Button'
+import { MakeLogo } from '../../components/ui/MakeLogo'
 import { Spinner } from '../../components/ui/Spinner'
 import { StorageImage } from '../../components/ui/StorageImage'
 import { useLocale } from '../../i18n/LocaleProvider'
@@ -71,6 +72,9 @@ export function BusinessQuotationDetailPage() {
   const amount = Number(q.grandTotal ?? q.totalAmount ?? q.total ?? 0)
   const currency = String(q.currency ?? 'BHD')
   const vehicle = (q.vehicle as Record<string, unknown> | undefined) ?? {}
+  const vehicleMake = String(
+    q.vehicleMake ?? q.vehicle_make ?? vehicle.makeText ?? vehicle.make_text ?? '',
+  )
   const vehicleLabel =
     String(
       q.vehicleLabel ??
@@ -78,12 +82,15 @@ export function BusinessQuotationDetailPage() {
           .filter(Boolean)
           .join(' '),
     ) || '—'
-  const imagePath = (vehicle.imagePath ?? vehicle.image_path) as string | undefined
+  const imagePath = (vehicle.imagePath ?? vehicle.image_path ?? q.vehicleImagePath) as
+    | string
+    | undefined
   const customerName = String(
     q.customerName ??
       (q.customer as Record<string, unknown> | undefined)?.fullName ??
       '—',
   )
+  const customerPhone = String(q.customerPhone ?? q.customer_phone ?? '')
   const appointmentId = String(q.appointmentId ?? q.appointment_id ?? '')
   const serviceName = String(q.serviceName ?? q.service_name ?? q.title ?? '—')
   const issuedAt = String(q.issuedAt ?? q.issued_at ?? '')
@@ -112,7 +119,11 @@ export function BusinessQuotationDetailPage() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h2 className="text-xl font-semibold">{customerName}</h2>
-            <p className="text-sm text-text-muted">{vehicleLabel}</p>
+            {customerPhone && <p className="text-sm text-text-muted">{customerPhone}</p>}
+            <p className="mt-1 flex items-center gap-2 text-sm text-text-muted">
+              <MakeLogo make={vehicleMake} size={24} />
+              <span>{vehicleLabel}</span>
+            </p>
           </div>
           <span className="rounded-full bg-surface-secondary px-2.5 py-1 text-xs font-medium">
             {statusLabel(status)}

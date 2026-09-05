@@ -100,11 +100,11 @@ export function ProfilePage() {
     ['admin', 'super_admin', 'onboarding_officer', 'dispute_officer', 'content_moderator', 'support_agent'].includes(r),
   )
 
-  const audienceLinks: { to: string; label: string }[] = [
-    { to: '/business/applications', label: 'Apply as a garage' },
+  const audienceLinks: { to: string; labelKey: string }[] = [
+    { to: '/business/applications', labelKey: 'profile.applyAsGarage' },
   ]
-  if (isBusinessUser) audienceLinks.push({ to: '/business', label: 'Garage portal' })
-  if (isAdminUser) audienceLinks.push({ to: '/admin', label: 'Admin console' })
+  if (isBusinessUser) audienceLinks.push({ to: '/business', labelKey: 'biz.shellTitle' })
+  if (isAdminUser) audienceLinks.push({ to: '/admin', labelKey: 'admin.shellTitle' })
 
   const links: { to: string; labelKey: string }[] = [
     { to: '/vehicles', labelKey: 'profile.vehicles' },
@@ -175,7 +175,7 @@ export function ProfilePage() {
           <nav className="space-y-2">
             <p className="px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">Workspaces</p>
             {audienceLinks.map((link) => (
-              <ProfileNavLink key={link.to} to={link.to} label={link.label} />
+              <ProfileNavLink key={link.to} to={link.to} label={t(link.labelKey)} />
             ))}
           </nav>
         )}

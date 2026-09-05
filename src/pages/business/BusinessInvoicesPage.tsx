@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { RequireGarageSetup } from '../../components/business/RequireGarageSetup'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { MakeLogo } from '../../components/ui/MakeLogo'
 import { Spinner } from '../../components/ui/Spinner'
 import { useLocale } from '../../i18n/LocaleProvider'
 import { formatMoney } from '../../lib/utils'
@@ -118,11 +119,23 @@ export function BusinessInvoicesPage() {
                 (inv.customer as Record<string, unknown> | undefined)?.full_name ??
                 '—',
             )
+            const vehicleMake = String(
+              inv.vehicleMake ??
+                inv.vehicle_make ??
+                (inv.vehicle as Record<string, unknown> | undefined)?.makeText ??
+                (inv.vehicle as Record<string, unknown> | undefined)?.make_text ??
+                '',
+            )
             const vehicleParts = [
-              (inv.vehicle as Record<string, unknown> | undefined)?.year,
-              (inv.vehicle as Record<string, unknown> | undefined)?.makeText ??
-                (inv.vehicle as Record<string, unknown> | undefined)?.make_text,
-              (inv.vehicle as Record<string, unknown> | undefined)?.modelText ??
+              inv.vehicleYear ?? (inv.vehicle as Record<string, unknown> | undefined)?.year,
+              vehicleMake ||
+                String(
+                  (inv.vehicle as Record<string, unknown> | undefined)?.makeText ??
+                    (inv.vehicle as Record<string, unknown> | undefined)?.make_text ??
+                    '',
+                ),
+              inv.vehicleModel ??
+                (inv.vehicle as Record<string, unknown> | undefined)?.modelText ??
                 (inv.vehicle as Record<string, unknown> | undefined)?.model_text,
             ]
               .filter(Boolean)
@@ -168,7 +181,10 @@ export function BusinessInvoicesPage() {
                   </div>
                   <div className="flex justify-between gap-2">
                     <dt>{t('common.vehicle')}</dt>
-                    <dd className="text-text-primary">{vehicleLabel}</dd>
+                    <dd className="flex items-center gap-2 text-text-primary">
+                      <MakeLogo make={vehicleMake} size={20} />
+                      <span>{vehicleLabel}</span>
+                    </dd>
                   </div>
                   {appointmentId && (
                     <div className="flex justify-between gap-2">

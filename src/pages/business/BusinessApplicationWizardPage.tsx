@@ -24,15 +24,23 @@ import {
   withdrawBusinessApplication,
 } from '../../services/api/business'
 
-const STEPS = [
-  { id: 'business_information', label: 'Business' },
-  { id: 'contact_information', label: 'Contact' },
-  { id: 'branch_information', label: 'Branch' },
-  { id: 'documents', label: 'Documents' },
-  { id: 'review_and_submit', label: 'Submit' },
+const STEP_IDS = [
+  'business_information',
+  'contact_information',
+  'branch_information',
+  'documents',
+  'review_and_submit',
 ] as const
 
-type StepId = (typeof STEPS)[number]['id']
+type StepId = (typeof STEP_IDS)[number]
+
+const STEP_LABEL_KEYS: Record<StepId, string> = {
+  business_information: 'biz.apply.steps.business',
+  contact_information: 'biz.apply.steps.contact',
+  branch_information: 'biz.apply.steps.branch',
+  documents: 'biz.apply.steps.documents',
+  review_and_submit: 'biz.apply.steps.submit',
+}
 
 function mimeForFile(file: File): 'application/pdf' | 'image/jpeg' | 'image/png' | null {
   if (file.type === 'application/pdf') return 'application/pdf'
@@ -100,7 +108,7 @@ export function BusinessApplicationWizardPage() {
     setCity(b?.city ?? 'Manama')
     setLatitude(b?.latitude ?? null)
     setLongitude(b?.longitude ?? null)
-    if (a.currentStep && STEPS.some((s) => s.id === a.currentStep)) {
+    if (a.currentStep && STEP_IDS.includes(a.currentStep as StepId)) {
       setStep(a.currentStep as StepId)
     }
   }, [detailQuery.data])
@@ -180,9 +188,9 @@ export function BusinessApplicationWizardPage() {
 
   const saveBranchMutation = useMutation({
     mutationFn: async () => {
-      if (!addressLine.trim()) throw new Error('Branch address is required.')
+      if (!addressLine.trim()) throw new Error(t('biz.apply.errors.branchAddressRequired'))
       if (latitude == null || longitude == null) {
-        throw new Error('Pin your location on the map (tap the map or use my location).')
+        throw new Error(t('biz.apply.errors.pinLocationRequired'))
       }
       await updateApplicationBranch(applicationId, {
         name: displayName.trim() || null,
@@ -217,7 +225,7 @@ export function BusinessApplicationWizardPage() {
       expiresAt?: string
     }) => {
       const mime = mimeForFile(file)
-      if (!mime) throw new Error('Only PDF, JPEG, or PNG files are allowed.')
+      if (!mime) throw new Error(t('biz.apply.errors.fileTypeOnly'))
       const created = await createApplicationDocument(applicationId, {
         documentRequirementId: requirementId,
         originalFileName: file.name,
@@ -245,9 +253,9 @@ export function BusinessApplicationWizardPage() {
     mutationFn: async () => {
       if (!providerAccepted) throw new Error(t('legal.providerAcceptRequired'))
       const detail = detailQuery.data
-      if (!detail?.branch?.addressLine) throw new Error('Add a branch address before submitting.')
+      if (!detail?.branch?.addressLine) throw new Error(t('biz.apply.errors.addBranchBeforeSubmit'))
       if (detail.branch.latitude == null || detail.branch.longitude == null) {
-        throw new Error('Pin your branch location on the map before submitting.')
+        throw new Error(t('biz.apply.errors.pinBeforeSubmit'))
       }
       const required = (requirementsQuery.data ?? []).filter((r) => r.isRequired)
       for (const req of required) {
@@ -290,9 +298,11 @@ export function BusinessApplicationWizardPage() {
   return (
     <section className="mx-auto max-w-lg space-y-4 px-4 py-4">
       <Link to="/business/applications" className="text-sm text-primary">
-        ← Applications
+        ← {t('biz.nav.applications')}
       </Link>
-      <h2 className="text-xl font-semibold">{isNew ? 'New garage application' : displayName || 'Application'}</h2>
+      <h2 className="text-xl font-semibold">
+        {isNew ? t('biz.apply.titles.newApplication') : displayName || t('biz.apply.titles.application')}
+      </h2>
       {app && (
         <p className="text-sm capitalize text-text-muted">Status: {app.status.replaceAll('_', ' ')}</p>
       )}
@@ -311,15 +321,15 @@ export function BusinessApplicationWizardPage() {
       )}
 
       <div className="flex flex-wrap gap-1 text-xs">
-        {STEPS.map((s) => (
+        {STEP_IDS.map((id) => (
           <button
-            key={s.id}
+            key={id}
             type="button"
-            disabled={!editable && s.id !== step}
-            onClick={() => editable && setStep(s.id)}
-            className={`rounded-full px-2.5 py-1 ${step === s.id ? 'bg-primary text-white' : 'bg-surface-secondary text-text-muted'}`}
+            disabled={!editable && id !== step}
+            onClick={() => editable && setStep(id)}
+            className={`rounded-full px-2.5 py-1 ${step === id ? 'bg-primary text-white' : 'bg-surface-secondary text-text-muted'}`}
           >
-            {s.label}
+            {t(STEP_LABEL_KEYS[id])}
           </button>
         ))}
       </div>
@@ -329,14 +339,14 @@ export function BusinessApplicationWizardPage() {
       {step === 'business_information' && (
         <div className="space-y-3">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium">Business category</span>
+            <span className="mb-1 block font-medium">{t('biz.products.category')}</span>
             <select
               className="w-full rounded-xl border border-border bg-background px-3 py-2"
               value={categoryId}
               disabled={!editable}
               onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">Select…</option>
+              <option value="">{t('common.select')}</option>
               {(categoriesQuery.data ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -345,38 +355,38 @@ export function BusinessApplicationWizardPage() {
             </select>
           </label>
           <Input
-            label="Legal name"
+            label={t('biz.apply.labels.legalName')}
             value={legalName}
             disabled={!editable}
             onChange={(e) => setLegalName(e.target.value)}
           />
           <Input
-            label="Display name"
+            label={t('biz.apply.labels.displayName')}
             value={displayName}
             disabled={!editable}
             onChange={(e) => setDisplayName(e.target.value)}
           />
           <Input
-            label="Commercial registration (optional)"
+            label={t('biz.apply.labels.crOptional')}
             value={crNumber}
             disabled={!editable}
             onChange={(e) => setCrNumber(e.target.value)}
           />
           <Input
-            label="Phone"
+            label={t('biz.apply.labels.phone')}
             value={phone}
             disabled={!editable}
             onChange={(e) => setPhone(e.target.value)}
           />
           <Input
-            label="Email"
+            label={t('biz.apply.labels.email')}
             type="email"
             value={email}
             disabled={!editable}
             onChange={(e) => setEmail(e.target.value)}
           />
           <label className="block text-sm">
-            <span className="mb-1 block font-medium">Description</span>
+            <span className="mb-1 block font-medium">{t('biz.apply.labels.description')}</span>
             <textarea
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               rows={3}
@@ -455,20 +465,20 @@ export function BusinessApplicationWizardPage() {
       {step === 'contact_information' && !isNew && (
         <div className="space-y-3">
           <Input
-            label="Phone"
+            label={t('biz.apply.labels.phone')}
             value={phone}
             disabled={!editable}
             onChange={(e) => setPhone(e.target.value)}
           />
           <Input
-            label="Email"
+            label={t('biz.apply.labels.email')}
             type="email"
             value={email}
             disabled={!editable}
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input
-            label="Website (optional)"
+            label={t('biz.apply.labels.websiteOptional')}
             value={website}
             disabled={!editable}
             onChange={(e) => setWebsite(e.target.value)}
@@ -484,13 +494,23 @@ export function BusinessApplicationWizardPage() {
       {step === 'branch_information' && !isNew && (
         <div className="space-y-3">
           <Input
-            label="Address"
+            label={t('biz.apply.labels.address')}
             value={addressLine}
             disabled={!editable}
             onChange={(e) => setAddressLine(e.target.value)}
           />
-          <Input label="Area" value={area} disabled={!editable} onChange={(e) => setArea(e.target.value)} />
-          <Input label="City" value={city} disabled={!editable} onChange={(e) => setCity(e.target.value)} />
+          <Input
+            label={t('biz.apply.labels.area')}
+            value={area}
+            disabled={!editable}
+            onChange={(e) => setArea(e.target.value)}
+          />
+          <Input
+            label={t('biz.apply.labels.city')}
+            value={city}
+            disabled={!editable}
+            onChange={(e) => setCity(e.target.value)}
+          />
           {editable ? (
             <LocationPicker
               latitude={latitude}
@@ -595,21 +615,21 @@ export function BusinessApplicationWizardPage() {
         <div className="space-y-4">
           <dl className="space-y-2 text-sm">
             <div>
-              <dt className="text-text-muted">Legal name</dt>
+              <dt className="text-text-muted">{t('biz.apply.labels.legalName')}</dt>
               <dd>{legalName}</dd>
             </div>
             <div>
-              <dt className="text-text-muted">Display name</dt>
+              <dt className="text-text-muted">{t('biz.apply.labels.displayName')}</dt>
               <dd>{displayName}</dd>
             </div>
             <div>
-              <dt className="text-text-muted">Contact</dt>
+              <dt className="text-text-muted">{t('biz.apply.steps.contact')}</dt>
               <dd>
                 {phone} · {email}
               </dd>
             </div>
             <div>
-              <dt className="text-text-muted">Address</dt>
+              <dt className="text-text-muted">{t('biz.apply.labels.address')}</dt>
               <dd>
                 {[addressLine, area, city].filter(Boolean).join(', ')}
                 {latitude != null && longitude != null

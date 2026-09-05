@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { EmptyState } from '../components/ui/EmptyState'
+import { MakeLogo } from '../components/ui/MakeLogo'
 import { Spinner } from '../components/ui/Spinner'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { formatDateLocalized } from '../i18n/format'
@@ -37,7 +38,11 @@ export function InvoicesPage() {
         )}
         {data && data.length > 0 && (
           <div className="space-y-3">
-            {data.map((inv) => (
+            {data.map((inv) => {
+              const vehicleLabel =
+                inv.vehicleLabel ??
+                [inv.vehicleMake, inv.vehicleModel, inv.vehicleYear].filter(Boolean).join(' ')
+              return (
               <Link
                 key={inv.id}
                 to={`/invoices/${inv.id}`}
@@ -50,6 +55,12 @@ export function InvoicesPage() {
                   </div>
                   <StatusBadge status={inv.status} />
                 </div>
+                {vehicleLabel && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
+                    <MakeLogo make={inv.vehicleMake} size={22} />
+                    <span>{vehicleLabel}</span>
+                  </div>
+                )}
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className="font-medium">{formatMoney(inv.grandTotal, inv.currency)}</span>
                   {inv.issuedAt && (
@@ -66,7 +77,7 @@ export function InvoicesPage() {
                   </p>
                 )}
               </Link>
-            ))}
+            )})}
           </div>
         )}
       </div>
