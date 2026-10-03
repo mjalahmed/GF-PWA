@@ -48,6 +48,7 @@ import { BusinessReviewsPage } from '../pages/business/BusinessReviewsPage'
 import { BusinessQuotationsPage } from '../pages/business/BusinessQuotationsPage'
 import { BusinessInvoicesPage } from '../pages/business/BusinessInvoicesPage'
 import { BusinessTeamPage } from '../pages/business/BusinessTeamPage'
+import { BusinessAuditPage } from '../pages/business/BusinessAuditPage'
 import { BusinessAcceptInvitationPage } from '../pages/business/BusinessAcceptInvitationPage'
 import { BusinessMembershipOutlet } from '../components/business/RequireBusinessMembership'
 import {
@@ -294,6 +295,7 @@ export function AppRouter() {
             <Route path="garages/:businessId/orders" element={<BusinessOrdersPage />} />
             <Route path="garages/:businessId/reviews" element={<BusinessReviewsPage />} />
             <Route path="garages/:businessId/team" element={<BusinessTeamPage />} />
+            <Route path="garages/:businessId/activity" element={<BusinessAuditPage />} />
           </Route>
         </Route>
 

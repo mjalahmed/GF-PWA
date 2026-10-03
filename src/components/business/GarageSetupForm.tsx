@@ -13,9 +13,15 @@ import {
   deactivateBusinessService,
   getBusinessDashboard,
   getBusinessSettings,
+  closeBusinessTemporarily,
+  createClosureDate,
+  deleteClosureDate,
   getOpeningHours,
   listBusinessBranches,
   listBusinessServices,
+  listClosureDates,
+  listMyBusinessMemberships,
+  reopenBusiness,
   replaceOpeningHours,
   updateBusinessBranch,
   updateBusinessProfile,
@@ -44,13 +50,21 @@ type Props = {
   businessId: string
   backTo: string
   requireComplete?: boolean
+  platformAdmin?: boolean
 }
 
-export function GarageSetupForm({ businessId, backTo, requireComplete = false }: Props) {
+export function GarageSetupForm({
+  businessId,
+  backTo,
+  requireComplete = false,
+  platformAdmin = false,
+}: Props) {
   const queryClient = useQueryClient()
   const { t } = useLocale()
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [closureDate, setClosureDate] = useState('')
+  const [closureReason, setClosureReason] = useState('')
 
   const businessQuery = useQuery({
     queryKey: ['business-profile', businessId],
@@ -75,6 +89,16 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
   const categoriesQuery = useQuery({
     queryKey: ['service-categories'],
     queryFn: listServiceCategories,
+  })
+  const membershipQuery = useQuery({
+    queryKey: ['business-memberships'],
+    queryFn: listMyBusinessMemberships,
+    enabled: !platformAdmin,
+  })
+  const closuresQuery = useQuery({
+    queryKey: ['business-closures', businessId],
+    queryFn: () => listClosureDates(businessId),
+    enabled: Boolean(businessId),
   })
 
   const primaryBranch =
@@ -154,6 +178,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
     void queryClient.invalidateQueries({ queryKey: ['business-hours', businessId] })
     void queryClient.invalidateQueries({ queryKey: ['business-services', businessId] })
     void queryClient.invalidateQueries({ queryKey: ['garage-setup', businessId] })
+    void queryClient.invalidateQueries({ queryKey: ['business-closures', businessId] })
   }
 
   const profileMutation = useMutation({
@@ -227,6 +252,51 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
     onSuccess: () => {
       setSuccess('Opening hours saved.')
       setError('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const closeMutation = useMutation({
+    mutationFn: () => closeBusinessTemporarily(businessId, closureReason.trim() || null),
+    onSuccess: () => {
+      setSuccess('Garage closed until you reopen it. Weekly hours stay unchanged.')
+      setError('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const reopenMutation = useMutation({
+    mutationFn: () => reopenBusiness(businessId),
+    onSuccess: () => {
+      setSuccess('Garage reopened. Weekly hours apply again.')
+      setError('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const addClosureMutation = useMutation({
+    mutationFn: () =>
+      createClosureDate(businessId, {
+        closureDate,
+        reason: closureReason.trim() || null,
+        isFullDay: true,
+      }),
+    onSuccess: () => {
+      setClosureDate('')
+      setSuccess('Closure date saved.')
+      setError('')
+      invalidate()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const deleteClosureMutation = useMutation({
+    mutationFn: (closureId: string) => deleteClosureDate(businessId, closureId),
+    onSuccess: () => {
+      setSuccess('Closure date removed.')
       invalidate()
     },
     onError: (err: Error) => setError(err.message),
@@ -308,9 +378,14 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
     branchesQuery.isLoading ||
     settingsQuery.isLoading ||
     hoursQuery.isLoading ||
-    servicesQuery.isLoading
+    servicesQuery.isLoading ||
+    (!platformAdmin && membershipQuery.isLoading)
 
   if (loading) return <Spinner />
+
+  const role = membershipQuery.data?.find((item) => item.businessId === businessId)?.role
+  const canEditProfile = platformAdmin || role === 'owner' || role === 'manager'
+  const canEditSchedule = platformAdmin || role === 'owner'
 
   const mapPreview =
     latitude != null && longitude != null
@@ -366,6 +441,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
+        {canEditProfile && <>
         <ImageUpload
           bucket="business-media"
           label={t('biz.setup.logo')}
@@ -400,9 +476,14 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             await updateBusinessProfile(businessId, { coverPath: null })
           }}
         />
-        <Button loading={profileMutation.isPending} onClick={() => profileMutation.mutate()}>
-          {t('biz.setup.saveProfile')}
-        </Button>
+        </>}
+        {canEditProfile ? (
+          <Button loading={profileMutation.isPending} onClick={() => profileMutation.mutate()}>
+            {t('biz.setup.saveProfile')}
+          </Button>
+        ) : (
+          <p className="text-sm text-text-muted">Only owners and managers can update the garage profile.</p>
+        )}
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
@@ -423,9 +504,13 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             Preview in Google Maps
           </a>
         )}
-        <Button loading={branchMutation.isPending} onClick={() => branchMutation.mutate()}>
-          Save location
-        </Button>
+        {canEditProfile ? (
+          <Button loading={branchMutation.isPending} onClick={() => branchMutation.mutate()}>
+            Save location
+          </Button>
+        ) : (
+          <p className="text-sm text-text-muted">Only owners and managers can update the location.</p>
+        )}
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
@@ -437,6 +522,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
               <label className="flex items-center gap-1">
                 <input
                   type="checkbox"
+                  disabled={!canEditSchedule}
                   checked={day.isClosed}
                   onChange={(e) => {
                     const next = [...schedule]
@@ -458,6 +544,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
                 <>
                   <input
                     type="time"
+                    disabled={!canEditSchedule}
                     className="rounded-lg border border-border px-2 py-1"
                     value={(day.opensAt ?? '09:00').slice(0, 5)}
                     onChange={(e) => {
@@ -470,6 +557,7 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
                   <span>–</span>
                   <input
                     type="time"
+                    disabled={!canEditSchedule}
                     className="rounded-lg border border-border px-2 py-1"
                     value={(day.closesAt ?? '18:00').slice(0, 5)}
                     onChange={(e) => {
@@ -484,9 +572,71 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             </div>
           ))}
         </div>
-        <Button loading={hoursMutation.isPending} onClick={() => hoursMutation.mutate()}>
-          Save hours
-        </Button>
+        {canEditSchedule ? (
+          <>
+            <Button loading={hoursMutation.isPending} onClick={() => hoursMutation.mutate()}>
+              Save hours
+            </Button>
+            <div className="space-y-2 rounded-xl border border-border p-3">
+              <p className="font-medium">Temporary close</p>
+              <p className="text-sm text-text-muted">
+                Close now even if the weekly hours say the garage is open. Hours stay as they are.
+              </p>
+              <Input
+                label="Reason (optional)"
+                value={closureReason}
+                onChange={(e) => setClosureReason(e.target.value)}
+              />
+              {businessQuery.data?.temporarilyClosed ? (
+                <Button loading={reopenMutation.isPending} onClick={() => reopenMutation.mutate()}>
+                  Reopen garage
+                </Button>
+              ) : (
+                <Button loading={closeMutation.isPending} onClick={() => closeMutation.mutate()}>
+                  Close garage now
+                </Button>
+              )}
+            </div>
+            <div className="space-y-2">
+              <p className="font-medium">Closure dates</p>
+              <Input
+                label="Date"
+                type="date"
+                value={closureDate}
+                onChange={(e) => setClosureDate(e.target.value)}
+              />
+              <Button
+                loading={addClosureMutation.isPending}
+                disabled={!closureDate}
+                onClick={() => addClosureMutation.mutate()}
+              >
+                Add full-day closure
+              </Button>
+              <ul className="space-y-2">
+                {(closuresQuery.data ?? []).map((closure) => (
+                  <li key={closure.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span>
+                      {closure.closureDate}
+                      {closure.reason ? ` · ${closure.reason}` : ''}
+                      {closure.isFullDay ? '' : ' · partial'}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      loading={deleteClosureMutation.isPending && deleteClosureMutation.variables === closure.id}
+                      onClick={() => deleteClosureMutation.mutate(closure.id)}
+                    >
+                      Delete
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-text-muted">
+            Opening hours and closures are owner-controlled. You can view the schedule above.
+          </p>
+        )}
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
@@ -509,13 +659,15 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
                     {s.price != null ? ` · ${s.price}` : ''})
                   </span>
                 </span>
-                <button
-                  type="button"
-                  className="text-xs text-error"
-                  onClick={() => deactivateMutation.mutate(s.id)}
-                >
-                  Remove
-                </button>
+                {canEditProfile && (
+                  <button
+                    type="button"
+                    className="text-xs text-error"
+                    onClick={() => deactivateMutation.mutate(s.id)}
+                  >
+                    Remove
+                  </button>
+                )}
               </li>
             ))}
         </ul>
@@ -557,13 +709,17 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
         />
-        <Button
-          loading={serviceMutation.isPending}
-          disabled={!serviceName.trim() || !serviceCategoryId}
-          onClick={() => serviceMutation.mutate()}
-        >
-          Add service
-        </Button>
+        {canEditProfile ? (
+          <Button
+            loading={serviceMutation.isPending}
+            disabled={!serviceName.trim() || !serviceCategoryId}
+            onClick={() => serviceMutation.mutate()}
+          >
+            Add service
+          </Button>
+        ) : (
+          <p className="text-sm text-text-muted">Only owners and managers can add services.</p>
+        )}
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
@@ -576,13 +732,15 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             <span className="text-warning">Disabled</span>
           )}
         </p>
-        <Button
-          loading={bookingsMutation.isPending}
-          disabled={checklist.appointmentsEnabled}
-          onClick={() => bookingsMutation.mutate()}
-        >
-          {checklist.appointmentsEnabled ? 'Bookings already on' : 'Enable appointments'}
-        </Button>
+        {canEditProfile && (
+          <Button
+            loading={bookingsMutation.isPending}
+            disabled={checklist.appointmentsEnabled}
+            onClick={() => bookingsMutation.mutate()}
+          >
+            {checklist.appointmentsEnabled ? 'Bookings already on' : 'Enable appointments'}
+          </Button>
+        )}
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
@@ -621,9 +779,11 @@ export function GarageSetupForm({ businessId, backTo, requireComplete = false }:
             </label>
           </>
         )}
-        <Button loading={benefitPayMutation.isPending} onClick={() => benefitPayMutation.mutate()}>
-          Save BenefitPay settings
-        </Button>
+        {canEditProfile && (
+          <Button loading={benefitPayMutation.isPending} onClick={() => benefitPayMutation.mutate()}>
+            Save BenefitPay settings
+          </Button>
+        )}
       </section>
 
       {checklist.complete && (

@@ -38,6 +38,8 @@ export function BusinessGaragePage() {
   }
 
   const businessName = membership.business.displayName || businessQuery.data?.displayName || businessId
+  const isOwner = membership.role === 'owner'
+  const canManage = membership.role === 'owner' || membership.role === 'manager'
   const checklist = setupQuery.data
   const setupIncomplete = checklist && !checklist.complete
 
@@ -103,12 +105,25 @@ export function BusinessGaragePage() {
               title: 'Invoices',
               desc: 'Issue invoices and record cash payments.',
             },
-            {
-              to: `/business/garages/${businessId}/team`,
-              title: 'Team & invitations',
-              desc: 'Invite staff by email.',
-            },
-          ] as const
+            ...(canManage
+              ? [
+                  {
+                    to: `/business/garages/${businessId}/team`,
+                    title: 'Team & invitations',
+                    desc: 'Invite staff by email.',
+                  },
+                ]
+              : []),
+            ...(isOwner
+              ? [
+                  {
+                    to: `/business/garages/${businessId}/activity`,
+                    title: 'Activity log',
+                    desc: 'See who changed this garage and what changed.',
+                  },
+                ]
+              : []),
+          ]
         ).map((item) => (
           <Link
             key={item.to}

@@ -265,4 +265,6 @@ export type BusinessProfile = {
   coverPath: string | null
   status: string
   verificationStatus: string
+  temporarilyClosed?: boolean
+  temporaryClosureReason?: string | null
 }

@@ -97,6 +97,14 @@ export const businessPaths = {
   branch: (businessId: string, branchId: string) =>
     `${V1}/business/businesses/${businessId}/branches/${branchId}`,
   openingHours: (businessId: string) => `${V1}/business/businesses/${businessId}/opening-hours`,
+  closureDates: (businessId: string) => `${V1}/business/businesses/${businessId}/closure-dates`,
+  closureDate: (businessId: string, closureId: string) =>
+    `${V1}/business/businesses/${businessId}/closure-dates/${closureId}`,
+  temporaryClosure: (businessId: string) =>
+    `${V1}/business/businesses/${businessId}/temporary-closure`,
+  temporaryReopen: (businessId: string) =>
+    `${V1}/business/businesses/${businessId}/temporary-closure/reopen`,
+  auditLogs: (businessId: string) => `${V1}/business/businesses/${businessId}/audit-logs`,
   services: (businessId: string) => `${V1}/business/businesses/${businessId}/services`,
   service: (businessId: string, serviceId: string) =>
     `${V1}/business/businesses/${businessId}/services/${serviceId}`,

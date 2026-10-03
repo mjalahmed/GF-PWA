@@ -25,7 +25,12 @@ export function AdminGarageSetupPage() {
           Edit capabilities →
         </Link>
       </div>
-      <GarageSetupForm businessId={businessId} backTo="/admin/applications" requireComplete={false} />
+      <GarageSetupForm
+        businessId={businessId}
+        backTo="/admin/applications"
+        requireComplete={false}
+        platformAdmin
+      />
     </div>
   )
 }

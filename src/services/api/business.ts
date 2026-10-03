@@ -331,6 +331,117 @@ export async function getOpeningHours(
   return envelope.data ?? []
 }
 
+export type ClosureDate = {
+  id: string
+  businessId: string
+  branchId: string | null
+  closureDate: string
+  reason: string | null
+  isFullDay: boolean
+  opensAt: string | null
+  closesAt: string | null
+}
+
+export async function listClosureDates(businessId: string): Promise<ClosureDate[]> {
+  const envelope = await apiClient.get(businessPaths.closureDates(businessId), (json) =>
+    asArray<ClosureDate>(json),
+  )
+  return envelope.data ?? []
+}
+
+export async function createClosureDate(
+  businessId: string,
+  input: { closureDate: string; reason?: string | null; isFullDay: boolean },
+): Promise<ClosureDate> {
+  const envelope = await apiClient.post(
+    businessPaths.closureDates(businessId),
+    input as unknown as Record<string, unknown>,
+    (json) => json as ClosureDate,
+  )
+  return envelope.data!
+}
+
+export async function deleteClosureDate(businessId: string, closureId: string): Promise<void> {
+  await apiClient.delete(businessPaths.closureDate(businessId, closureId), () => null)
+}
+
+export async function closeBusinessTemporarily(
+  businessId: string,
+  reason?: string | null,
+): Promise<BusinessProfile> {
+  const envelope = await apiClient.post(
+    businessPaths.temporaryClosure(businessId),
+    { reason: reason ?? null },
+    (json) => json as BusinessProfile,
+  )
+  return envelope.data!
+}
+
+export async function reopenBusiness(businessId: string): Promise<BusinessProfile> {
+  const envelope = await apiClient.post(
+    businessPaths.temporaryReopen(businessId),
+    {},
+    (json) => json as BusinessProfile,
+  )
+  return envelope.data!
+}
+
+export type BusinessAuditLog = {
+  id: string
+  actorUserId: string | null
+  actorName: string | null
+  actorRole: string | null
+  action: string
+  entityType: string
+  entityId: string | null
+  businessId: string
+  branchId: string | null
+  previousStatus: string | null
+  newStatus: string | null
+  reason: string | null
+  oldValues: Record<string, unknown> | null
+  newValues: Record<string, unknown> | null
+  metadata: Record<string, unknown>
+  createdAt: string
+}
+
+export async function listBusinessAuditLogs(
+  businessId: string,
+  params?: {
+    actorUserId?: string
+    action?: string
+    entityType?: string
+    entityId?: string
+    branchId?: string
+    from?: string
+    to?: string
+    page?: number
+    pageSize?: number
+  },
+): Promise<{ items: BusinessAuditLog[]; total: number; page: number; pageSize: number }> {
+  const envelope = await apiClient.get(
+    `${businessPaths.auditLogs(businessId)}${buildQuery({
+      actorUserId: params?.actorUserId,
+      action: params?.action,
+      entityType: params?.entityType,
+      entityId: params?.entityId,
+      branchId: params?.branchId,
+      from: params?.from,
+      to: params?.to,
+      page: params?.page,
+      pageSize: params?.pageSize,
+    })}`,
+    (json) => asArray<BusinessAuditLog>(json),
+  )
+  const pagination = envelope.meta?.pagination
+  return {
+    items: envelope.data ?? [],
+    total: pagination?.total ?? envelope.data?.length ?? 0,
+    page: pagination?.page ?? params?.page ?? 1,
+    pageSize: pagination?.pageSize ?? params?.pageSize ?? 20,
+  }
+}
+
 export async function replaceOpeningHours(
   businessId: string,
   schedule: OpeningHoursDay[],
