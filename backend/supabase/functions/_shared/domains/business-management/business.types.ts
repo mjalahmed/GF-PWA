@@ -34,6 +34,10 @@ export type BusinessRecord = {
   suspendedAt: string | null;
   suspendedReason: string | null;
   closedAt: string | null;
+  temporarilyClosed: boolean;
+  temporaryClosureReason: string | null;
+  temporarilyClosedAt: string | null;
+  temporarilyClosedBy: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;

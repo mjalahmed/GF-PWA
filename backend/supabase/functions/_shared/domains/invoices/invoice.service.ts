@@ -528,7 +528,9 @@ export class InvoiceService {
       entityType: "invoice",
       entityId: invoice.id,
       requestId,
-      newValues: { appointmentId },
+      newValues: { appointmentId, businessId },
+      businessId,
+      metadata: { businessId, appointmentId },
     });
 
     return invoice;
@@ -624,6 +626,8 @@ export class InvoiceService {
       entityType: "invoice",
       entityId: invoiceId,
       requestId,
+      businessId,
+      metadata: { businessId },
     });
 
     return this.toInvoiceDto(updated, actor);
@@ -664,6 +668,8 @@ export class InvoiceService {
       requestId,
       previousStatus: invoice.status,
       newStatus: InvoiceStatuses.Issued,
+      businessId: invoice.businessId,
+      metadata: { businessId: invoice.businessId },
     });
 
     await this.safeNotify({
@@ -715,6 +721,8 @@ export class InvoiceService {
       requestId,
       previousStatus: InvoiceStatuses.Issued,
       newStatus: InvoiceStatuses.Viewed,
+      businessId: invoice.businessId,
+      metadata: { businessId: invoice.businessId },
     });
 
     return this.toInvoiceDto(updated, actor);
@@ -763,6 +771,8 @@ export class InvoiceService {
       requestId,
       previousStatus: invoice.status,
       newStatus: InvoiceStatuses.CustomerApproved,
+      businessId: invoice.businessId,
+      metadata: { businessId: invoice.businessId },
     });
 
     await this.notifyBusinessStaff(invoice.businessId, {
@@ -821,6 +831,8 @@ export class InvoiceService {
       requestId,
       previousStatus: invoice.status,
       newStatus: InvoiceStatuses.Cancelled,
+      businessId: invoice.businessId,
+      metadata: { businessId: invoice.businessId },
     });
 
     await this.safeNotify({

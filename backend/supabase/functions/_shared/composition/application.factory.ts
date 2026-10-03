@@ -61,6 +61,9 @@ export function createApplication() {
   v1.route("/", openApiRoutes);
 
   app.route(ApiContract.basePath, v1);
+  // PWA audience prefixes. Handlers stay on the canonical /v1 routes.
+  app.route(`${ApiContract.basePath}/business`, v1);
+  app.route(`${ApiContract.basePath}/customer`, v1);
 
   app.notFound((c) =>
     c.json(

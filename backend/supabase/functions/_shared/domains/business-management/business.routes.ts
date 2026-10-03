@@ -17,6 +17,8 @@ import {
   createClosureDateSchema,
   openingHoursQuerySchema,
   replaceOpeningHoursSchema,
+  auditLogsQuerySchema,
+  temporaryClosureSchema,
   updateBusinessSchema,
   updateBusinessSettingsSchema,
   updateClosureDateSchema,
@@ -42,6 +44,9 @@ import {
   updateBusinessController,
   getBusinessSettingsController,
   updateBusinessSettingsController,
+  closeBusinessTemporarilyController,
+  reopenBusinessController,
+  listBusinessAuditLogsController,
   listMyBusinessMembershipsController,
 } from "./business.controller.ts";
 import {
@@ -329,6 +334,35 @@ businessRoutes.get(
   requireBusinessPermission(Permissions.Business.Settings.Read),
   validate({ params: businessIdParamsSchema }),
   (c) => getBusinessSettingsController(c),
+);
+
+businessRoutes.post(
+  ApiContract.routes.businessTemporaryClosure,
+  requireAuthentication(),
+  requireBusinessMembership(),
+  requireActiveBusiness(),
+  requireBusinessPermission(Permissions.Business.Schedule.Update),
+  validate({ params: businessIdParamsSchema, body: temporaryClosureSchema }),
+  (c) => closeBusinessTemporarilyController(c),
+);
+
+businessRoutes.post(
+  ApiContract.routes.businessTemporaryReopen,
+  requireAuthentication(),
+  requireBusinessMembership(),
+  requireActiveBusiness(),
+  requireBusinessPermission(Permissions.Business.Schedule.Update),
+  validate({ params: businessIdParamsSchema, body: emptyBodySchema }),
+  (c) => reopenBusinessController(c),
+);
+
+businessRoutes.get(
+  ApiContract.routes.businessAuditLogs,
+  requireAuthentication(),
+  requireBusinessMembership(),
+  requireBusinessPermission(Permissions.Business.Audit.Read),
+  validate({ params: businessIdParamsSchema, query: auditLogsQuerySchema }),
+  (c) => listBusinessAuditLogsController(c),
 );
 
 businessRoutes.patch(

@@ -30,5 +30,13 @@ export interface BusinessRepository {
     userId: string,
   ): Promise<Array<{ membership: BusinessMembershipRecord; business: BusinessRecord }>>;
   countActiveOwners(businessId: string): Promise<number>;
+  setTemporaryClosure(
+    businessId: string,
+    input: {
+      temporarilyClosed: boolean;
+      reason: string | null;
+      actorUserId: string;
+    },
+  ): Promise<BusinessRecord>;
   insertNotification(input: NotificationInsertInput): Promise<void>;
 }

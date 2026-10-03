@@ -47,6 +47,9 @@ export const ApiContract = {
     businessClosureDateById:
       "/businesses/:businessId/closure-dates/:closureId",
     businessSettings: "/businesses/:businessId/settings",
+    businessTemporaryClosure: "/businesses/:businessId/temporary-closure",
+    businessTemporaryReopen: "/businesses/:businessId/temporary-closure/reopen",
+    businessAuditLogs: "/businesses/:businessId/audit-logs",
     serviceCategories: "/service-categories",
     productCategories: "/product-categories",
     vehicleMakes: "/vehicle-makes",

@@ -1,4 +1,6 @@
 import { Permissions } from "../../core/constants/permissions.ts";
+import { ValidationError } from "../../core/errors/app-error.ts";
+import { assertOwnedBusinessMediaPath } from "./business-media-path.ts";
 import { BusinessStatuses, BusinessVerificationStatuses } from "../../core/constants/statuses.ts";
 import type { AuditRepository } from "../../repositories/audit/audit.repository.interface.ts";
 import type { BusinessRepository } from "./business.repository.interface.ts";
@@ -18,7 +20,7 @@ import type {
   UpdateBusinessRequestDto,
   UpdateBusinessSettingsRequestDto,
 } from "./business.dto.ts";
-import type { BusinessRecord } from "./business.types.ts";
+import type { BusinessRecord, BusinessSettingsRecord } from "./business.types.ts";
 
 export class BusinessService {
   constructor(
@@ -65,6 +67,8 @@ export class BusinessService {
   ): Promise<BusinessResponseDto> {
     const existing = await this.loadBusinessOrThrow(businessId);
     this.assertActiveBusiness(existing);
+    assertOwnedBusinessMediaPath(businessId, input.logoPath);
+    assertOwnedBusinessMediaPath(businessId, input.coverPath);
 
     const updated = await this.businessRepository.updateFields(businessId, {
       displayName: input.displayName,
@@ -101,6 +105,7 @@ export class BusinessService {
         coverPath: updated.coverPath,
       },
       metadata: { businessId },
+      businessId,
     });
 
     return BusinessMapper.toBusinessDto(updated);
@@ -133,10 +138,60 @@ export class BusinessService {
       entityType: "business_settings",
       entityId: updated.id,
       requestId,
+      businessId,
+      oldValues: settingsSnapshot(existing),
+      newValues: settingsSnapshot(updated),
       metadata: { businessId },
     });
 
     return BusinessMapper.toSettingsDto(updated);
+  }
+
+  async setTemporaryClosure(
+    actorUserId: string,
+    businessId: string,
+    temporarilyClosed: boolean,
+    reason: string | null,
+    requestId?: string,
+  ): Promise<BusinessResponseDto> {
+    const existing = await this.loadBusinessOrThrow(businessId);
+    this.assertActiveBusiness(existing);
+    if (reason != null && reason.length > 500) {
+      throw new ValidationError("Closure reason is too long.");
+    }
+
+    if (existing.temporarilyClosed === temporarilyClosed &&
+      (existing.temporaryClosureReason ?? null) === (temporarilyClosed ? reason : null)) {
+      return BusinessMapper.toBusinessDto(existing);
+    }
+
+    const updated = await this.businessRepository.setTemporaryClosure(businessId, {
+      temporarilyClosed,
+      reason: temporarilyClosed ? reason : null,
+      actorUserId,
+    });
+
+    await this.auditRepository.write({
+      actorUserId,
+      action: temporarilyClosed
+        ? "business.temporarily_closed"
+        : "business.reopened",
+      entityType: "business",
+      entityId: businessId,
+      businessId,
+      requestId,
+      oldValues: {
+        temporarilyClosed: existing.temporarilyClosed,
+        temporaryClosureReason: existing.temporaryClosureReason,
+      },
+      newValues: {
+        temporarilyClosed: updated.temporarilyClosed,
+        temporaryClosureReason: updated.temporaryClosureReason,
+      },
+      metadata: { businessId },
+    });
+
+    return BusinessMapper.toBusinessDto(updated);
   }
 
   async listMyMemberships(
@@ -168,4 +223,24 @@ export class BusinessService {
     if (this.canAccessInternal(business, globalPermissions)) return;
     throw new BusinessAccessDeniedError();
   }
+}
+
+function settingsSnapshot(record: BusinessSettingsRecord): Record<string, unknown> {
+  return {
+    appointmentsEnabled: record.appointmentsEnabled,
+    productsEnabled: record.productsEnabled,
+    quotationsEnabled: record.quotationsEnabled,
+    invoicesEnabled: record.invoicesEnabled,
+    cashPaymentsEnabled: record.cashPaymentsEnabled,
+    onlinePaymentsEnabled: record.onlinePaymentsEnabled,
+    reviewsEnabled: record.reviewsEnabled,
+    autoConfirmAppointments: record.autoConfirmAppointments,
+    defaultAppointmentDurationMinutes: record.defaultAppointmentDurationMinutes,
+    minimumBookingNoticeMinutes: record.minimumBookingNoticeMinutes,
+    maximumBookingDaysAhead: record.maximumBookingDaysAhead,
+    cancellationNoticeMinutes: record.cancellationNoticeMinutes,
+    currency: record.currency,
+    locale: record.locale,
+    timezone: record.timezone,
+  };
 }

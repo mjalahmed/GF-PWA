@@ -86,6 +86,7 @@ export class DiscoveryMapper {
       })),
       openingHours: input.openingHours,
       closureDates: input.closureDates,
+      temporarilyClosed: input.business.temporarilyClosed,
     });
 
     let distanceKm: number | null = null;

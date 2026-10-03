@@ -95,7 +95,11 @@ export function evaluateOpenNow(input: {
   branches: BranchLike[];
   openingHours: OpeningHoursLike[];
   closureDates: ClosureDateLike[];
+  temporarilyClosed?: boolean;
 }): { isOpen: boolean; branchId: string | null; branchName: string | null } {
+  if (input.temporarilyClosed) {
+    return { isOpen: false, branchId: null, branchName: null };
+  }
   const now = getBahrainClock();
   const activeBranches = input.branches.filter((b) => b.isActive);
   const ordered = [

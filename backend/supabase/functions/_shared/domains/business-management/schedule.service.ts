@@ -36,6 +36,7 @@ export class ScheduleService {
     requestId?: string,
   ): Promise<OpeningHoursResponseDto[]> {
     const branchId = input.branchId ?? null;
+    const previous = await this.scheduleRepository.listOpeningHours(businessId, branchId);
     const rows = await this.scheduleRepository.replaceOpeningHours(
       businessId,
       branchId,
@@ -53,7 +54,11 @@ export class ScheduleService {
       action: "business.opening_hours.updated",
       entityType: "business_opening_hours",
       entityId: businessId,
+      businessId,
+      branchId,
       requestId,
+      oldValues: { schedule: previous },
+      newValues: { schedule: rows },
       metadata: { businessId, branchId },
     });
 
@@ -93,8 +98,11 @@ export class ScheduleService {
       action: "business.closure_date.created",
       entityType: "business_closure_date",
       entityId: row.id,
+      businessId,
+      branchId: row.branchId,
       requestId,
-      metadata: { businessId },
+      newValues: { ...row },
+      metadata: { businessId, branchId: row.branchId },
     });
 
     return ScheduleMapper.toClosureDateDto(row);
@@ -118,8 +126,11 @@ export class ScheduleService {
       action: "business.closure_date.updated",
       entityType: "business_closure_date",
       entityId: closureId,
+      businessId,
+      branchId: row.branchId,
       requestId,
-      metadata: { businessId },
+      newValues: { ...row },
+      metadata: { businessId, branchId: row.branchId },
     });
 
     return ScheduleMapper.toClosureDateDto(row);
@@ -145,6 +156,7 @@ export class ScheduleService {
       action: "business.closure_date.deleted",
       entityType: "business_closure_date",
       entityId: closureId,
+      businessId,
       requestId,
       metadata: { businessId },
     });

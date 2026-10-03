@@ -40,6 +40,7 @@ export type DiscoveryBusinessRecord = {
   branches: BusinessBranchRecord[];
   serviceCount: number;
   productCount: number;
+  temporarilyClosed: boolean;
 };
 
 export type OpeningHoursRow = {

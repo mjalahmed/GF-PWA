@@ -20,7 +20,19 @@ import { BusinessMapper } from "../functions/_shared/domains/business-management
 import {
   permissionsForMembershipRole,
   canManageMembershipTarget,
+  effectiveBusinessPermissions,
 } from "../functions/_shared/core/auth/business-authorization.middleware.ts";
+import { assertOwnedBusinessMediaPath } from "../functions/_shared/domains/business-management/business-media-path.ts";
+import { ValidationError } from "../functions/_shared/core/errors/app-error.ts";
+import {
+  resolveAuditScope,
+  sanitizeAuditValue,
+} from "../functions/_shared/repositories/audit/audit.scope.ts";
+import { isBookableWindow } from "../functions/_shared/domains/appointments/appointment.schedule.ts";
+import {
+  evaluateOpenNow,
+  getBahrainClock,
+} from "../functions/_shared/domains/discovery/discovery.utils.ts";
 
 Deno.test("ApiContract exposes business management routes", () => {
   assertEquals(ApiContract.routes.businessById, "/businesses/:businessId");
@@ -188,6 +200,10 @@ Deno.test("BusinessMapper public DTO omits private fields", () => {
       suspendedAt: null,
       suspendedReason: null,
       closedAt: null,
+      temporarilyClosed: false,
+      temporaryClosureReason: null,
+      temporarilyClosedAt: null,
+      temporarilyClosedBy: null,
       metadata: { secret: true },
       createdAt: now,
       updatedAt: now,
@@ -209,4 +225,118 @@ Deno.test("Permissions.Business management codes are registered", () => {
   assertEquals(Permissions.Business.Branch.Create, "business.branch.create");
   assertEquals(Permissions.Business.Member.Invite, "business.member.invite");
   assertEquals(Permissions.Business.Schedule.Read, "business.schedule.read");
+  assertEquals(Permissions.Business.Audit.Read, "business.audit.read");
+  assertEquals(
+    ApiContract.routes.businessAuditLogs,
+    "/businesses/:businessId/audit-logs",
+  );
+});
+
+Deno.test("schedule writes and business audit reads are owner-only", () => {
+  const owner = permissionsForMembershipRole(MembershipRoles.Owner);
+  const manager = permissionsForMembershipRole(MembershipRoles.Manager);
+  const staff = permissionsForMembershipRole(MembershipRoles.Staff);
+  const cashier = permissionsForMembershipRole(MembershipRoles.Cashier);
+
+  assertEquals(owner.includes(Permissions.Business.Schedule.Update), true);
+  assertEquals(owner.includes(Permissions.Business.Audit.Read), true);
+  assertEquals(manager.includes(Permissions.Business.Schedule.Read), true);
+  assertEquals(manager.includes(Permissions.Business.Schedule.Update), false);
+  assertEquals(manager.includes(Permissions.Business.Audit.Read), false);
+  assertEquals(staff.includes(Permissions.Business.Schedule.Update), false);
+  assertEquals(staff.includes(Permissions.Business.Member.Invite), false);
+  assertEquals(staff.includes(Permissions.Business.Settings.Update), false);
+  assertEquals(staff.includes(Permissions.Appointment.Arrive), true);
+  assertEquals(staff.includes(Permissions.BusinessPayment.RecordCash), false);
+  assertEquals(cashier.includes(Permissions.BusinessPayment.RecordCash), true);
+  assertEquals(cashier.includes(Permissions.Business.Member.Remove), false);
+});
+
+Deno.test("global business role does not authorize another business", () => {
+  assertEquals(
+    effectiveBusinessPermissions({
+      roles: ["business_owner"],
+      membershipRole: null,
+    }),
+    [],
+  );
+  const asManagerElsewhere = effectiveBusinessPermissions({
+    roles: ["business_owner"],
+    membershipRole: MembershipRoles.Manager,
+  });
+  assertEquals(Array.isArray(asManagerElsewhere), true);
+  if (Array.isArray(asManagerElsewhere)) {
+    assertEquals(
+      asManagerElsewhere.includes(Permissions.Business.Schedule.Update),
+      false,
+    );
+    assertEquals(
+      asManagerElsewhere.includes(Permissions.Business.Audit.Read),
+      false,
+    );
+  }
+  assertEquals(
+    effectiveBusinessPermissions({ roles: ["admin"], membershipRole: null }),
+    "platform",
+  );
+});
+
+Deno.test("temporary closure overrides an open weekly schedule", () => {
+  assertEquals(isBookableWindow(true, true), false);
+  assertEquals(isBookableWindow(false, true), true);
+  const now = getBahrainClock();
+  const openHours = [{
+    branchId: null,
+    dayOfWeek: now.dayOfWeek,
+    opensAt: "00:00",
+    closesAt: "23:59",
+    isClosed: false,
+  }];
+  const closed = evaluateOpenNow({
+    temporarilyClosed: true,
+    branches: [{ id: "b1", name: "Main", isActive: true, isPrimary: true }],
+    openingHours: openHours,
+    closureDates: [],
+  });
+  assertEquals(closed.isOpen, false);
+});
+
+Deno.test("business media paths cannot point at another business", () => {
+  const businessId = "11111111-1111-4111-8111-111111111111";
+  assertOwnedBusinessMediaPath(businessId, `${businessId}/logo/mark.png`);
+  assertThrows(
+    () => assertOwnedBusinessMediaPath(businessId, "22222222-2222-4222-8222-222222222222/logo/mark.png"),
+    ValidationError,
+  );
+  assertThrows(
+    () => assertOwnedBusinessMediaPath(businessId, `${businessId}/../logo/mark.png`),
+    ValidationError,
+  );
+});
+
+Deno.test("business audit scope stays on the acting business and hides secrets", () => {
+  const businessId = "11111111-1111-4111-8111-111111111111";
+  const scope = resolveAuditScope({
+    actorUserId: "33333333-3333-4333-8333-333333333333",
+    action: "business.updated",
+    entityType: "business",
+    metadata: { businessId, token: "raw-secret" },
+    newValues: { displayName: "Ok" },
+  });
+  assertEquals(scope.businessId, businessId);
+  const other = resolveAuditScope({
+    actorUserId: null,
+    action: "profile.updated",
+    entityType: "profile",
+    metadata: {},
+  });
+  assertEquals(other.businessId, null);
+  const sanitized = sanitizeAuditValue({
+    displayName: "Ok",
+    token: "raw-secret",
+    nested: { apiKey: "k" },
+  }) as Record<string, unknown>;
+  assertEquals(sanitized.displayName, "Ok");
+  assertEquals("token" in sanitized, false);
+  assertEquals("apiKey" in (sanitized.nested as Record<string, unknown>), false);
 });

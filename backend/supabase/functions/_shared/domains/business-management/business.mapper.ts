@@ -35,6 +35,9 @@ export class BusinessMapper {
       approvedAt: record.approvedAt,
       suspendedAt: record.suspendedAt,
       closedAt: record.closedAt,
+      temporarilyClosed: record.temporarilyClosed,
+      temporaryClosureReason: record.temporaryClosureReason,
+      temporarilyClosedAt: record.temporarilyClosedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };
@@ -83,6 +86,8 @@ export class BusinessMapper {
       verificationStatus: input.business.verificationStatus,
       averageRating: input.business.averageRating,
       ratingCount: input.business.ratingCount,
+      temporarilyClosed: input.business.temporarilyClosed,
+      temporaryClosureReason: input.business.temporaryClosureReason,
       branches: input.branches
         .filter((b) => b.isActive)
         .map((b) => ({

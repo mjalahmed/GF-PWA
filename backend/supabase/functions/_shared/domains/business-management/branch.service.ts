@@ -91,24 +91,11 @@ export class BranchService {
     const existing = await this.branchRepository.findById(businessId, branchId);
     if (!existing) throw new BranchNotFoundError(branchId);
 
-    const result = await this.branchRepository.deactivateViaRpc(
+    return this.branchRepository.deactivateViaRpc(
       businessId,
       branchId,
       actorUserId,
     );
-
-    if (!result.idempotent) {
-      await this.auditRepository.write({
-        actorUserId,
-        action: "business.branch.deactivated",
-        entityType: "business_branch",
-        entityId: branchId,
-        requestId,
-        metadata: { businessId },
-      });
-    }
-
-    return result;
   }
 
   async makePrimary(
@@ -120,24 +107,10 @@ export class BranchService {
     const existing = await this.branchRepository.findById(businessId, branchId);
     if (!existing) throw new BranchNotFoundError(branchId);
 
-    const result = await this.branchRepository.makePrimaryViaRpc(
+    return this.branchRepository.makePrimaryViaRpc(
       businessId,
       branchId,
       actorUserId,
     );
-
-    await this.auditRepository.write({
-      actorUserId,
-      action: "business.branch.primary_changed",
-      entityType: "business_branch",
-      entityId: branchId,
-      requestId,
-      metadata: {
-        businessId,
-        previousPrimaryBranchId: result.previousPrimaryBranchId,
-      },
-    });
-
-    return result;
   }
 }

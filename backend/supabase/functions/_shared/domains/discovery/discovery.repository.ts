@@ -34,6 +34,7 @@ type BusinessRow = {
   average_rating: number;
   rating_count: number;
   created_at: string;
+  temporarily_closed?: boolean;
 };
 
 type BranchRow = {
@@ -240,7 +241,7 @@ export class SupabaseDiscoveryRepository implements DiscoveryRepository {
     let query = this.client
       .from("businesses")
       .select(
-        "id, slug, display_name, description, logo_path, cover_path, business_category_id, verification_status, average_rating, rating_count, created_at",
+        "id, slug, display_name, description, logo_path, cover_path, business_category_id, verification_status, average_rating, rating_count, created_at, temporarily_closed",
       )
       .eq("status", "active")
       .eq("verification_status", "verified");
@@ -304,6 +305,7 @@ export class SupabaseDiscoveryRepository implements DiscoveryRepository {
       branches: branchesByBusiness.get(row.id) ?? [],
       serviceCount: serviceCounts.get(row.id) ?? 0,
       productCount: productCounts.get(row.id) ?? 0,
+      temporarilyClosed: Boolean(row.temporarily_closed),
     }));
 
     if (filters.sort === "name") {
@@ -324,7 +326,7 @@ export class SupabaseDiscoveryRepository implements DiscoveryRepository {
     const { data, error } = await this.client
       .from("businesses")
       .select(
-        "id, slug, display_name, description, logo_path, cover_path, business_category_id, verification_status, average_rating, rating_count, created_at",
+        "id, slug, display_name, description, logo_path, cover_path, business_category_id, verification_status, average_rating, rating_count, created_at, temporarily_closed",
       )
       .eq("slug", slug)
       .eq("status", "active")
@@ -340,7 +342,7 @@ export class SupabaseDiscoveryRepository implements DiscoveryRepository {
     const { data, error } = await this.client
       .from("businesses")
       .select(
-        "id, slug, display_name, description, logo_path, cover_path, business_category_id, verification_status, average_rating, rating_count, created_at",
+        "id, slug, display_name, description, logo_path, cover_path, business_category_id, verification_status, average_rating, rating_count, created_at, temporarily_closed",
       )
       .eq("id", businessId)
       .eq("status", "active")
@@ -372,6 +374,7 @@ export class SupabaseDiscoveryRepository implements DiscoveryRepository {
       branches: branches.get(row.id) ?? [],
       serviceCount: serviceCounts.get(row.id) ?? 0,
       productCount: productCounts.get(row.id) ?? 0,
+      temporarilyClosed: Boolean(row.temporarily_closed),
     };
   }
 

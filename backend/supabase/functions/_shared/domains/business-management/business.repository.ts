@@ -39,6 +39,10 @@ type BusinessRow = {
   suspended_at: string | null;
   suspended_reason: string | null;
   closed_at: string | null;
+  temporarily_closed: boolean;
+  temporary_closure_reason: string | null;
+  temporarily_closed_at: string | null;
+  temporarily_closed_by: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -83,7 +87,7 @@ type MembershipRow = {
 };
 
 const BUSINESS_SELECT =
-  "id, slug, business_category_id, legal_name, display_name, description, commercial_registration_number, phone, email, website, status, verification_status, source_application_id, logo_path, cover_path, average_rating, rating_count, approved_at, approved_by, suspended_at, suspended_reason, closed_at, metadata, created_at, updated_at";
+  "id, slug, business_category_id, legal_name, display_name, description, commercial_registration_number, phone, email, website, status, verification_status, source_application_id, logo_path, cover_path, average_rating, rating_count, approved_at, approved_by, suspended_at, suspended_reason, closed_at, temporarily_closed, temporary_closure_reason, temporarily_closed_at, temporarily_closed_by, metadata, created_at, updated_at";
 
 const SETTINGS_SELECT =
   "id, business_id, appointments_enabled, products_enabled, quotations_enabled, invoices_enabled, cash_payments_enabled, online_payments_enabled, reviews_enabled, auto_confirm_appointments, default_appointment_duration_minutes, minimum_booking_notice_minutes, maximum_booking_days_ahead, cancellation_notice_minutes, currency, locale, timezone, metadata, created_at, updated_at";
@@ -115,6 +119,10 @@ function toBusinessRecord(row: BusinessRow): BusinessRecord {
     suspendedAt: row.suspended_at,
     suspendedReason: row.suspended_reason,
     closedAt: row.closed_at,
+    temporarilyClosed: row.temporarily_closed,
+    temporaryClosureReason: row.temporary_closure_reason,
+    temporarilyClosedAt: row.temporarily_closed_at,
+    temporarilyClosedBy: row.temporarily_closed_by,
     metadata: row.metadata ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -230,6 +238,40 @@ export class SupabaseBusinessRepository implements BusinessRepository {
       .from("businesses")
       .update(patch)
       .eq("id", id)
+      .select(BUSINESS_SELECT)
+      .single();
+
+    if (error) mapSupabaseError(error);
+    if (!data) throw new NotFoundError("Business was not found.");
+    return toBusinessRecord(data as BusinessRow);
+  }
+
+  async setTemporaryClosure(
+    businessId: string,
+    input: {
+      temporarilyClosed: boolean;
+      reason: string | null;
+      actorUserId: string;
+    },
+  ): Promise<BusinessRecord> {
+    const patch = input.temporarilyClosed
+      ? {
+        temporarily_closed: true,
+        temporary_closure_reason: input.reason,
+        temporarily_closed_at: new Date().toISOString(),
+        temporarily_closed_by: input.actorUserId,
+      }
+      : {
+        temporarily_closed: false,
+        temporary_closure_reason: null,
+        temporarily_closed_at: null,
+        temporarily_closed_by: null,
+      };
+
+    const { data, error } = await this.adminClient
+      .from("businesses")
+      .update(patch)
+      .eq("id", businessId)
       .select(BUSINESS_SELECT)
       .single();
 

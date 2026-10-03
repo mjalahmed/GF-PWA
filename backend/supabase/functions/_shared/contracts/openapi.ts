@@ -877,6 +877,40 @@ export const openApiDocument = {
         },
       },
     },
+    [`${ApiContract.basePath}${ApiContract.routes.businessTemporaryClosure}`]: {
+      post: {
+        tags: ["BusinessManagement"],
+        summary: "Temporarily close the business regardless of opening hours",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Business marked temporarily closed",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiSuccessEnvelope" },
+              },
+            },
+          },
+        },
+      },
+    },
+    [`${ApiContract.basePath}${ApiContract.routes.businessAuditLogs}`]: {
+      get: {
+        tags: ["BusinessManagement"],
+        summary: "List audit logs for one business (owner only)",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Business audit logs",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiSuccessEnvelope" },
+              },
+            },
+          },
+        },
+      },
+    },
     [`${ApiContract.basePath}${ApiContract.routes.businessSettings}`]: {
       get: {
         tags: ["BusinessManagement"],

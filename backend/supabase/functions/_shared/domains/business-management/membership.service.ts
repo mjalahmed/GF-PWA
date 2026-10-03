@@ -96,19 +96,6 @@ export class MembershipService {
       actorUserId,
     );
 
-    await this.auditRepository.write({
-      actorUserId,
-      action: input.role === "owner"
-        ? "business.membership.owner_assigned"
-        : "business.membership.role_updated",
-      entityType: "business_membership",
-      entityId: membershipId,
-      requestId,
-      previousStatus: result.previousRole,
-      newStatus: result.newRole,
-      metadata: { businessId, userId: target.userId },
-    });
-
     await this.safeNotify({
       userId: target.userId,
       type: "business_membership_role_changed",
@@ -142,17 +129,6 @@ export class MembershipService {
       actorUserId,
     );
 
-    await this.auditRepository.write({
-      actorUserId,
-      action: "business.membership.suspended",
-      entityType: "business_membership",
-      entityId: membershipId,
-      requestId,
-      previousStatus: "active",
-      newStatus: "suspended",
-      metadata: { businessId, userId: target.userId },
-    });
-
     await this.safeNotify({
       userId: target.userId,
       type: "business_membership_suspended",
@@ -178,17 +154,6 @@ export class MembershipService {
       membershipId,
       actorUserId,
     );
-
-    await this.auditRepository.write({
-      actorUserId,
-      action: "business.membership.restored",
-      entityType: "business_membership",
-      entityId: membershipId,
-      requestId,
-      previousStatus: "suspended",
-      newStatus: "active",
-      metadata: { businessId, userId: target.userId },
-    });
 
     await this.safeNotify({
       userId: target.userId,
@@ -224,15 +189,6 @@ export class MembershipService {
     );
 
     if (!result.idempotent) {
-      await this.auditRepository.write({
-        actorUserId,
-        action: "business.membership.removed",
-        entityType: "business_membership",
-        entityId: membershipId,
-        requestId,
-        metadata: { businessId, userId: target.userId },
-      });
-
       await this.safeNotify({
         userId: target.userId,
         type: "business_membership_removed",

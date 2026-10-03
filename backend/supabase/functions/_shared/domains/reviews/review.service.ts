@@ -316,6 +316,8 @@ export class ReviewService {
       entityId: reviewId,
       requestId,
       newStatus: ReviewStatuses.Published,
+      businessId: eligibility.businessId,
+      metadata: { businessId: eligibility.businessId },
     });
 
     await this.notifyBusinessStaff(eligibility.businessId, {
@@ -426,6 +428,8 @@ export class ReviewService {
       entityId: reviewId,
       previousStatus: record.status,
       newStatus: updated.status,
+      businessId: record.businessId,
+      metadata: { businessId: record.businessId },
     });
 
     return this.toAudienceDto(updated, "customer") as CustomerReviewDto;
@@ -524,6 +528,16 @@ export class ReviewService {
       response: body.response,
     });
 
+    await this.auditRepository.write({
+      actorUserId: actor.userId,
+      action: "review.response_saved",
+      entityType: "review",
+      entityId: reviewId,
+      businessId,
+      newValues: { response: body.response },
+      metadata: { businessId },
+    });
+
     return this.toAudienceDto(updated, "business") as BusinessReviewDto;
   }
 
@@ -543,11 +557,23 @@ export class ReviewService {
     }
     if (!record.response) throw new ReviewResponseNotFoundError();
 
+    const previousResponse = record.response;
     const updated = await this.reviewRepository.updateResponse({
       reviewId,
       businessId,
       respondedBy: actor.userId,
       response: body.response,
+    });
+
+    await this.auditRepository.write({
+      actorUserId: actor.userId,
+      action: "review.response_updated",
+      entityType: "review",
+      entityId: reviewId,
+      businessId,
+      oldValues: { response: previousResponse },
+      newValues: { response: body.response },
+      metadata: { businessId },
     });
 
     return this.toAudienceDto(updated, "business") as BusinessReviewDto;
@@ -623,6 +649,8 @@ export class ReviewService {
       requestId,
       previousStatus: record.status,
       newStatus,
+      businessId: record.businessId,
+      metadata: { businessId: record.businessId },
     });
 
     return this.toAudienceDto(updated, "admin") as AdminReviewDto;

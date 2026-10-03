@@ -118,19 +118,6 @@ export class InvitationService {
       userEmail,
     );
 
-    await this.auditRepository.write({
-      actorUserId: userId,
-      action: "business.invitation.accepted",
-      entityType: "business_invitation",
-      entityId: result.invitationId,
-      requestId,
-      metadata: {
-        businessId: result.businessId,
-        membershipId: result.membershipId,
-        role: result.role,
-      },
-    });
-
     await this.safeNotify({
       userId,
       type: "business_invitation_accepted",

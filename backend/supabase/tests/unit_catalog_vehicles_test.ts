@@ -288,6 +288,7 @@ Deno.test("DiscoveryMapper public summary omits internal inventory fields", () =
       branches: [],
       serviceCount: 1,
       productCount: 2,
+      temporarilyClosed: false,
     },
     openingState: { isOpen: false, branchId: null, branchName: null },
     distanceKm: 1.5,

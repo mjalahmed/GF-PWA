@@ -52,6 +52,9 @@ export const Permissions = {
       Read: "business.schedule.read",
       Update: "business.schedule.update",
     },
+    Audit: {
+      Read: "business.audit.read",
+    },
     Service: {
       Read: "business.service.read",
       Create: "business.service.create",

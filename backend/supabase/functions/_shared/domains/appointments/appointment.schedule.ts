@@ -117,6 +117,15 @@ export function bahrainLocalToIso(dateStr: string, minutes: number): string {
   ).toISOString();
 }
 
+/** A temporary closure blocks booking even when the weekly schedule is open. */
+export function isBookableWindow(
+  temporarilyClosed: boolean,
+  withinHours: boolean,
+): boolean {
+  if (temporarilyClosed) return false;
+  return withinHours;
+}
+
 export function isIntervalWithinOpenHours(
   branchId: string,
   start: Date,

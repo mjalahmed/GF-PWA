@@ -101,6 +101,22 @@ export const replaceOpeningHoursSchema = z.object({
   schedule: z.array(openingHoursDaySchema).min(1).max(7),
 }).strict();
 
+export const temporaryClosureSchema = z.object({
+  reason: z.string().trim().max(500).nullable().optional(),
+}).strict();
+
+export const auditLogsQuerySchema = z.object({
+  actorUserId: uuidSchema.optional(),
+  action: z.string().trim().min(1).max(120).optional(),
+  entityType: z.string().trim().min(1).max(80).optional(),
+  entityId: uuidSchema.optional(),
+  branchId: uuidSchema.optional(),
+  from: z.string().refine((value) => !Number.isNaN(Date.parse(value)), "Invalid timestamp").optional(),
+  to: z.string().refine((value) => !Number.isNaN(Date.parse(value)), "Invalid timestamp").optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+}).strict();
+
 export const closureDatesQuerySchema = z.object({
   branchId: uuidSchema.optional(),
   from: z.string().date().optional(),
@@ -152,3 +168,5 @@ export type ClosureDatesQueryDto = z.infer<typeof closureDatesQuerySchema>;
 export type CreateClosureDateRequestDto = z.infer<typeof createClosureDateSchema>;
 export type UpdateClosureDateRequestDto = z.infer<typeof updateClosureDateSchema>;
 export type ClosureParamsDto = z.infer<typeof closureParamsSchema>;
+export type TemporaryClosureRequestDto = z.infer<typeof temporaryClosureSchema>;
+export type AuditLogsQueryDto = z.infer<typeof auditLogsQuerySchema>;

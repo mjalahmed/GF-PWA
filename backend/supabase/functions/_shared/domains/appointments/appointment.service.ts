@@ -31,6 +31,7 @@ import { AppointmentMapper } from "./appointment.mapper.ts";
 import type { AppointmentRepository } from "./appointment.repository.interface.ts";
 import {
   generateCandidateSlots,
+  isBookableWindow,
   isIntervalWithinOpenHours,
 } from "./appointment.schedule.ts";
 import { assertTransition } from "./appointment.transitions.ts";
@@ -197,6 +198,9 @@ export class AppointmentService {
     if (!business || business.status !== BusinessStatuses.Active) {
       throw new ValidationError("Business is not available for booking.");
     }
+    if (business.temporarilyClosed) {
+      throw new AppointmentOutsideHoursError("This business is temporarily closed.");
+    }
 
     const settings = await this.businessRepository.findSettings(
       input.businessId,
@@ -254,14 +258,23 @@ export class AppointmentService {
       this.scheduleRepository.listClosureDates(input.businessId),
     ]);
 
-    const withinHours = isIntervalWithinOpenHours(
-      input.branchId,
-      input.scheduledStart,
-      input.scheduledEnd,
-      openingHours,
-      closureDates,
+    const withinHours = isBookableWindow(
+      business.temporarilyClosed,
+      isIntervalWithinOpenHours(
+        input.branchId,
+        input.scheduledStart,
+        input.scheduledEnd,
+        openingHours,
+        closureDates,
+      ),
     );
-    if (!withinHours) throw new AppointmentOutsideHoursError();
+    if (!withinHours) {
+      throw new AppointmentOutsideHoursError(
+        business.temporarilyClosed
+          ? "This business is temporarily closed."
+          : undefined,
+      );
+    }
 
     const overlaps = await this.appointmentRepository.listOverlapping({
       branchId: input.branchId,
@@ -339,8 +352,11 @@ export class AppointmentService {
       action: "appointment.created",
       entityType: "appointment",
       entityId: appointment.id,
+      businessId: input.businessId,
+      branchId: input.branchId,
       requestId,
       newValues: { status: initialStatus, businessId: input.businessId },
+      metadata: { businessId: input.businessId, branchId: input.branchId },
     });
 
     await this.safeNotify({
@@ -418,6 +434,10 @@ export class AppointmentService {
       this.scheduleRepository.listOpeningHours(businessId),
       this.scheduleRepository.listClosureDates(businessId),
     ]);
+
+    if (business.temporarilyClosed) {
+      return { date, durationMinutes: duration, slots: [] };
+    }
 
     const slots = generateCandidateSlots({
       dateStr: date,
@@ -515,9 +535,15 @@ export class AppointmentService {
       action: options.auditAction,
       entityType: "appointment",
       entityId: appointmentId,
+      businessId: appointment.businessId,
+      branchId: appointment.branchId,
       requestId,
       previousStatus: appointment.status,
       newStatus: toStatus,
+      metadata: {
+        businessId: appointment.businessId,
+        branchId: appointment.branchId,
+      },
     });
 
     await this.safeNotify({

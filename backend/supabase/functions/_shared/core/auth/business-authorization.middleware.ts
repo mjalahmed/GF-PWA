@@ -121,7 +121,6 @@ const MANAGER_PERMISSIONS: string[] = [
   Permissions.Business.Member.Invite,
   Permissions.Business.Member.Update,
   Permissions.Business.Member.Suspend,
-  Permissions.Business.Schedule.Update,
   ...CATALOG_WRITE_PERMISSIONS.filter(
     (p) => !CATALOG_READ_PERMISSIONS.includes(p),
   ),
@@ -144,10 +143,14 @@ const MANAGER_PERMISSIONS: string[] = [
 
 const OWNER_PERMISSIONS: string[] = [
   ...MANAGER_PERMISSIONS,
+  Permissions.Business.Schedule.Update,
+  Permissions.Business.Audit.Read,
   Permissions.Business.Branch.Delete,
   Permissions.Business.Member.Remove,
   Permissions.Business.Member.AssignOwner,
 ];
+
+const PLATFORM_BUSINESS_OPERATORS: string[] = [Roles.SuperAdmin, Roles.Admin];
 
 const NON_MANAGEMENT_ROLES: MembershipRole[] = [
   "service_advisor",
@@ -176,11 +179,21 @@ function isSuperAdmin(roles: string[]): boolean {
   return roles.includes(Roles.SuperAdmin);
 }
 
-function hasGlobalPermission(
-  globalPermissions: string[],
-  required: string[],
-): boolean {
-  return required.every((p) => globalPermissions.includes(p));
+export function isPlatformBusinessOperator(roles: string[]): boolean {
+  return roles.some((role) => PLATFORM_BUSINESS_OPERATORS.includes(role));
+}
+
+/**
+ * Business routes authorize from the membership of the business in the URL.
+ * Global business_owner / business_manager grants are not a tenant boundary.
+ */
+export function effectiveBusinessPermissions(input: {
+  roles: string[];
+  membershipRole: MembershipRole | null;
+}): string[] | "platform" {
+  if (isPlatformBusinessOperator(input.roles)) return "platform";
+  if (!input.membershipRole) return [];
+  return permissionsForMembershipRole(input.membershipRole);
 }
 
 function hasEffectivePermission(
@@ -188,10 +201,7 @@ function hasEffectivePermission(
   required: string[],
 ): boolean {
   const roles = (c.get("roles") ?? []) as string[];
-  if (isSuperAdmin(roles)) return true;
-
-  const globalPermissions = (c.get("permissions") ?? []) as string[];
-  if (hasGlobalPermission(globalPermissions, required)) return true;
+  if (isPlatformBusinessOperator(roles)) return true;
 
   const businessPermissions = (c.get("businessPermissions") ?? []) as string[];
   return required.every((p) => businessPermissions.includes(p));
@@ -222,11 +232,8 @@ async function loadBusinessAuthContext(
   );
 
   const roles = (c.get("roles") ?? []) as string[];
-  const globalPermissions = (c.get("permissions") ?? []) as string[];
 
-  if (!membership && !isSuperAdmin(roles) &&
-    !globalPermissions.includes(Permissions.Business.Read) &&
-    !globalPermissions.includes(Permissions.Business.View)) {
+  if (!membership && !isPlatformBusinessOperator(roles)) {
     throw new BusinessAccessDeniedError();
   }
 
@@ -263,7 +270,7 @@ export function requireBusinessRole(...roles: MembershipRole[]) {
     await loadBusinessAuthContext(c);
 
     const userRoles = c.get("roles") ?? [];
-    if (isSuperAdmin(userRoles)) {
+    if (isPlatformBusinessOperator(userRoles)) {
       await next();
       return;
     }
@@ -294,7 +301,7 @@ export function requireActiveBusiness() {
     await loadBusinessAuthContext(c);
 
     const userRoles = c.get("roles") ?? [];
-    if (isSuperAdmin(userRoles)) {
+    if (isPlatformBusinessOperator(userRoles)) {
       await next();
       return;
     }
@@ -313,7 +320,7 @@ export function requireBusinessOwner() {
     await loadBusinessAuthContext(c);
 
     const userRoles = c.get("roles") ?? [];
-    if (isSuperAdmin(userRoles)) {
+    if (isPlatformBusinessOperator(userRoles)) {
       await next();
       return;
     }

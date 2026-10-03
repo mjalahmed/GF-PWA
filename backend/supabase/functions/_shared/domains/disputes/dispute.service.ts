@@ -309,15 +309,21 @@ export class DisputeService {
       metadata?: Record<string, unknown>;
     },
   ): Promise<void> {
+    const metadata = { ...(extra?.metadata ?? {}) };
+    if (metadata.businessId == null) {
+      const record = await this.disputeRepository.findById(disputeId);
+      if (record?.businessId) metadata.businessId = record.businessId;
+    }
     await this.auditRepository.write({
       actorUserId,
       action,
       entityType: "dispute",
       entityId: disputeId,
+      businessId: typeof metadata.businessId === "string" ? metadata.businessId : null,
       requestId,
       previousStatus: extra?.previousStatus,
       newStatus: extra?.newStatus,
-      metadata: extra?.metadata,
+      metadata,
     });
   }
 

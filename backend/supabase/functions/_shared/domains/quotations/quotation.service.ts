@@ -346,6 +346,9 @@ export class QuotationService {
       requestId,
       previousStatus: quotation.status,
       newStatus: QuotationStatuses.Expired,
+      businessId: quotation.businessId,
+      branchId: quotation.branchId,
+      metadata: { businessId: quotation.businessId, branchId: quotation.branchId },
     });
 
     await this.safeNotify({
@@ -572,6 +575,8 @@ export class QuotationService {
       entityType: "quotation",
       entityId: quotationId,
       requestId,
+      businessId,
+      metadata: { businessId },
     });
 
     return this.toAudienceDto(updated, actor);
@@ -612,6 +617,9 @@ export class QuotationService {
       requestId,
       previousStatus: quotation.status,
       newStatus: QuotationStatuses.Issued,
+      businessId: quotation.businessId,
+      branchId: quotation.branchId,
+      metadata: { businessId: quotation.businessId, branchId: quotation.branchId },
     });
 
     await this.safeNotify({
@@ -668,6 +676,8 @@ export class QuotationService {
       requestId,
       previousStatus: QuotationStatuses.Issued,
       newStatus: QuotationStatuses.Viewed,
+      businessId: quotation.businessId,
+      metadata: { businessId: quotation.businessId },
     });
 
     return this.toAudienceDto(updated, actor);
@@ -719,6 +729,8 @@ export class QuotationService {
       requestId,
       previousStatus: quotation.status,
       newStatus: QuotationStatuses.Accepted,
+      businessId: quotation.businessId,
+      metadata: { businessId: quotation.businessId },
     });
 
     await this.notifyBusinessStaff(quotation.businessId, {
@@ -774,6 +786,8 @@ export class QuotationService {
       requestId,
       previousStatus: quotation.status,
       newStatus: QuotationStatuses.Rejected,
+      businessId: quotation.businessId,
+      metadata: { businessId: quotation.businessId },
     });
 
     await this.notifyBusinessStaff(quotation.businessId, {
@@ -828,6 +842,8 @@ export class QuotationService {
       requestId,
       previousStatus: quotation.status,
       newStatus: QuotationStatuses.Cancelled,
+      businessId: quotation.businessId,
+      metadata: { businessId: quotation.businessId },
     });
 
     await this.safeNotify({
@@ -872,7 +888,10 @@ export class QuotationService {
       newValues: {
         previousRevisionId: quotationId,
         revisionNumber: revised.revisionNumber,
+        businessId: quotation.businessId,
       },
+      businessId: quotation.businessId,
+      metadata: { businessId: quotation.businessId },
     });
 
     await this.safeNotify({

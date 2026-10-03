@@ -19,6 +19,9 @@ export type BusinessResponseDto = {
   approvedAt: string | null;
   suspendedAt: string | null;
   closedAt: string | null;
+  temporarilyClosed: boolean;
+  temporaryClosureReason: string | null;
+  temporarilyClosedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -36,6 +39,8 @@ export type BusinessPublicResponseDto = {
   verificationStatus: string;
   averageRating: number;
   ratingCount: number;
+  temporarilyClosed: boolean;
+  temporaryClosureReason: string | null;
   branches: BusinessPublicBranchDto[];
   openingHours: BusinessPublicOpeningHoursDto[];
 };

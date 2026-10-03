@@ -128,6 +128,7 @@ export class DiscoveryService {
           opensAt: c.opensAt,
           closesAt: c.closesAt,
         })),
+        temporarilyClosed: business.temporarilyClosed,
       });
 
       let distanceKm: number | null = null;
