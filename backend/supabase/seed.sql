@@ -186,5 +186,6 @@ insert into public.permissions (code, description) values
   ('business.member.assign_owner', 'Assign owner membership'),
   ('business.schedule.read', 'Read opening hours and closures'),
   ('business.schedule.update', 'Update opening hours and closures'),
+  ('business.audit.read', 'Read audit logs for one business'),
   ('business.public.read', 'Read public business profile')
 on conflict (code) do nothing;
