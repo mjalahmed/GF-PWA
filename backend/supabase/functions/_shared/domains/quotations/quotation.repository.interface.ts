@@ -12,6 +12,10 @@ export interface QuotationRepository {
     options?: { includeItems?: boolean; includeHistory?: boolean },
   ): Promise<QuotationRecord | null>;
   list(filters: ListQuotationsFilters): Promise<QuotationRecord[]>;
+  existsForCustomerBusiness(
+    customerId: string,
+    businessId: string,
+  ): Promise<boolean>;
   listRevisions(rootQuotationId: string): Promise<QuotationRecord[]>;
   create(input: CreateQuotationPersistenceInput): Promise<QuotationRecord>;
   updateDraft(input: UpdateDraftPersistenceInput): Promise<QuotationRecord>;

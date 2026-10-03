@@ -7,15 +7,19 @@ import { Input } from '../../components/ui/Input'
 import { MakeLogo } from '../../components/ui/MakeLogo'
 import { Spinner } from '../../components/ui/Spinner'
 import { useLocale } from '../../i18n/LocaleProvider'
+import {
+  canCancelInvoice,
+  canRecordCash,
+  canUpdateBusinessSettings,
+  useMembershipRole,
+} from '../../lib/businessPermissions'
 import { formatMoney } from '../../lib/utils'
 import {
   cancelBusinessInvoice,
-  confirmInvoicePayment,
   issueBusinessInvoice,
   listBusinessInvoices,
   listMyBusinessMemberships,
   recordInvoiceCashPayment,
-  sendInvoicePaymentReminder,
   updateBusinessSettings,
 } from '../../services/api/business'
 
@@ -36,17 +40,22 @@ export function BusinessInvoicesPage() {
     queryFn: listMyBusinessMemberships,
   })
   const businessId = params.get('businessId') || membershipsQuery.data?.[0]?.businessId || ''
+  const { role } = useMembershipRole(businessId)
+  const mayCancel = canCancelInvoice(role)
+  const mayCollectCash = canRecordCash(role)
 
   const invoicesQuery = useQuery({
-    queryKey: ['business-invoices', businessId],
+    queryKey: ['business-invoices', businessId, role],
     queryFn: async () => {
-      await updateBusinessSettings(businessId, {
-        invoicesEnabled: true,
-        cashPaymentsEnabled: true,
-      }).catch(() => undefined)
+      if (canUpdateBusinessSettings(role)) {
+        await updateBusinessSettings(businessId, {
+          invoicesEnabled: true,
+          cashPaymentsEnabled: true,
+        }).catch(() => undefined)
+      }
       return listBusinessInvoices(businessId)
     },
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId) && !membershipsQuery.isLoading,
   })
 
   const invalidate = () => {
@@ -72,18 +81,6 @@ export function BusinessInvoicesPage() {
     },
     onError: (err: Error) => setError(err.message),
   })
-  const confirmMutation = useMutation({
-    mutationFn: ({ invoiceId, paymentId }: { invoiceId: string; paymentId: string }) =>
-      confirmInvoicePayment(businessId, invoiceId, paymentId),
-    onSuccess: invalidate,
-    onError: (err: Error) => setError(err.message),
-  })
-  const reminderMutation = useMutation({
-    mutationFn: (invoiceId: string) => sendInvoicePaymentReminder(businessId, invoiceId),
-    onSuccess: () => setError(''),
-    onError: (err: Error) => setError(err.message),
-  })
-
   if (membershipsQuery.isLoading) return <Spinner />
   if (!businessId) {
     return (
@@ -156,9 +153,6 @@ export function BusinessInvoicesPage() {
                   String(a.confirmedAt ?? a.confirmed_at ?? a.createdAt ?? ''),
                 ),
               )[0]
-            const pendingPays = payments.filter((p) =>
-              ['pending', 'requires_action', 'created', 'authorized'].includes(String(p.status)),
-            )
             const canCollect = [
               'issued',
               'awaiting_payment',
@@ -242,7 +236,8 @@ export function BusinessInvoicesPage() {
                       {t('biz.invoices.issue')}
                     </Button>
                   )}
-                  {(status === 'draft' || status === 'issued' || status === 'awaiting_payment') && (
+                  {mayCancel &&
+                    (status === 'draft' || status === 'issued' || status === 'awaiting_payment') && (
                     <Button
                       variant="danger"
                       loading={cancelMutation.isPending && cancelMutation.variables === id}
@@ -251,43 +246,9 @@ export function BusinessInvoicesPage() {
                       {t('common.cancel')}
                     </Button>
                   )}
-                  {canCollect && remaining > 0 && (
-                    <Button
-                      variant="secondary"
-                      loading={
-                        reminderMutation.isPending && reminderMutation.variables === id
-                      }
-                      onClick={() => reminderMutation.mutate(id)}
-                    >
-                      {t('biz.invoices.sendReminder')}
-                    </Button>
-                  )}
                 </div>
 
-                {pendingPays.map((p) => (
-                  <div key={String(p.id)} className="mt-3 flex items-center justify-between gap-2">
-                    <p className="text-xs text-warning">
-                      {t('biz.invoices.pendingPayment', {
-                        method: String(p.method ?? 'payment'),
-                        amount: formatMoney(num(p.amount), currency),
-                      })}
-                    </p>
-                    <Button
-                      variant="secondary"
-                      loading={
-                        confirmMutation.isPending &&
-                        confirmMutation.variables?.paymentId === String(p.id)
-                      }
-                      onClick={() =>
-                        confirmMutation.mutate({ invoiceId: id, paymentId: String(p.id) })
-                      }
-                    >
-                      {t('biz.invoices.confirmPayment')}
-                    </Button>
-                  </div>
-                ))}
-
-                {canCollect && remaining > 0 && (
+                {mayCollectCash && canCollect && remaining > 0 && (
                   <div className="mt-3 flex items-end gap-2">
                     <Input
                       label={t('biz.invoices.partialAmount')}

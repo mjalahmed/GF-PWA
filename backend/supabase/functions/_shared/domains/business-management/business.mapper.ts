@@ -62,7 +62,12 @@ export class BusinessMapper {
       currency: record.currency,
       locale: record.locale,
       timezone: record.timezone,
-      metadata: record.metadata,
+      benefitPayEnabled: record.benefitPayEnabled,
+      benefitPayPhone: record.benefitPayPhone,
+      benefitPayIban: record.benefitPayIban,
+      benefitPayInstructions: record.benefitPayInstructions,
+      publiclyVisible: record.publiclyVisible,
+      acceptNewCustomers: record.acceptNewCustomers,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };

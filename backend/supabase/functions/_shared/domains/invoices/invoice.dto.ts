@@ -53,6 +53,11 @@ export type InvoiceResponseDto = {
   createdAt: string;
   updatedAt: string;
   items: InvoiceItemDto[];
+  cashPaymentsEnabled?: boolean;
+  benefitPayEnabled?: boolean;
+  benefitPayPhone?: string | null;
+  benefitPayIban?: string | null;
+  benefitPayInstructions?: string | null;
 };
 
 export type InvoiceItemInputDto = {

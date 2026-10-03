@@ -3,7 +3,7 @@ import {
   BusinessStatuses,
   type AppointmentStatus,
 } from "../../core/constants/statuses.ts";
-import { Permissions } from "../../core/constants/permissions.ts";
+import { isPlatformBusinessOperator } from "../../core/auth/business-authorization.middleware.ts";
 import { ValidationError } from "../../core/errors/app-error.ts";
 import type { AuditRepository } from "../../repositories/audit/audit.repository.interface.ts";
 import type { BranchRepository } from "../business-management/branch.repository.interface.ts";
@@ -27,6 +27,11 @@ import {
   AppointmentOutsideHoursError,
   AppointmentsDisabledError,
 } from "./appointment.errors.ts";
+import {
+  membershipCanPerformAppointmentTransition,
+  type AppointmentTransitionAction,
+} from "./appointment.auth.ts";
+import { assertRepairPhotoStoragePath } from "./appointment.media.ts";
 import { AppointmentMapper } from "./appointment.mapper.ts";
 import type { AppointmentRepository } from "./appointment.repository.interface.ts";
 import {
@@ -455,22 +460,23 @@ export class AppointmentService {
   private async requireBusinessActor(
     actor: ActorContext,
     businessId: string,
+    action: AppointmentTransitionAction,
   ): Promise<void> {
     const membership = await this.businessRepository.findActiveMembership(
       businessId,
       actor.userId,
     );
-    if (membership) return;
-    const perms = actor.globalPermissions ?? [];
     if (
-      perms.includes(Permissions.Appointment.Manage) ||
-      perms.includes(Permissions.Appointment.Confirm)
+      !membershipCanPerformAppointmentTransition({
+        roles: actor.roles,
+        membershipRole: membership?.role ?? null,
+        action,
+      })
     ) {
-      return;
+      throw new AppointmentAccessDeniedError(
+        "You do not have permission to perform this action.",
+      );
     }
-    throw new AppointmentAccessDeniedError(
-      "Only business staff can perform this action.",
-    );
   }
 
   private async transition(
@@ -480,6 +486,7 @@ export class AppointmentService {
     body: TransitionRequestDto,
     options: {
       actorRole: "customer" | "business";
+      transitionAction?: AppointmentTransitionAction;
       auditAction: string;
       notifyType: string;
       notifyTitle: string;
@@ -503,7 +510,14 @@ export class AppointmentService {
         throw new AppointmentAccessDeniedError();
       }
     } else {
-      await this.requireBusinessActor(actor, appointment.businessId);
+      if (!options.transitionAction) {
+        throw new AppointmentAccessDeniedError();
+      }
+      await this.requireBusinessActor(
+        actor,
+        appointment.businessId,
+        options.transitionAction,
+      );
     }
 
     assertTransition(appointment.status, toStatus);
@@ -570,6 +584,7 @@ export class AppointmentService {
       body,
       {
         actorRole: "business",
+        transitionAction: "confirm",
         auditAction: "appointment.confirmed",
         notifyType: "appointment_confirmed",
         notifyTitle: "Appointment confirmed",
@@ -593,6 +608,7 @@ export class AppointmentService {
       body,
       {
         actorRole: "business",
+        transitionAction: "reject",
         auditAction: "appointment.rejected",
         notifyType: "appointment_rejected",
         notifyTitle: "Appointment rejected",
@@ -615,7 +631,11 @@ export class AppointmentService {
       actor.userId,
     );
 
-    if (!isCustomer && !membership) {
+    if (
+      !isCustomer &&
+      !membership &&
+      !isPlatformBusinessOperator(actor.roles ?? [])
+    ) {
       throw new AppointmentAccessDeniedError();
     }
 
@@ -630,6 +650,7 @@ export class AppointmentService {
       body,
       {
         actorRole: isCustomer ? "customer" : "business",
+        transitionAction: isCustomer ? undefined : "cancel",
         auditAction: "appointment.cancelled",
         notifyType: "appointment_cancelled",
         notifyTitle: "Appointment cancelled",
@@ -656,6 +677,7 @@ export class AppointmentService {
       body,
       {
         actorRole: "business",
+        transitionAction: "arrive",
         auditAction: "appointment.customer_arrived",
         notifyType: "appointment_customer_arrived",
         notifyTitle: "Customer arrived",
@@ -679,6 +701,7 @@ export class AppointmentService {
       body,
       {
         actorRole: "business",
+        transitionAction: "start",
         auditAction: "appointment.started",
         notifyType: "appointment_started",
         notifyTitle: "Appointment started",
@@ -702,6 +725,7 @@ export class AppointmentService {
       body,
       {
         actorRole: "business",
+        transitionAction: "complete",
         auditAction: "appointment.completed",
         notifyType: "appointment_completed",
         notifyTitle: "Appointment completed",
@@ -725,6 +749,7 @@ export class AppointmentService {
       body,
       {
         actorRole: "business",
+        transitionAction: "no_show",
         auditAction: "appointment.no_show",
         notifyType: "appointment_no_show",
         notifyTitle: "Marked as no-show",
@@ -732,5 +757,43 @@ export class AppointmentService {
       },
       requestId,
     );
+  }
+
+  async listMedia(actor: ActorContext, appointmentId: string) {
+    const appointment = await this.loadAccessible(actor, appointmentId);
+    return this.appointmentRepository.listMedia(appointment.id);
+  }
+
+  async registerMedia(
+    actor: ActorContext,
+    businessId: string,
+    appointmentId: string,
+    input: {
+      phase: "before" | "during" | "after";
+      storagePath: string;
+      caption?: string | null;
+      sortOrder?: number;
+    },
+  ) {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment || appointment.businessId !== businessId) {
+      throw new AppointmentNotFoundError(appointmentId);
+    }
+    await this.requireBusinessActor(actor, businessId, "arrive");
+    assertRepairPhotoStoragePath({
+      businessId,
+      appointmentId,
+      phase: input.phase,
+      storagePath: input.storagePath,
+    });
+    return this.appointmentRepository.insertMedia({
+      businessId,
+      appointmentId,
+      phase: input.phase,
+      storagePath: input.storagePath,
+      caption: input.caption ?? null,
+      sortOrder: input.sortOrder ?? 0,
+      createdBy: actor.userId,
+    });
   }
 }

@@ -31,7 +31,16 @@ export class InvoiceMapper {
 
   static toDto(
     record: InvoiceRecord,
-    options?: { includeBusinessNotes?: boolean },
+    options?: {
+      includeBusinessNotes?: boolean;
+      settlement?: {
+        cashPaymentsEnabled: boolean;
+        benefitPayEnabled: boolean;
+        benefitPayPhone: string | null;
+        benefitPayIban: string | null;
+        benefitPayInstructions: string | null;
+      };
+    },
   ): InvoiceResponseDto {
     const dto: InvoiceResponseDto = {
       id: record.id,
@@ -67,6 +76,13 @@ export class InvoiceMapper {
 
     if (options?.includeBusinessNotes) {
       dto.businessNotes = record.businessNotes;
+    }
+    if (options?.settlement) {
+      dto.cashPaymentsEnabled = options.settlement.cashPaymentsEnabled;
+      dto.benefitPayEnabled = options.settlement.benefitPayEnabled;
+      dto.benefitPayPhone = options.settlement.benefitPayPhone;
+      dto.benefitPayIban = options.settlement.benefitPayIban;
+      dto.benefitPayInstructions = options.settlement.benefitPayInstructions;
     }
 
     return dto;

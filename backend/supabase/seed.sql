@@ -90,45 +90,8 @@ insert into public.role_permissions (role_id, permission_id)
 select r.id, p.id
 from public.roles r
 cross join public.permissions p
-where r.code in ('business_owner', 'business_manager')
-  and p.code in (
-    'profile.read_own', 'profile.update_own',
-    'business.view', 'business.update',
-    'appointment.read', 'appointment.confirm', 'appointment.reject',
-    'appointment.cancel', 'appointment.arrive', 'appointment.start',
-    'appointment.complete', 'appointment.no_show',
-    'appointment.view', 'appointment.manage',
-    'business.quotation.read', 'business.quotation.create',
-    'business.quotation.update', 'business.quotation.issue',
-    'business.quotation.revise', 'business.quotation.cancel',
-    'invoice.create', 'invoice.issue', 'payment.view',
-    'business.invoice.read', 'business.invoice.create',
-    'business.invoice.update', 'business.invoice.issue',
-    'business.invoice.cancel',
-    'business.payment.read', 'business.payment.record_cash',
-    'business.review.read', 'business.review.respond', 'review.public.read',
-    'business.dispute.read', 'business.dispute.respond',
-    'business.dispute.evidence', 'business.dispute.create'
-  )
-on conflict do nothing;
-
-insert into public.role_permissions (role_id, permission_id)
-select r.id, p.id
-from public.roles r
-cross join public.permissions p
-where r.code = 'business_staff'
-  and p.code in (
-    'profile.read_own', 'profile.update_own',
-    'appointment.read', 'appointment.arrive', 'appointment.start',
-    'appointment.complete', 'appointment.no_show', 'appointment.view',
-    'business.quotation.read', 'business.quotation.create',
-    'business.quotation.update', 'business.quotation.issue',
-    'business.invoice.read', 'business.invoice.create',
-    'business.invoice.update', 'business.invoice.issue',
-    'business.payment.read', 'business.payment.record_cash',
-    'business.review.read', 'review.public.read',
-    'business.dispute.read', 'business.dispute.respond', 'business.dispute.evidence'
-  )
+where r.code in ('business_owner', 'business_manager', 'business_staff')
+  and p.code in ('profile.read_own', 'profile.update_own')
 on conflict do nothing;
 
 insert into public.role_permissions (role_id, permission_id)

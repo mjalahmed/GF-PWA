@@ -91,7 +91,10 @@ export const ApiContract = {
     appointmentStart: "/appointments/:appointmentId/start",
     appointmentComplete: "/appointments/:appointmentId/complete",
     appointmentNoShow: "/appointments/:appointmentId/no-show",
+    appointmentMedia: "/appointments/:appointmentId/media",
     businessAppointments: "/businesses/:businessId/appointments",
+    businessAppointmentMedia:
+      "/businesses/:businessId/appointments/:appointmentId/media",
     businessBranchAppointmentSlots:
       "/businesses/:businessId/branches/:branchId/appointment-slots",
     quotations: "/quotations",
@@ -133,6 +136,7 @@ export const ApiContract = {
     reviewReport: "/reviews/:reviewId/report",
     businessReviews: "/businesses/:businessId/reviews",
     businessReviewResponse: "/businesses/:businessId/reviews/:reviewId/response",
+    businessReviewReport: "/businesses/:businessId/reviews/:reviewId/report",
     adminReviews: "/admin/reviews",
     adminReviewById: "/admin/reviews/:reviewId",
     adminReviewHide: "/admin/reviews/:reviewId/hide",

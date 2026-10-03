@@ -11,6 +11,8 @@ import type {
   ListAppointmentsQueryDto,
   ListBusinessAppointmentsQueryDto,
   TransitionBodyDto,
+  AppointmentMediaParamsDto,
+  RegisterAppointmentMediaDto,
 } from "./appointment.schemas.ts";
 
 function actorFrom(c: AppContext) {
@@ -170,6 +172,28 @@ export async function completeAppointmentController(c: AppContext) {
     c.get("requestId"),
   );
   return successResponse(c, item);
+}
+
+export async function listAppointmentMediaController(c: AppContext) {
+  const { appointmentId } = (c.get("validatedParams" as never) ??
+    {}) as AppointmentIdParamsDto;
+  const { appointmentService } = createRequestDependencies(c);
+  const items = await appointmentService.listMedia(actorFrom(c), appointmentId);
+  return successResponse(c, items);
+}
+
+export async function registerAppointmentMediaController(c: AppContext) {
+  const { businessId, appointmentId } = (c.get("validatedParams" as never) ??
+    {}) as AppointmentMediaParamsDto;
+  const body = (c.get("validatedBody" as never) ?? {}) as RegisterAppointmentMediaDto;
+  const { appointmentService } = createRequestDependencies(c);
+  const item = await appointmentService.registerMedia(
+    actorFrom(c),
+    businessId,
+    appointmentId,
+    body,
+  );
+  return successResponse(c, item, 201);
 }
 
 export async function noShowAppointmentController(c: AppContext) {

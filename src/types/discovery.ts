@@ -18,6 +18,13 @@ export interface OpeningState {
   branchName?: string
 }
 
+export interface PublicOpeningHours {
+  dayOfWeek: number
+  opensAt?: string
+  closesAt?: string
+  isClosed: boolean
+}
+
 export interface DiscoveryBusiness {
   id: string
   slug: string
@@ -32,6 +39,9 @@ export interface DiscoveryBusiness {
   areas: string[]
   branches: PublicBranch[]
   openingState?: OpeningState
+  temporarilyClosed?: boolean
+  temporaryClosureReason?: string
+  openingHours?: PublicOpeningHours[]
   serviceCount: number
   productCount: number
   distanceKm?: number

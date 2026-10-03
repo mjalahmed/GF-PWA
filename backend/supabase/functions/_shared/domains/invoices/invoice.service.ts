@@ -136,10 +136,17 @@ export class InvoiceService {
   private toInvoiceDto(
     record: InvoiceRecord,
     actor: ActorContext,
+    settlement?: {
+      cashPaymentsEnabled: boolean;
+      benefitPayEnabled: boolean;
+      benefitPayPhone: string | null;
+      benefitPayIban: string | null;
+      benefitPayInstructions: string | null;
+    },
   ): InvoiceResponseDto {
     const includeBusinessNotes = record.customerId !== actor.userId ||
       this.isBusinessViewer(actor, record);
-    return InvoiceMapper.toDto(record, { includeBusinessNotes });
+    return InvoiceMapper.toDto(record, { includeBusinessNotes, settlement });
   }
 
   private toPaymentDto(
@@ -372,6 +379,28 @@ export class InvoiceService {
         throw new ValidationError("Vehicle must belong to the customer.");
       }
     }
+
+    if (!input.appointmentId && !input.quotationId) {
+      const [hasAppointment, hasQuotation, hasInvoice] = await Promise.all([
+        this.appointmentRepository.existsForCustomerBusiness(
+          input.customerId,
+          input.businessId,
+        ),
+        this.quotationRepository.existsForCustomerBusiness(
+          input.customerId,
+          input.businessId,
+        ),
+        this.invoiceRepository.existsForCustomerBusiness(
+          input.customerId,
+          input.businessId,
+        ),
+      ]);
+      if (!hasAppointment && !hasQuotation && !hasInvoice) {
+        throw new ValidationError(
+          "Customer has no verified relationship with this business.",
+        );
+      }
+    }
   }
 
   async listForActor(
@@ -418,7 +447,19 @@ export class InvoiceService {
     invoiceId: string,
   ): Promise<InvoiceResponseDto> {
     const invoice = await this.loadAccessibleInvoice(actor, invoiceId);
-    return this.toInvoiceDto(invoice, actor);
+    const settings = await this.businessRepository.findSettings(
+      invoice.businessId,
+      "admin",
+    );
+    return this.toInvoiceDto(invoice, actor, settings
+      ? {
+        cashPaymentsEnabled: settings.cashPaymentsEnabled,
+        benefitPayEnabled: settings.benefitPayEnabled,
+        benefitPayPhone: settings.benefitPayPhone,
+        benefitPayIban: settings.benefitPayIban,
+        benefitPayInstructions: settings.benefitPayInstructions,
+      }
+      : undefined);
   }
 
   async create(

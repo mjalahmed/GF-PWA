@@ -312,6 +312,19 @@ export class SupabaseQuotationRepository implements QuotationRepository {
     );
   }
 
+  async existsForCustomerBusiness(
+    customerId: string,
+    businessId: string,
+  ): Promise<boolean> {
+    const { count, error } = await this.adminClient
+      .from("quotations")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("business_id", businessId);
+    if (error) throw new InternalError("Failed to check quotations.", error);
+    return (count ?? 0) > 0;
+  }
+
   async listRevisions(rootQuotationId: string): Promise<QuotationRecord[]> {
     const { data, error } = await this.adminClient
       .from("quotations")

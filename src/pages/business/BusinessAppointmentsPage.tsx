@@ -5,6 +5,7 @@ import { RequireGarageSetup } from '../../components/business/RequireGarageSetup
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
 import { useLocale } from '../../i18n/LocaleProvider'
+import { canAppointmentAction } from '../../lib/businessPermissions'
 import {
   listBusinessAppointments,
   listMyBusinessMemberships,
@@ -57,6 +58,7 @@ export function BusinessAppointmentsPage() {
   })
 
   const memberships = membershipsQuery.data ?? []
+  const role = memberships.find((membership) => membership.businessId === businessId)?.role
   const items = appointmentsQuery.data ?? []
 
   const title = useMemo(() => {
@@ -136,7 +138,9 @@ export function BusinessAppointmentsPage() {
           const id = String(raw.id ?? '')
           const status = String(raw.status ?? '')
           const start = String(raw.scheduledStart ?? raw.scheduled_start ?? '')
-          const actions = ACTIONS[status] ?? []
+          const actions = (ACTIONS[status] ?? []).filter((action) =>
+            canAppointmentAction(role, action),
+          )
           return (
             <li key={id} className="rounded-xl border border-border bg-surface p-4">
               <div className="flex justify-between gap-2">

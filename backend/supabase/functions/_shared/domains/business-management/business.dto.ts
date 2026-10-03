@@ -84,7 +84,12 @@ export type BusinessSettingsResponseDto = {
   currency: string;
   locale: string;
   timezone: string;
-  metadata: Record<string, unknown>;
+  benefitPayEnabled: boolean;
+  benefitPayPhone: string | null;
+  benefitPayIban: string | null;
+  benefitPayInstructions: string | null;
+  publiclyVisible: boolean;
+  acceptNewCustomers: boolean;
   createdAt: string;
   updatedAt: string;
 };

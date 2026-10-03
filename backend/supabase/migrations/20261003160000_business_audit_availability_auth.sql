@@ -151,6 +151,12 @@ begin
     );
   end if;
 
+  if v_business_id is not null and not exists (
+    select 1 from public.businesses b where b.id = v_business_id
+  ) then
+    v_business_id := null;
+  end if;
+
   if v_actor_role is null and v_business_id is not null and p_actor_user_id is not null then
     select m.role::text
     into v_actor_role
@@ -184,16 +190,24 @@ grant execute on function public.write_audit_log(
   uuid, text, text, uuid, text, text, text, text, jsonb, jsonb, jsonb, uuid, uuid, text
 ) to service_role;
 
-update public.audit_logs
-set business_id = coalesce(
-  public.try_parse_uuid(metadata->>'businessId'),
-  public.try_parse_uuid(metadata->>'business_id'),
-  public.try_parse_uuid(new_values->>'businessId'),
-  public.try_parse_uuid(new_values->>'business_id'),
-  public.try_parse_uuid(old_values->>'businessId'),
-  public.try_parse_uuid(old_values->>'business_id')
-)
-where business_id is null;
+update public.audit_logs l
+set business_id = parsed.business_id
+from (
+  select
+    id,
+    coalesce(
+      public.try_parse_uuid(metadata->>'businessId'),
+      public.try_parse_uuid(metadata->>'business_id'),
+      public.try_parse_uuid(new_values->>'businessId'),
+      public.try_parse_uuid(new_values->>'business_id'),
+      public.try_parse_uuid(old_values->>'businessId'),
+      public.try_parse_uuid(old_values->>'business_id')
+    ) as business_id
+  from public.audit_logs
+  where business_id is null
+) parsed
+join public.businesses b on b.id = parsed.business_id
+where l.id = parsed.id;
 
 update public.audit_logs
 set branch_id = coalesce(

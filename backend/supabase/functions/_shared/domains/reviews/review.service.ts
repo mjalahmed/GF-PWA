@@ -309,17 +309,6 @@ export class ReviewService {
     const record = await this.reviewRepository.findReviewById(reviewId);
     if (!record) throw new ReviewNotFoundError(reviewId);
 
-    await this.auditRepository.write({
-      actorUserId: actor.userId,
-      action: "review.created",
-      entityType: "review",
-      entityId: reviewId,
-      requestId,
-      newStatus: ReviewStatuses.Published,
-      businessId: eligibility.businessId,
-      metadata: { businessId: eligibility.businessId },
-    });
-
     await this.notifyBusinessStaff(eligibility.businessId, {
       type: "review_created",
       title: "New customer review",
@@ -457,6 +446,22 @@ export class ReviewService {
     });
 
     return ReviewMapper.toReportDto(report);
+  }
+
+  async reportBusinessReview(
+    actor: ActorContext,
+    businessId: string,
+    reviewId: string,
+    body: ReportReviewRequestDto,
+  ): Promise<ReviewReportDto> {
+    if (!(await this.hasBusinessReviewRespond(businessId, actor))) {
+      throw new ReviewAccessDeniedError();
+    }
+    const record = await this.reviewRepository.findReviewById(reviewId);
+    if (!record || record.businessId !== businessId) {
+      throw new ReviewNotFoundError(reviewId);
+    }
+    return this.reportReview(actor, reviewId, body);
   }
 
   async listPublicBusinessReviews(
@@ -689,6 +694,7 @@ export class ReviewService {
 
     const report = await this.reviewRepository.findReportById(reportId);
     if (!report) throw new ReviewReportNotFoundError(reportId);
+    const review = await this.reviewRepository.findReviewById(report.reviewId);
 
     const resolved = await this.reviewRepository.resolveReport({
       reportId,
@@ -702,7 +708,12 @@ export class ReviewService {
       action: "review.report_dismissed",
       entityType: "review_report",
       entityId: reportId,
-      metadata: { reason: body.reason ?? null, reviewId: report.reviewId },
+      businessId: review?.businessId ?? null,
+      metadata: {
+        reason: body.reason ?? null,
+        reviewId: report.reviewId,
+        businessId: review?.businessId ?? null,
+      },
     });
 
     return ReviewMapper.toReportDto(resolved);
@@ -755,7 +766,12 @@ export class ReviewService {
       entityId: reportId,
       previousStatus: review.status,
       newStatus,
-      metadata: { action: body.action, reviewId: review.id },
+      businessId: review.businessId,
+      metadata: {
+        action: body.action,
+        reviewId: review.id,
+        businessId: review.businessId,
+      },
     });
 
     return ReviewMapper.toReportDto(resolved);

@@ -15,7 +15,7 @@ export class InventoryService {
     private readonly inventoryRepository: InventoryRepository,
     private readonly productRepository: ProductRepository,
     private readonly branchRepository: BranchRepository,
-    private readonly auditRepository: AuditRepository,
+    private readonly _auditRepository: AuditRepository,
   ) {}
 
   async list(
@@ -58,27 +58,11 @@ export class InventoryService {
     );
     if (!branch) throw new BranchBusinessMismatchError();
 
-    const result = await this.inventoryRepository.adjustViaRpc(
+    return this.inventoryRepository.adjustViaRpc(
       productId,
       input,
       actorUserId,
       requestId,
     );
-
-    await this.auditRepository.write({
-      actorUserId,
-      action: "inventory.adjusted",
-      entityType: "product_inventory",
-      entityId: result.inventoryId,
-      requestId,
-      metadata: {
-        businessId,
-        productId,
-        adjustmentId: result.adjustmentId,
-        adjustmentType: input.adjustmentType,
-      },
-    });
-
-    return result;
   }
 }

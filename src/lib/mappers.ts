@@ -127,6 +127,21 @@ export function mapBusiness(raw: Record<string, unknown>): DiscoveryBusiness {
           }
         })()
       : undefined,
+    temporarilyClosed: Boolean(raw.temporarilyClosed ?? raw.temporarily_closed),
+    temporaryClosureReason: (raw.temporaryClosureReason ?? raw.temporary_closure_reason) as
+      | string
+      | undefined,
+    openingHours: Array.isArray(raw.openingHours ?? raw.opening_hours)
+      ? ((raw.openingHours ?? raw.opening_hours) as unknown[]).map((hour) => {
+          const row = hour as Record<string, unknown>
+          return {
+            dayOfWeek: Number(row.dayOfWeek ?? row.day_of_week),
+            opensAt: (row.opensAt ?? row.opens_at) as string | undefined,
+            closesAt: (row.closesAt ?? row.closes_at) as string | undefined,
+            isClosed: Boolean(row.isClosed ?? row.is_closed),
+          }
+        })
+      : undefined,
     serviceCount: Number(raw.serviceCount ?? raw.service_count ?? 0),
     productCount: Number(raw.productCount ?? raw.product_count ?? 0),
     distanceKm: raw.distanceKm != null ? Number(raw.distanceKm ?? raw.distance_km) : undefined,
@@ -353,7 +368,8 @@ export function mapReview(raw: Record<string, unknown>): Review {
     overallRating: pickNum(raw, 'overallRating', 'overall_rating') ?? 0,
     ratings: mapRatings((raw.ratings ?? raw.reviewRatings) as Record<string, unknown>),
     comment: pick(raw, 'comment') as string | undefined,
-    status: String(raw.status),
+    status: String(raw.status ?? ''),
+    verified: raw.verified === true,
     createdAt: String(pick(raw, 'createdAt', 'created_at') ?? ''),
     response: resp
       ? {

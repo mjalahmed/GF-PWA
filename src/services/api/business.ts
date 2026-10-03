@@ -104,20 +104,19 @@ export function toBusinessSettingsWriteBody(
     benefitPayPhone,
     benefitPayIban,
     benefitPayInstructions,
-    metadata,
+    metadata: _metadata,
     businessId: _businessId,
     ...rest
   } = input
   const body: Record<string, unknown> = { ...rest }
   if (publiclyVisible !== undefined) body.publiclyVisible = publiclyVisible
   if (acceptNewCustomers !== undefined) body.acceptNewCustomers = acceptNewCustomers
-  if (benefitPayEnabled !== undefined) body.benefitpayPaymentsEnabled = benefitPayEnabled
-  if (benefitPayPhone !== undefined) body.benefitpayPhone = benefitPayPhone
-  if (benefitPayIban !== undefined) body.benefitpayIban = benefitPayIban
+  if (benefitPayEnabled !== undefined) body.benefitPayEnabled = benefitPayEnabled
+  if (benefitPayPhone !== undefined) body.benefitPayPhone = benefitPayPhone
+  if (benefitPayIban !== undefined) body.benefitPayIban = benefitPayIban
   if (benefitPayInstructions !== undefined) {
-    body.benefitpayInstructions = benefitPayInstructions
+    body.benefitPayInstructions = benefitPayInstructions
   }
-  if (metadata !== undefined) body.metadata = metadata
   return body
 }
 

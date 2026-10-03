@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { SearchableSelect } from '../../components/ui/SearchableSelect'
 import { Spinner } from '../../components/ui/Spinner'
+import { canManageCatalog, canUpdateBusinessSettings, useMembershipRole } from '../../lib/businessPermissions'
 import { localizedCategoryName } from '../../i18n/localized'
 import { useLocale } from '../../i18n/LocaleProvider'
 import {
@@ -18,6 +19,8 @@ import { listProductCategories } from '../../services/api/catalog'
 
 export function BusinessProductsPage() {
   const { businessId = '' } = useParams()
+  const { role } = useMembershipRole(businessId)
+  const mayManageCatalog = canManageCatalog(role)
   const queryClient = useQueryClient()
   const { t, locale } = useLocale()
   const [error, setError] = useState('')
@@ -50,7 +53,9 @@ export function BusinessProductsPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await updateBusinessSettings(businessId, { productsEnabled: true })
+      if (canUpdateBusinessSettings(role)) {
+        await updateBusinessSettings(businessId, { productsEnabled: true })
+      }
       return createBusinessProduct(businessId, {
         categoryId,
         name: name.trim(),
@@ -102,17 +107,20 @@ export function BusinessProductsPage() {
                   {p.name} · {p.price} BHD
                   {p.brand ? ` · ${p.brand}` : ''}
                 </span>
-                <button
-                  type="button"
-                  className="text-xs text-error"
-                  onClick={() => removeMutation.mutate(p.id)}
-                >
-                  {t('common.remove')}
-                </button>
+                {mayManageCatalog && (
+                  <button
+                    type="button"
+                    className="text-xs text-error"
+                    onClick={() => removeMutation.mutate(p.id)}
+                  >
+                    {t('common.remove')}
+                  </button>
+                )}
               </li>
             ))}
         </ul>
 
+        {mayManageCatalog && (
         <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
           <Input
             label={t('biz.products.name')}
@@ -143,6 +151,7 @@ export function BusinessProductsPage() {
             {t('biz.products.add')}
           </Button>
         </div>
+        )}
       </section>
     </RequireGarageSetup>
   )

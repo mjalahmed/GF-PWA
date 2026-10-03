@@ -38,12 +38,24 @@ export type DiscoveryBusinessSummaryDto = {
   areas: string[];
   branches: PublicBranchDto[];
   openingState: OpeningStateDto | null;
+  temporarilyClosed: boolean;
   serviceCount: number;
   productCount: number;
   distanceKm: number | null;
 };
 
-export type DiscoveryBusinessDetailDto = DiscoveryBusinessSummaryDto;
+export type PublicOpeningHoursDto = {
+  dayOfWeek: number;
+  opensAt: string | null;
+  closesAt: string | null;
+  isClosed: boolean;
+};
+
+export type DiscoveryBusinessDetailDto = DiscoveryBusinessSummaryDto & {
+  temporarilyClosed: boolean;
+  temporaryClosureReason: string | null;
+  openingHours: PublicOpeningHoursDto[];
+};
 
 export type PublicCategoryRefDto = {
   id: string;

@@ -9,6 +9,7 @@ import { MakeLogo } from '../../components/ui/MakeLogo'
 import { SearchableSelect } from '../../components/ui/SearchableSelect'
 import { Spinner } from '../../components/ui/Spinner'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { canAppointmentAction, canManageAppointments, useMembershipRole } from '../../lib/businessPermissions'
 import { formatMoney } from '../../lib/utils'
 import { hasMotomarksLogo } from '../../lib/motomarks'
 import { uploadFile, uploadImage, vehicleImagePath as buildVehicleImagePath } from '../../lib/upload'
@@ -133,6 +134,7 @@ export function BusinessAppointmentDetailPage() {
   })
 
   const businessId = businessIdHint || detailQuery.data?.businessId || ''
+  const { role } = useMembershipRole(businessId)
 
   const mediaQuery = useQuery({
     queryKey: ['repair-photos', appointmentId],
@@ -282,10 +284,14 @@ export function BusinessAppointmentDetailPage() {
   }
 
   const appt = detailQuery.data
-  const actions = ACTIONS[appt.status] ?? []
-  const genericStatuses = (GENERIC_FROM[appt.status] ?? []).filter((s) =>
-    (GENERIC_APPOINTMENT_STATUSES as readonly string[]).includes(s),
+  const actions = (ACTIONS[appt.status] ?? []).filter((action) =>
+    canAppointmentAction(role, action),
   )
+  const genericStatuses = canManageAppointments(role)
+    ? (GENERIC_FROM[appt.status] ?? []).filter((s) =>
+      (GENERIC_APPOINTMENT_STATUSES as readonly string[]).includes(s),
+    )
+    : []
   const expectedMinutes = appt.services.reduce(
     (sum, s) => sum + (s.estimatedDurationMinutes || 0),
     0,

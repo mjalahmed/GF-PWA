@@ -47,6 +47,7 @@ import {
   listReviewEligibilitiesController,
   listReviewsController,
   removeAdminReviewController,
+  reportBusinessReviewController,
   reportReviewController,
   respondToReviewController,
   restoreAdminReviewController,
@@ -133,6 +134,16 @@ reviewRoutes.post(
   validate({ params: businessReviewParamsSchema, body: reviewResponseSchema }),
   idempotency("review.respond", idempotencyRepo),
   (c) => respondToReviewController(c),
+);
+
+reviewRoutes.post(
+  ApiContract.routes.businessReviewReport,
+  requireAuthentication(),
+  requireBusinessMembership(),
+  requireBusinessPermission(Permissions.BusinessReview.Respond),
+  validate({ params: businessReviewParamsSchema, body: reportReviewSchema }),
+  idempotency("review.business_report", idempotencyRepo),
+  (c) => reportBusinessReviewController(c),
 );
 
 reviewRoutes.patch(

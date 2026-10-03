@@ -29,6 +29,7 @@ export interface Review {
   ratings: ReviewRatingDimensions
   comment?: string
   status: string
+  verified?: boolean
   createdAt: string
   response?: ReviewResponse
   /** Service / vehicle context when backend provides it */

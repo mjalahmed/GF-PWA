@@ -41,6 +41,7 @@ export type DiscoveryBusinessRecord = {
   serviceCount: number;
   productCount: number;
   temporarilyClosed: boolean;
+  temporaryClosureReason: string | null;
 };
 
 export type OpeningHoursRow = {

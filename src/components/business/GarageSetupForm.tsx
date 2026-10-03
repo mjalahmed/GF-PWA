@@ -752,6 +752,7 @@ export function GarageSetupForm({
           <input
             type="checkbox"
             checked={benefitPayEnabled}
+            disabled={!canEditProfile}
             onChange={(e) => setBenefitPayEnabled(e.target.checked)}
           />
           Enable BenefitPay
@@ -761,11 +762,13 @@ export function GarageSetupForm({
             <Input
               label="BenefitPay phone"
               value={benefitPayPhone}
+              disabled={!canEditProfile}
               onChange={(e) => setBenefitPayPhone(e.target.value)}
             />
             <Input
               label="IBAN"
               value={benefitPayIban}
+              disabled={!canEditProfile}
               onChange={(e) => setBenefitPayIban(e.target.value)}
             />
             <label className="block text-sm">
@@ -773,6 +776,7 @@ export function GarageSetupForm({
               <textarea
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                 rows={3}
+                disabled={!canEditProfile}
                 value={benefitPayInstructions}
                 onChange={(e) => setBenefitPayInstructions(e.target.value)}
               />

@@ -153,6 +153,20 @@ export async function respondToReviewController(c: AppContext) {
   return successResponse(c, item, 201);
 }
 
+export async function reportBusinessReviewController(c: AppContext) {
+  const { businessId, reviewId } = (c.get("validatedParams" as never) ??
+    {}) as BusinessReviewParamsDto;
+  const body = (c.get("validatedBody" as never) ?? {}) as ReportReviewRequestDto;
+  const { reviewService } = createRequestDependencies(c);
+  const item = await reviewService.reportBusinessReview(
+    actorFrom(c),
+    businessId,
+    reviewId,
+    body,
+  );
+  return successResponse(c, item, 201);
+}
+
 export async function updateReviewResponseController(c: AppContext) {
   const { businessId, reviewId } = (c.get("validatedParams" as never) ??
     {}) as BusinessReviewParamsDto;

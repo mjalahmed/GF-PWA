@@ -1,7 +1,6 @@
-import { Permissions } from "../../core/constants/permissions.ts";
 import { ValidationError } from "../../core/errors/app-error.ts";
 import { assertOwnedBusinessMediaPath } from "./business-media-path.ts";
-import { BusinessStatuses, BusinessVerificationStatuses } from "../../core/constants/statuses.ts";
+import { BusinessStatuses } from "../../core/constants/statuses.ts";
 import type { AuditRepository } from "../../repositories/audit/audit.repository.interface.ts";
 import type { BusinessRepository } from "./business.repository.interface.ts";
 import type { BranchRepository } from "./branch.repository.interface.ts";
@@ -202,15 +201,9 @@ export class BusinessService {
   }
 
   canAccessInternal(
-    business: BusinessRecord,
-    globalPermissions: string[],
+    _business: BusinessRecord,
+    _globalPermissions: string[],
   ): boolean {
-    if (globalPermissions.includes(Permissions.Business.Read)) return true;
-    if (globalPermissions.includes(Permissions.Business.View)) return true;
-    if (business.status === BusinessStatuses.Active &&
-      business.verificationStatus === BusinessVerificationStatuses.Verified) {
-      return globalPermissions.includes(Permissions.Business.PublicRead);
-    }
     return false;
   }
 
@@ -242,5 +235,8 @@ function settingsSnapshot(record: BusinessSettingsRecord): Record<string, unknow
     currency: record.currency,
     locale: record.locale,
     timezone: record.timezone,
+    benefitPayEnabled: record.benefitPayEnabled,
+    publiclyVisible: record.publiclyVisible,
+    acceptNewCustomers: record.acceptNewCustomers,
   };
 }

@@ -5,6 +5,7 @@ import { RequireGarageSetup } from '../../components/business/RequireGarageSetup
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
 import { StarRating } from '../../components/ui/StarRating'
+import { canRespondToReview, useMembershipRole } from '../../lib/businessPermissions'
 import { formatDateLocalized } from '../../i18n/format'
 import { useLocale } from '../../i18n/LocaleProvider'
 import { listGarageReviews, requestReviewDispute } from '../../services/api/business'
@@ -20,6 +21,8 @@ const REPORT_REASONS = [
 
 export function BusinessReviewsPage() {
   const { businessId = '' } = useParams()
+  const { role } = useMembershipRole(businessId)
+  const mayReport = canRespondToReview(role)
   const queryClient = useQueryClient()
   const { dateLocale } = useLocale()
   const [error, setError] = useState('')
@@ -123,7 +126,7 @@ export function BusinessReviewsPage() {
                     </Button>
                   </div>
                 </div>
-              ) : (
+              ) : mayReport ? (
                 <button
                   type="button"
                   className="mt-3 text-sm font-medium text-primary"
@@ -135,7 +138,7 @@ export function BusinessReviewsPage() {
                 >
                   Request dispute
                 </button>
-              )}
+              ) : null}
             </li>
           ))}
         </ul>

@@ -16,6 +16,7 @@ test:
 		supabase/tests/unit_invoices_test.ts \
 		supabase/tests/unit_reviews_test.ts \
 		supabase/tests/unit_disputes_test.ts \
+		supabase/tests/unit_tenant_isolation_test.ts \
 		supabase/tests/contract/
 
 migrate:

@@ -5,6 +5,7 @@ import type {
   FavoriteBusinessDto,
   PublicCategoryRefDto,
   PublicImageDto,
+  PublicOpeningHoursDto,
   PublicProductDto,
   PublicServiceDto,
 } from "./discovery.dto.ts";
@@ -18,6 +19,35 @@ import type {
 } from "./discovery.types.ts";
 import type { BusinessBranchRecord } from "../business-management/business.types.ts";
 import { evaluateOpenNow, haversineDistanceKm } from "./discovery.utils.ts";
+
+function publicOpeningHours(
+  hours: Array<{
+    branchId: string | null;
+    dayOfWeek: number;
+    opensAt: string | null;
+    closesAt: string | null;
+    isClosed: boolean;
+  }>,
+  branches: Array<{ id: string; isPrimary: boolean; isActive: boolean }>,
+): PublicOpeningHoursDto[] {
+  const primary = branches.find((branch) => branch.isPrimary && branch.isActive)
+    ?? branches.find((branch) => branch.isActive);
+  const forBranch = primary ? hours.filter((hour) => hour.branchId === primary.id) : [];
+  const businessWide = hours.filter((hour) => hour.branchId == null);
+  const chosen = forBranch.length > 0
+    ? forBranch
+    : businessWide.length > 0
+    ? businessWide
+    : hours;
+  return [...chosen]
+    .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+    .map((hour) => ({
+      dayOfWeek: hour.dayOfWeek,
+      opensAt: hour.opensAt,
+      closesAt: hour.closesAt,
+      isClosed: hour.isClosed,
+    }));
+}
 
 export class DiscoveryMapper {
   static toPublicBranch(branch: BusinessBranchRecord) {
@@ -64,6 +94,7 @@ export class DiscoveryMapper {
       areas,
       branches: activeBranches.map(DiscoveryMapper.toPublicBranch),
       openingState: input.openingState ?? null,
+      temporarilyClosed: input.business.temporarilyClosed,
       serviceCount: input.business.serviceCount,
       productCount: input.business.productCount,
       distanceKm: input.distanceKm ?? null,
@@ -106,11 +137,15 @@ export class DiscoveryMapper {
       }
     }
 
-    return DiscoveryMapper.toSummaryDto({
-      business: input.business,
-      openingState,
-      distanceKm,
-    });
+    return {
+      ...DiscoveryMapper.toSummaryDto({
+        business: input.business,
+        openingState,
+        distanceKm,
+      }),
+      temporaryClosureReason: input.business.temporaryClosureReason,
+      openingHours: publicOpeningHours(input.openingHours, input.business.branches),
+    };
   }
 
   static toCategoryRef(input: {

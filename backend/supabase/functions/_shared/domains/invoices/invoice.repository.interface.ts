@@ -16,6 +16,10 @@ export interface InvoiceRepository {
   ): Promise<InvoiceRecord | null>;
   findByQuotationId(quotationId: string): Promise<InvoiceRecord | null>;
   list(filters: ListInvoicesFilters): Promise<InvoiceRecord[]>;
+  existsForCustomerBusiness(
+    customerId: string,
+    businessId: string,
+  ): Promise<boolean>;
   create(input: CreateInvoicePersistenceInput): Promise<InvoiceRecord>;
   updateDraft(input: UpdateDraftPersistenceInput): Promise<InvoiceRecord>;
   transition(input: TransitionPersistenceInput): Promise<InvoiceRecord>;

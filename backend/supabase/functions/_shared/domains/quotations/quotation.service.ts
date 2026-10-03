@@ -312,6 +312,24 @@ export class QuotationService {
         throw new ValidationError("Vehicle must belong to the customer.");
       }
     }
+
+    if (!input.appointmentId) {
+      const [hasAppointment, hasQuotation] = await Promise.all([
+        this.appointmentRepository.existsForCustomerBusiness(
+          input.customerId,
+          input.businessId,
+        ),
+        this.quotationRepository.existsForCustomerBusiness(
+          input.customerId,
+          input.businessId,
+        ),
+      ]);
+      if (!hasAppointment && !hasQuotation) {
+        throw new ValidationError(
+          "Customer has no verified relationship with this business.",
+        );
+      }
+    }
   }
 
   private async maybeExpire(

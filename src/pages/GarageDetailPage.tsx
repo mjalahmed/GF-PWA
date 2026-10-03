@@ -192,11 +192,20 @@ export function GarageDetailPage() {
               {garage.openingState && (
                 <p
                   className={
-                    garage.openingState.isOpen ? 'mt-1 text-sm text-success' : 'mt-1 text-sm text-text-subtle'
+                    !garage.temporarilyClosed && garage.openingState.isOpen
+                      ? 'mt-1 text-sm text-success'
+                      : 'mt-1 text-sm text-text-subtle'
                   }
                 >
-                  {garage.openingState.isOpen ? t('common.openNow') : t('common.closed')}
+                  {garage.temporarilyClosed
+                    ? t('common.temporarilyClosed')
+                    : garage.openingState.isOpen
+                      ? t('common.openNow')
+                      : t('common.closed')}
                 </p>
+              )}
+              {garage.temporarilyClosed && garage.temporaryClosureReason && (
+                <p className="mt-1 text-sm text-text-muted">{garage.temporaryClosureReason}</p>
               )}
               {garage.distanceKm != null && (
                 <p className="mt-1 text-sm text-text-muted">
@@ -222,6 +231,25 @@ export function GarageDetailPage() {
               <>
                 {garage.description && (
                   <p className="text-sm leading-relaxed text-text-secondary">{garage.description}</p>
+                )}
+                {garage.openingHours && garage.openingHours.length > 0 && (
+                  <section className="mt-6 rounded-2xl border border-border bg-surface p-4">
+                    <h2 className="font-semibold text-text-primary">{t('common.openingHours')}</h2>
+                    <ul className="mt-3 space-y-1 text-sm">
+                      {garage.openingHours.map((hour) => (
+                        <li key={hour.dayOfWeek} className="flex justify-between gap-4">
+                          <span className="text-text-secondary">
+                            {t(`common.weekday.${hour.dayOfWeek}`)}
+                          </span>
+                          <span className="text-text-primary">
+                            {hour.isClosed || !hour.opensAt || !hour.closesAt
+                              ? t('common.closedToday')
+                              : `${hour.opensAt.slice(0, 5)}–${hour.closesAt.slice(0, 5)}`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 )}
                 {branch && (
                   <section className="mt-6 rounded-2xl border border-border bg-surface p-4">
@@ -440,8 +468,13 @@ export function GarageDetailPage() {
                 <div className="space-y-3">
                   {reviewsQuery.data?.items.map((review) => (
                     <article key={review.id} className="rounded-xl border border-border bg-surface p-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <StarRating rating={review.overallRating} />
+                        {review.verified && (
+                          <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                            {t('review.verifiedService')}
+                          </span>
+                        )}
                         <span className="text-xs text-text-muted">
                           {formatDateLocalized(review.createdAt, dateLocale)}
                         </span>

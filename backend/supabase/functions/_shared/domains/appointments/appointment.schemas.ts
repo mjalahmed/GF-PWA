@@ -22,6 +22,18 @@ export const appointmentIdParamsSchema = z.object({
   appointmentId: uuid,
 }).strict();
 
+export const appointmentMediaParamsSchema = z.object({
+  businessId: uuid,
+  appointmentId: uuid,
+}).strict();
+
+export const registerAppointmentMediaSchema = z.object({
+  phase: z.enum(["before", "during", "after"]),
+  storagePath: z.string().trim().min(1).max(500),
+  caption: z.string().trim().max(300).nullable().optional(),
+  sortOrder: z.number().int().min(0).max(1000).optional(),
+}).strict();
+
 export const businessIdParamsSchema = z.object({
   businessId: uuid,
 }).strict();
@@ -64,6 +76,8 @@ export const appointmentSlotsQuerySchema = z.object({
 export type CreateAppointmentRequestDto = z.infer<typeof createAppointmentSchema>;
 export type TransitionBodyDto = z.infer<typeof transitionBodySchema>;
 export type AppointmentIdParamsDto = z.infer<typeof appointmentIdParamsSchema>;
+export type AppointmentMediaParamsDto = z.infer<typeof appointmentMediaParamsSchema>;
+export type RegisterAppointmentMediaDto = z.infer<typeof registerAppointmentMediaSchema>;
 export type BusinessIdParamsDto = z.infer<typeof businessIdParamsSchema>;
 export type BranchSlotsParamsDto = z.infer<typeof branchSlotsParamsSchema>;
 export type ListAppointmentsQueryDto = z.infer<typeof listAppointmentsQuerySchema>;

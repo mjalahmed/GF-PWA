@@ -61,6 +61,12 @@ export type BusinessSettingsRecord = {
   currency: string;
   locale: string;
   timezone: string;
+  benefitPayEnabled: boolean;
+  benefitPayPhone: string | null;
+  benefitPayIban: string | null;
+  benefitPayInstructions: string | null;
+  publiclyVisible: boolean;
+  acceptNewCustomers: boolean;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -168,7 +174,12 @@ export type UpdateBusinessSettingsPersistenceInput = {
   currency?: string;
   locale?: string;
   timezone?: string;
-  metadata?: Record<string, unknown>;
+  benefitPayEnabled?: boolean;
+  benefitPayPhone?: string | null;
+  benefitPayIban?: string | null;
+  benefitPayInstructions?: string | null;
+  publiclyVisible?: boolean;
+  acceptNewCustomers?: boolean;
 };
 
 export type CreateBranchPersistenceInput = {

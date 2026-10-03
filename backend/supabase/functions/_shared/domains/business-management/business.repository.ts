@@ -66,6 +66,12 @@ type SettingsRow = {
   currency: string;
   locale: string;
   timezone: string;
+  benefitpay_enabled: boolean;
+  benefitpay_phone: string | null;
+  benefitpay_iban: string | null;
+  benefitpay_instructions: string | null;
+  publicly_visible: boolean;
+  accept_new_customers: boolean;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -90,7 +96,7 @@ const BUSINESS_SELECT =
   "id, slug, business_category_id, legal_name, display_name, description, commercial_registration_number, phone, email, website, status, verification_status, source_application_id, logo_path, cover_path, average_rating, rating_count, approved_at, approved_by, suspended_at, suspended_reason, closed_at, temporarily_closed, temporary_closure_reason, temporarily_closed_at, temporarily_closed_by, metadata, created_at, updated_at";
 
 const SETTINGS_SELECT =
-  "id, business_id, appointments_enabled, products_enabled, quotations_enabled, invoices_enabled, cash_payments_enabled, online_payments_enabled, reviews_enabled, auto_confirm_appointments, default_appointment_duration_minutes, minimum_booking_notice_minutes, maximum_booking_days_ahead, cancellation_notice_minutes, currency, locale, timezone, metadata, created_at, updated_at";
+  "id, business_id, appointments_enabled, products_enabled, quotations_enabled, invoices_enabled, cash_payments_enabled, online_payments_enabled, reviews_enabled, auto_confirm_appointments, default_appointment_duration_minutes, minimum_booking_notice_minutes, maximum_booking_days_ahead, cancellation_notice_minutes, currency, locale, timezone, benefitpay_enabled, benefitpay_phone, benefitpay_iban, benefitpay_instructions, publicly_visible, accept_new_customers, metadata, created_at, updated_at";
 
 const MEMBERSHIP_SELECT =
   "id, business_id, user_id, role, status, invited_by, invited_at, accepted_at, suspended_at, removed_at, created_at, updated_at";
@@ -148,6 +154,12 @@ function toSettingsRecord(row: SettingsRow): BusinessSettingsRecord {
     currency: row.currency,
     locale: row.locale,
     timezone: row.timezone,
+    benefitPayEnabled: row.benefitpay_enabled,
+    benefitPayPhone: row.benefitpay_phone,
+    benefitPayIban: row.benefitpay_iban,
+    benefitPayInstructions: row.benefitpay_instructions,
+    publiclyVisible: row.publicly_visible,
+    acceptNewCustomers: row.accept_new_customers,
     metadata: row.metadata ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -335,7 +347,18 @@ export class SupabaseBusinessRepository implements BusinessRepository {
     if (input.currency !== undefined) patch.currency = input.currency;
     if (input.locale !== undefined) patch.locale = input.locale;
     if (input.timezone !== undefined) patch.timezone = input.timezone;
-    if (input.metadata !== undefined) patch.metadata = input.metadata;
+    if (input.benefitPayEnabled !== undefined) {
+      patch.benefitpay_enabled = input.benefitPayEnabled;
+    }
+    if (input.benefitPayPhone !== undefined) patch.benefitpay_phone = input.benefitPayPhone;
+    if (input.benefitPayIban !== undefined) patch.benefitpay_iban = input.benefitPayIban;
+    if (input.benefitPayInstructions !== undefined) {
+      patch.benefitpay_instructions = input.benefitPayInstructions;
+    }
+    if (input.publiclyVisible !== undefined) patch.publicly_visible = input.publiclyVisible;
+    if (input.acceptNewCustomers !== undefined) {
+      patch.accept_new_customers = input.acceptNewCustomers;
+    }
 
     const { data, error } = await this.adminClient
       .from("business_settings")

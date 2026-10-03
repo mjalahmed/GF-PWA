@@ -1,6 +1,8 @@
 import type {
+  AppointmentMediaRecord,
   AppointmentRecord,
   CreateAppointmentPersistenceInput,
+  InsertAppointmentMediaInput,
   ListAppointmentsFilters,
   OverlapQuery,
   TransitionPersistenceInput,
@@ -15,4 +17,10 @@ export interface AppointmentRepository {
   listOverlapping(query: OverlapQuery): Promise<AppointmentRecord[]>;
   create(input: CreateAppointmentPersistenceInput): Promise<AppointmentRecord>;
   transition(input: TransitionPersistenceInput): Promise<AppointmentRecord>;
+  existsForCustomerBusiness(
+    customerId: string,
+    businessId: string,
+  ): Promise<boolean>;
+  listMedia(appointmentId: string): Promise<AppointmentMediaRecord[]>;
+  insertMedia(input: InsertAppointmentMediaInput): Promise<AppointmentMediaRecord>;
 }

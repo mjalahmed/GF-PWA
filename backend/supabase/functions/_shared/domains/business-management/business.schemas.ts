@@ -62,7 +62,12 @@ export const updateBusinessSettingsSchema = z.object({
   currency: z.string().trim().length(3).optional(),
   locale: z.string().trim().min(2).max(10).optional(),
   timezone: z.string().trim().max(64).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  benefitPayEnabled: z.boolean().optional(),
+  benefitPayPhone: z.string().trim().max(30).nullable().optional(),
+  benefitPayIban: z.string().trim().max(40).nullable().optional(),
+  benefitPayInstructions: z.string().trim().max(500).nullable().optional(),
+  publiclyVisible: z.boolean().optional(),
+  acceptNewCustomers: z.boolean().optional(),
 }).strict();
 
 export const openingHoursQuerySchema = z.object({

@@ -372,6 +372,19 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
     return rows.map((row) => toInvoice(row, itemsMap.get(row.id) ?? []));
   }
 
+  async existsForCustomerBusiness(
+    customerId: string,
+    businessId: string,
+  ): Promise<boolean> {
+    const { count, error } = await this.adminClient
+      .from("invoices")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("business_id", businessId);
+    if (error) throw new InternalError("Failed to check invoices.", error);
+    return (count ?? 0) > 0;
+  }
+
   async create(input: CreateInvoicePersistenceInput): Promise<InvoiceRecord> {
     const invoiceNumber = await this.nextInvoiceNumber();
 

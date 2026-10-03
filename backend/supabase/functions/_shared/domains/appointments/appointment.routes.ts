@@ -13,7 +13,9 @@ import { ApiContract } from "../../contracts/api-contract.ts";
 import { createRequestDependencies } from "../../composition/dependencies.ts";
 import {
   appointmentIdParamsSchema,
+  appointmentMediaParamsSchema,
   appointmentSlotsQuerySchema,
+  registerAppointmentMediaSchema,
   branchSlotsParamsSchema,
   businessIdParamsSchema,
   createAppointmentSchema,
@@ -31,7 +33,9 @@ import {
   listAppointmentSlotsController,
   listAppointmentsController,
   listBusinessAppointmentsController,
+  listAppointmentMediaController,
   noShowAppointmentController,
+  registerAppointmentMediaController,
   rejectAppointmentController,
   startAppointmentController,
 } from "./appointment.controller.ts";
@@ -134,6 +138,25 @@ appointmentRoutes.post(
   validate({ params: appointmentIdParamsSchema, body: transitionBodySchema }),
   idempotency("appointment.complete", idempotencyRepo),
   (c) => completeAppointmentController(c),
+);
+
+appointmentRoutes.get(
+  ApiContract.routes.appointmentMedia,
+  requireAuthentication(),
+  validate({ params: appointmentIdParamsSchema }),
+  (c) => listAppointmentMediaController(c),
+);
+
+appointmentRoutes.post(
+  ApiContract.routes.businessAppointmentMedia,
+  requireAuthentication(),
+  requireBusinessMembership(),
+  requireBusinessPermission(Permissions.Appointment.Arrive),
+  validate({
+    params: appointmentMediaParamsSchema,
+    body: registerAppointmentMediaSchema,
+  }),
+  (c) => registerAppointmentMediaController(c),
 );
 
 appointmentRoutes.post(

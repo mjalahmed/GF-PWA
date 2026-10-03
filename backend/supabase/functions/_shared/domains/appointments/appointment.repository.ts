@@ -7,10 +7,12 @@ import {
 } from "../../core/constants/statuses.ts";
 import type { AppointmentRepository } from "./appointment.repository.interface.ts";
 import type {
+  AppointmentMediaRecord,
   AppointmentRecord,
   AppointmentServiceRecord,
   AppointmentStatusHistoryRecord,
   CreateAppointmentPersistenceInput,
+  InsertAppointmentMediaInput,
   ListAppointmentsFilters,
   OverlapQuery,
   TransitionPersistenceInput,
@@ -361,5 +363,91 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
       data as AppointmentRow,
       servicesMap.get(input.appointmentId) ?? [],
     );
+  }
+
+  async existsForCustomerBusiness(
+    customerId: string,
+    businessId: string,
+  ): Promise<boolean> {
+    const { count, error } = await this.adminClient
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("business_id", businessId);
+    if (error) throw new InternalError("Failed to check appointments.", error);
+    return (count ?? 0) > 0;
+  }
+
+  async listMedia(appointmentId: string): Promise<AppointmentMediaRecord[]> {
+    const { data, error } = await this.adminClient
+      .from("appointment_media")
+      .select(
+        "id, business_id, appointment_id, phase, storage_path, caption, sort_order, created_at",
+      )
+      .eq("appointment_id", appointmentId)
+      .order("sort_order", { ascending: true });
+    if (error) throw new InternalError("Failed to list repair photos.", error);
+    return ((data ?? []) as Array<{
+      id: string;
+      business_id: string;
+      appointment_id: string;
+      phase: "before" | "during" | "after";
+      storage_path: string;
+      caption: string | null;
+      sort_order: number;
+      created_at: string;
+    }>).map((row) => ({
+      id: row.id,
+      businessId: row.business_id,
+      appointmentId: row.appointment_id,
+      phase: row.phase,
+      storagePath: row.storage_path,
+      caption: row.caption,
+      sortOrder: row.sort_order,
+      createdAt: row.created_at,
+    }));
+  }
+
+  async insertMedia(
+    input: InsertAppointmentMediaInput,
+  ): Promise<AppointmentMediaRecord> {
+    const { data, error } = await this.adminClient
+      .from("appointment_media")
+      .insert({
+        business_id: input.businessId,
+        appointment_id: input.appointmentId,
+        phase: input.phase,
+        storage_path: input.storagePath,
+        caption: input.caption,
+        sort_order: input.sortOrder,
+        created_by: input.createdBy,
+      })
+      .select(
+        "id, business_id, appointment_id, phase, storage_path, caption, sort_order, created_at",
+      )
+      .single();
+    if (error || !data) {
+      throw new InternalError("Failed to record repair photo.", error);
+    }
+    const row = data as {
+      id: string;
+      business_id: string;
+      appointment_id: string;
+      phase: "before" | "during" | "after";
+      storage_path: string;
+      caption: string | null;
+      sort_order: number;
+      created_at: string;
+    };
+    return {
+      id: row.id,
+      businessId: row.business_id,
+      appointmentId: row.appointment_id,
+      phase: row.phase,
+      storagePath: row.storage_path,
+      caption: row.caption,
+      sortOrder: row.sort_order,
+      createdAt: row.created_at,
+    };
   }
 }

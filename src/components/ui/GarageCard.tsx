@@ -52,8 +52,12 @@ export function GarageCard({ garage }: GarageCardProps) {
               {formatRatingLocalized(garage.averageRating, garage.ratingCount, t)}
             </span>
             {garage.openingState && (
-              <span className={garage.openingState.isOpen ? 'text-success' : 'text-text-subtle'}>
-                {garage.openingState.isOpen ? t('common.open') : t('common.closed')}
+              <span className={!garage.temporarilyClosed && garage.openingState.isOpen ? 'text-success' : 'text-text-subtle'}>
+                {garage.temporarilyClosed
+                  ? t('common.temporarilyClosed')
+                  : garage.openingState.isOpen
+                    ? t('common.open')
+                    : t('common.closed')}
               </span>
             )}
           </div>

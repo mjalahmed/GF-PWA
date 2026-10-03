@@ -77,6 +77,27 @@ export type TransitionPersistenceInput = {
   };
 };
 
+export type AppointmentMediaRecord = {
+  id: string;
+  businessId: string;
+  appointmentId: string;
+  phase: "before" | "during" | "after";
+  storagePath: string;
+  caption: string | null;
+  sortOrder: number;
+  createdAt: string;
+};
+
+export type InsertAppointmentMediaInput = {
+  businessId: string;
+  appointmentId: string;
+  phase: "before" | "during" | "after";
+  storagePath: string;
+  caption: string | null;
+  sortOrder: number;
+  createdBy: string;
+};
+
 export type ListAppointmentsFilters = {
   customerId?: string;
   businessId?: string;
