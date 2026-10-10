@@ -8,10 +8,12 @@ import { MakeLogo } from '../components/ui/MakeLogo'
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { Spinner } from '../components/ui/Spinner'
 import { VinReminderBanner } from '../components/ui/VinReminderBanner'
+import { VinScanner } from '../components/ui/VinScanner'
 import { useAuth } from '../hooks/useAuth'
 import { useLocale } from '../i18n/LocaleProvider'
 import { hasMotomarksLogo } from '../lib/motomarks'
 import { uploadImage, vehicleImagePath } from '../lib/upload'
+import { normalizeVin } from '../lib/vin'
 import { VEHICLE_TYPE_OPTIONS, vehicleTypeLabelKey } from '../lib/vehicleTypes'
 import { listVehicleMakes, listVehicleModels } from '../services/api/catalog'
 import { createVehicle, getVehicle, updateVehicle } from '../services/api/vehicles'
@@ -30,8 +32,8 @@ export function VehicleFormPage() {
   const [makeId, setMakeId] = useState('')
   const [modelId, setModelId] = useState('')
   const [year, setYear] = useState(String(new Date().getFullYear()))
-  const [plateNumber, setPlateNumber] = useState('')
   const [vin, setVin] = useState('')
+  const [scanOpen, setScanOpen] = useState(false)
   const [color, setColor] = useState('')
   const [mileage, setMileage] = useState('')
   const [trim, setTrim] = useState('')
@@ -74,7 +76,6 @@ export function VehicleFormPage() {
     setMakeId(v.makeId)
     setModelId(v.modelId)
     setYear(String(v.year))
-    setPlateNumber(v.plateNumber ?? '')
     setVin(v.vin ?? '')
     setColor(v.color ?? '')
     setMileage(v.mileage != null ? String(v.mileage) : '')
@@ -89,7 +90,6 @@ export function VehicleFormPage() {
         makeId,
         modelId,
         year: Number(year),
-        plateNumber: plateNumber.trim() || undefined,
         vin: vin.trim() || undefined,
         color: color.trim() || undefined,
         trim: trim.trim() || undefined,
@@ -198,13 +198,25 @@ export function VehicleFormPage() {
             onChange={(e) => setYear(e.target.value)}
             required
           />
-          <Input
-            label={t('vehicles.plateNumber')}
-            value={plateNumber}
-            onChange={(e) => setPlateNumber(e.target.value)}
-          />
-          <Input label={t('common.vin')} value={vin} onChange={(e) => setVin(e.target.value)} />
-          {!vin.trim() && <VinReminderBanner vehicleId={id} />}
+          <div className="space-y-2">
+            <Input
+              label={t('common.vin')}
+              value={vin}
+              inputMode="text"
+              autoCapitalize="characters"
+              maxLength={17}
+              onChange={(e) => setVin(normalizeVin(e.target.value))}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => setScanOpen(true)}
+            >
+              {t('vinScan.open')}
+            </Button>
+            {!vin.trim() && <VinReminderBanner vehicleId={id} />}
+          </div>
           <ImageUpload
             bucket="vehicle-images"
             value={imagePath}
@@ -232,6 +244,14 @@ export function VehicleFormPage() {
           </Button>
         </form>
       </div>
+      <VinScanner
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onDetected={(detected) => {
+          setVin(detected)
+          setScanOpen(false)
+        }}
+      />
     </div>
   )
 }

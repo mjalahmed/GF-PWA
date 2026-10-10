@@ -18,8 +18,6 @@ function toVehicleWriteBody(body: {
   makeId?: string
   modelId?: string
   year?: number
-  plateNumber?: string
-  registrationNumber?: string | null
   vin?: string
   color?: string
   trim?: string
@@ -30,10 +28,8 @@ function toVehicleWriteBody(body: {
   fuelType?: string
   transmission?: string
 }): Record<string, unknown> {
-  const { plateNumber, registrationNumber, vehicleType, bodyType, ...rest } = body
+  const { vehicleType, bodyType, ...rest } = body
   const payload: Record<string, unknown> = { ...rest }
-  const plate = registrationNumber !== undefined ? registrationNumber : plateNumber
-  if (plate !== undefined) payload.registrationNumber = plate || null
   const type = vehicleType ?? bodyType
   if (type !== undefined) {
     payload.vehicleType = type || null
@@ -46,8 +42,6 @@ export async function createVehicle(body: {
   makeId: string
   modelId: string
   year: number
-  plateNumber?: string
-  registrationNumber?: string | null
   vin?: string
   color?: string
   trim?: string
@@ -72,8 +66,6 @@ export async function updateVehicle(
     makeId: string
     modelId: string
     year: number
-    plateNumber: string
-    registrationNumber: string | null
     vin: string
     color: string
     trim: string

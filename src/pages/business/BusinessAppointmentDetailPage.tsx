@@ -91,7 +91,6 @@ export function BusinessAppointmentDetailPage() {
   const [vehicleMake, setVehicleMake] = useState('')
   const [vehicleModel, setVehicleModel] = useState('')
   const [vehicleYear, setVehicleYear] = useState(String(new Date().getFullYear()))
-  const [vehiclePlate, setVehiclePlate] = useState('')
   const [vehicleVin, setVehicleVin] = useState('')
   const [vehicleColor, setVehicleColor] = useState('')
   const [vehicleMileage, setVehicleMileage] = useState('')
@@ -239,7 +238,6 @@ export function BusinessAppointmentDetailPage() {
         makeText: vehicleMake.trim(),
         modelText: vehicleModel.trim(),
         year,
-        registrationNumber: vehiclePlate.trim() || null,
         vin: vehicleVin.trim() || null,
         color: vehicleColor.trim() || null,
         mileage: vehicleMileage ? Number(vehicleMileage) : null,
@@ -258,7 +256,6 @@ export function BusinessAppointmentDetailPage() {
       setVehicleModelId('')
       setVehicleMake('')
       setVehicleModel('')
-      setVehiclePlate('')
       setVehicleVin('')
       setVehicleColor('')
       setVehicleMileage('')
@@ -428,11 +425,6 @@ export function BusinessAppointmentDetailPage() {
                       label={t('common.year')}
                       value={vehicleYear}
                       onChange={(e) => setVehicleYear(e.target.value)}
-                    />
-                    <Input
-                      label={t('vehicles.plateNumber')}
-                      value={vehiclePlate}
-                      onChange={(e) => setVehiclePlate(e.target.value)}
                     />
                     <Input
                       label={t('common.vin')}
