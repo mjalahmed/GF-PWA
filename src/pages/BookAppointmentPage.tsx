@@ -87,6 +87,16 @@ export function BookAppointmentPage() {
     onError: (err) => setError(err instanceof Error ? err.message : t('book.failed')),
   })
 
+  const filteredServices = useMemo(() => {
+    const items = servicesQuery.data?.items ?? []
+    const q = serviceQuery.trim().toLowerCase()
+    if (!q) return items
+    return items.filter((svc) => {
+      const name = localizedText(locale, svc.name, svc.nameAr).toLowerCase()
+      return name.includes(q)
+    })
+  }, [servicesQuery.data?.items, serviceQuery, locale])
+
   if (garageQuery.isLoading) return <Spinner />
   if (garageQuery.error || !garage) {
     return (
@@ -103,16 +113,6 @@ export function BookAppointmentPage() {
 
   const stepIndex = STEPS.indexOf(step)
   const selectedBranch = garage.branches.find((b) => b.id === branchId) ?? primaryBranch(garage)
-
-  const filteredServices = useMemo(() => {
-    const items = servicesQuery.data?.items ?? []
-    const q = serviceQuery.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((svc) => {
-      const name = localizedText(locale, svc.name, svc.nameAr).toLowerCase()
-      return name.includes(q)
-    })
-  }, [servicesQuery.data?.items, serviceQuery, locale])
 
   const goNext = () => {
     setError('')
