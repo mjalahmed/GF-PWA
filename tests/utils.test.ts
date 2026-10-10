@@ -51,7 +51,7 @@ describe('vehicleLabel', () => {
   })
 
   it('builds label from make/model/year', () => {
-    expect(vehicleLabel({ year: 2020, makeText: 'Toyota', modelText: 'Camry' })).toBe('2020 Toyota Camry')
+    expect(vehicleLabel({ year: 2020, makeText: 'Toyota', modelText: 'Camry' })).toBe('Toyota Camry 2020')
   })
 })
 
