@@ -7,6 +7,8 @@ import { ProtectedRoute } from '../ui/ProtectedRoute'
 import { PageHeader } from './PageHeader'
 import { Spinner } from '../ui/Spinner'
 
+type BusinessNavItem = { to: string; label: string; end?: boolean }
+
 export function BusinessShell() {
   const { t } = useLocale()
   const membershipsQuery = useQuery({
@@ -14,15 +16,22 @@ export function BusinessShell() {
     queryFn: listMyBusinessMemberships,
   })
 
-  const hasPortalAccess = (membershipsQuery.data?.length ?? 0) > 0
-  const applicantLinks = [{ to: '/business/applications', label: t('biz.nav.applications') }] as const
-  const portalLinks = [
+  const memberships = membershipsQuery.data ?? []
+  const hasPortalAccess = memberships.length > 0
+  const primaryBusinessId = memberships[0]?.businessId
+  const applicantLinks: BusinessNavItem[] = [
+    { to: '/business/applications', label: t('biz.nav.applications') },
+  ]
+  const portalLinks: BusinessNavItem[] = [
     { to: '/business', label: t('biz.nav.dashboard'), end: true },
+    ...(primaryBusinessId
+      ? [{ to: `/business/garages/${primaryBusinessId}`, label: t('biz.nav.garage') }]
+      : []),
     { to: '/business/appointments', label: t('biz.nav.appointments') },
     { to: '/business/quotations', label: t('biz.nav.quotations') },
     { to: '/business/invoices', label: t('biz.nav.invoices') },
     { to: '/business/applications', label: t('biz.nav.applications') },
-  ] as const
+  ]
   const links = hasPortalAccess ? portalLinks : applicantLinks
 
   return (
@@ -45,7 +54,7 @@ export function BusinessShell() {
             <NavLink
               key={link.to}
               to={link.to}
-              end={'end' in link ? link.end : false}
+              end={link.end ?? false}
               className={({ isActive }) => (isActive ? 'active' : '')}
             >
               {link.label}
